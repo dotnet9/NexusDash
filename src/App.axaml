@@ -1,0 +1,60 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:NexusDash"
+             x:Class="NexusDash.App"
+             RequestedThemeVariant="Dark">
+
+  <Application.Styles>
+    <FluentTheme />
+
+    <!-- Custom Theme Colors -->
+    <Style>
+      <Style.Resources>
+        <!-- VS Code Dark Plus inspired colors -->
+        <SolidColorBrush x:Key="BackgroundBrush" Color="#1e1e1e"/>
+        <SolidColorBrush x:Key="SurfaceBrush" Color="#252526"/>
+        <SolidColorBrush x:Key="BorderBrush" Color="#3c3c3c"/>
+        <SolidColorBrush x:Key="PrimaryBlueBrush" Color="#007acc"/>
+        <SolidColorBrush x:Key="AccentCyanBrush" Color="#4ec9b0"/>
+        <SolidColorBrush x:Key="WarningAmberBrush" Color="#d7ba7d"/>
+        <SolidColorBrush x:Key="DangerRedBrush" Color="#f14c4c"/>
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#ffffff"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#808080"/>
+      </Style.Resources>
+    </Style>
+
+    <!-- Button Style -->
+    <Style Selector="Button">
+      <Setter Property="Background" Value="#3c3c3c"/>
+      <Setter Property="Foreground" Value="#ffffff"/>
+      <Setter Property="BorderBrush" Value="#3c3c3c"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="4"/>
+      <Setter Property="Padding" Value="12,6"/>
+      <Setter Property="FontSize" Value="14"/>
+    </Style>
+
+    <Style Selector="Button:pointerover">
+      <Setter Property="Background" Value="#4c4c4c"/>
+    </Style>
+
+    <Style Selector="Button:pressed">
+      <Setter Property="Background" Value="#007acc"/>
+    </Style>
+
+    <!-- ScrollViewer Style -->
+    <Style Selector="ScrollViewer">
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+
+    <!-- ScrollBar Style -->
+    <Style Selector="ScrollBar">
+      <Setter Property="Background" Value="#252526"/>
+      <Setter Property="Foreground" Value="#3c3c3c"/>
+    </Style>
+
+    <Style Selector="ScrollBar:pointerover">
+      <Setter Property="Foreground" Value="#4c4c4c"/>
+    </Style>
+  </Application.Styles>
+</Application>

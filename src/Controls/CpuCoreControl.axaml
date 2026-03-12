@@ -1,0 +1,130 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="200" d:DesignHeight="200"
+             x:Class="NexusDash.Controls.CpuCoreControl"
+             x:Name="Root">
+
+  <Grid>
+    <!-- Outer glow effect -->
+    <Ellipse Width="{Binding ElementName=Root, Path=CoreSize}"
+             Height="{Binding ElementName=Root, Path=CoreSize}"
+             Fill="Transparent"
+             Stroke="{Binding ElementName=Root, Path=GlowColor}"
+             StrokeThickness="2"
+             Opacity="0.3">
+      <Ellipse.Effect>
+        <BlurEffect Radius="20"/>
+      </Ellipse.Effect>
+    </Ellipse>
+
+    <!-- Main rotating core -->
+    <Ellipse Width="{Binding ElementName=Root, Path=CoreSize}"
+             Height="{Binding ElementName=Root, Path=CoreSize}"
+             Fill="Transparent"
+             Stroke="{Binding ElementName=Root, Path=CoreColor}"
+             StrokeThickness="3">
+      <Ellipse.Effect>
+        <BlurEffect Radius="10"/>
+      </Ellipse.Effect>
+    </Ellipse>
+
+    <!-- Rotating segments -->
+    <Canvas Width="{Binding ElementName=Root, Path=CoreSize}"
+            Height="{Binding ElementName=Root, Path=CoreSize}"
+            RenderTransformOrigin="0.5,0.5">
+      <Canvas.RenderTransform>
+        <RotateTransform Angle="{Binding ElementName=Root, Path=RotationAngle}"/>
+      </Canvas.RenderTransform>
+
+      <!-- Inner rotating ring -->
+      <Ellipse Canvas.Left="10"
+               Canvas.Top="10"
+               Width="{Binding ElementName=Root, Path=InnerRingSize}"
+               Height="{Binding ElementName=Root, Path=InnerRingSize}"
+               Fill="Transparent"
+               Stroke="{Binding ElementName=Root, Path=InnerRingColor}"
+               StrokeThickness="2"
+               StrokeDashArray="20,10"/>
+
+      <!-- Rotating segments -->
+      <Path Fill="{Binding ElementName=Root, Path=SegmentColor}"
+            Opacity="0.6">
+        <Path.Data>
+          <PathGeometry>
+            <PathFigure StartPoint="100,10" IsClosed="True">
+              <LineSegment Point="110,30"/>
+              <LineSegment Point="90,30"/>
+            </PathFigure>
+          </PathGeometry>
+        </Path.Data>
+      </Path>
+
+      <Path Fill="{Binding ElementName=Root, Path=SegmentColor}"
+            Opacity="0.6"
+            RenderTransformOrigin="0.5,0.5">
+        <Path.RenderTransform>
+          <RotateTransform Angle="120"/>
+        </Path.RenderTransform>
+        <Path.Data>
+          <PathGeometry>
+            <PathFigure StartPoint="100,10" IsClosed="True">
+              <LineSegment Point="110,30"/>
+              <LineSegment Point="90,30"/>
+            </PathFigure>
+          </PathGeometry>
+        </Path.Data>
+      </Path>
+
+      <Path Fill="{Binding ElementName=Root, Path=SegmentColor}"
+            Opacity="0.6"
+            RenderTransformOrigin="0.5,0.5">
+        <Path.RenderTransform>
+          <RotateTransform Angle="240"/>
+        </Path.RenderTransform>
+        <Path.Data>
+          <PathGeometry>
+            <PathFigure StartPoint="100,10" IsClosed="True">
+              <LineSegment Point="110,30"/>
+              <LineSegment Point="90,30"/>
+            </PathFigure>
+          </PathGeometry>
+        </Path.Data>
+      </Path>
+    </Canvas>
+
+    <!-- Center info -->
+    <StackPanel HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+      <TextBlock Text="{Binding ElementName=Root, Path=CpuUsage, StringFormat='{}{0:F1}'}"
+                 FontSize="28"
+                 FontWeight="Bold"
+                 Foreground="{Binding ElementName=Root, Path=TextColor}"
+                 HorizontalAlignment="Center"/>
+      <TextBlock Text="%"
+                 FontSize="14"
+                 Foreground="{Binding ElementName=Root, Path=TextColor}"
+                 Opacity="0.7"
+                 HorizontalAlignment="Center"/>
+      <TextBlock Text="CPU"
+                 FontSize="12"
+                 Foreground="{Binding ElementName=Root, Path=TextColor}"
+                 Opacity="0.5"
+                 HorizontalAlignment="Center"
+                 Margin="0,4,0,0"/>
+    </StackPanel>
+
+    <!-- Warning overlay -->
+    <Border Background="#f14c4c"
+            Opacity="{Binding ElementName=Root, Path=WarningOpacity}"
+            CornerRadius="100"
+            Width="{Binding ElementName=Root, Path=CoreSize}"
+            Height="{Binding ElementName=Root, Path=CoreSize}"
+            IsVisible="{Binding ElementName=Root, Path=IsWarning}">
+      <Border.Effect>
+        <BlurEffect Radius="30"/>
+      </Border.Effect>
+    </Border>
+  </Grid>
+</UserControl>

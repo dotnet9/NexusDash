@@ -1,0 +1,299 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:NexusDash.ViewModels"
+        xmlns:ctrl="using:NexusDash.Controls"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        x:Class="NexusDash.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="NexusDash - 系统监控仪表盘"
+        Background="#1e1e1e"
+        Foreground="#ffffff"
+        FontFamily="Segoe UI, Microsoft YaHei UI">
+
+  <Design.DataContext>
+    <vm:MainWindowViewModel/>
+  </Design.DataContext>
+
+  <Grid RowDefinitions="Auto,*,Auto">
+    <!-- Header -->
+    <Border Grid.Row="0"
+            Background="#252526"
+            BorderBrush="#3c3c3c"
+            BorderThickness="0,0,0,1"
+            Padding="20,12">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12">
+          <TextBlock Text="NexusDash"
+                     FontSize="24"
+                     FontWeight="Bold"
+                     Foreground="#007acc"/>
+          <TextBlock Text="系统监控仪表盘"
+                     FontSize="14"
+                     Foreground="#808080"
+                     VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+          <Button Content="⏸ 暂停"
+                  Command="{Binding TogglePauseCommand}"
+                  IsVisible="{Binding IsRunning}"
+                  Background="#3c3c3c"
+                  Foreground="#ffffff"
+                  Padding="12,6"/>
+          <Button Content="▶ 继续"
+                  Command="{Binding TogglePauseCommand}"
+                  IsVisible="{Binding !IsRunning}"
+                  Background="#007acc"
+                  Foreground="#ffffff"
+                  Padding="12,6"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- Main Content -->
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+      <Grid Margin="20" RowDefinitions="Auto,Auto" ColumnDefinitions="*,*">
+        <!-- CPU Section -->
+        <Border Grid.Row="0" Grid.Column="0"
+                Background="#252526"
+                BorderBrush="#3c3c3c"
+                BorderThickness="1"
+                CornerRadius="4"
+                Margin="0,0,10,10"
+                Padding="20">
+          <Grid RowDefinitions="Auto,*">
+            <TextBlock Grid.Row="0"
+                       Text="反应堆核心 (CPU)"
+                       FontSize="16"
+                       FontWeight="SemiBold"
+                       Foreground="#4ec9b0"
+                       Margin="0,0,0,16"/>
+
+            <Grid Grid.Row="1" ColumnDefinitions="Auto,*">
+              <!-- CPU Core Visualization -->
+              <ctrl:CpuCoreControl Grid.Column="0"
+                                   CpuUsage="{Binding CpuUsage}"
+                                   RotationAngle="{Binding CpuRotationAngle}"
+                                   CoreSize="160"
+                                   Width="180"
+                                   Height="180"
+                                   HorizontalAlignment="Left"/>
+
+              <!-- CPU Details -->
+              <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="核心数" FontSize="12" Foreground="#808080"/>
+                <TextBlock Text="{Binding CpuCoreCount, StringFormat='{}{0} 核心'}"
+                           FontSize="18"
+                           Foreground="#ffffff"
+                           Margin="0,4,0,12"/>
+
+                <TextBlock Text="温度" FontSize="12" Foreground="#808080"/>
+                <TextBlock Text="{Binding CpuTemperature, StringFormat='{}{0:F1}°C'}"
+                           FontSize="18"
+                           Foreground="#ffffff"
+                           Margin="0,4,0,0"/>
+              </StackPanel>
+            </Grid>
+          </Grid>
+        </Border>
+
+        <!-- Memory Section -->
+        <Border Grid.Row="0" Grid.Column="1"
+                Background="#252526"
+                BorderBrush="#3c3c3c"
+                BorderThickness="1"
+                CornerRadius="4"
+                Margin="10,0,0,10"
+                Padding="20">
+          <Grid RowDefinitions="Auto,*">
+            <TextBlock Grid.Row="0"
+                       Text="护盾容量 (内存)"
+                       FontSize="16"
+                       FontWeight="SemiBold"
+                       Foreground="#4ec9b0"
+                       Margin="0,0,0,16"/>
+
+            <Grid Grid.Row="1">
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+              </Grid.RowDefinitions>
+
+              <!-- Memory Bar -->
+              <Border Grid.Row="0" x:Name="MemoryBarGrid" Height="40" Background="#3c3c3c" CornerRadius="4">
+                <Grid>
+                  <Border x:Name="MemoryFill"
+                          Background="#007acc"
+                          CornerRadius="4"
+                          HorizontalAlignment="Left"/>
+                  <TextBlock Text="{Binding MemoryUsage, StringFormat='{}{0:F1} %'}"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"
+                             FontSize="16"
+                             FontWeight="Bold"
+                             Foreground="#ffffff"/>
+                </Grid>
+              </Border>
+
+              <!-- Memory Details -->
+              <Grid Grid.Row="1" Margin="0,16,0,0" ColumnDefinitions="*,*">
+                <StackPanel Grid.Column="0">
+                  <TextBlock Text="已用内存" FontSize="12" Foreground="#808080"/>
+                  <TextBlock Text="{Binding MemoryUsedText}"
+                             FontSize="18"
+                             Foreground="#ffffff"
+                             Margin="0,4,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                  <TextBlock Text="总内存" FontSize="12" Foreground="#808080"/>
+                  <TextBlock Text="{Binding MemoryTotalText}"
+                             FontSize="18"
+                             Foreground="#ffffff"
+                             Margin="0,4,0,0"/>
+                </StackPanel>
+              </Grid>
+            </Grid>
+          </Grid>
+        </Border>
+
+        <!-- Disk Section -->
+        <Border Grid.Row="1" Grid.Column="0"
+                Background="#252526"
+                BorderBrush="#3c3c3c"
+                BorderThickness="1"
+                CornerRadius="4"
+                Margin="0,10,10,0"
+                Padding="20">
+          <Grid RowDefinitions="Auto,*">
+            <TextBlock Grid.Row="0"
+                       Text="存储阵列 (磁盘)"
+                       FontSize="16"
+                       FontWeight="SemiBold"
+                       Foreground="#4ec9b0"
+                       Margin="0,0,0,16"/>
+
+            <ItemsControl Grid.Row="1" ItemsSource="{Binding Disks}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Grid Margin="0,0,0,12">
+                    <Grid.RowDefinitions>
+                      <RowDefinition Height="Auto"/>
+                      <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+                      <TextBlock Grid.Column="0"
+                                 Text="{Binding Name}"
+                                 FontSize="14"
+                                 Foreground="#ffffff"/>
+                      <TextBlock Grid.Column="1"
+                                 Text="{Binding UsagePercentage, StringFormat='{}{0:F1} %'}"
+                                 FontSize="14"
+                                 Foreground="#808080"/>
+                    </Grid>
+
+                    <Border Grid.Row="1" x:Name="DiskBarGrid" Height="24" Background="#3c3c3c" CornerRadius="4" Margin="0,4,0,0">
+                      <Border x:Name="DiskFill"
+                              Background="#d7ba7d"
+                              CornerRadius="4"
+                              HorizontalAlignment="Left"/>
+                    </Border>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Grid>
+        </Border>
+
+        <!-- Network Section -->
+        <Border Grid.Row="1" Grid.Column="1"
+                Background="#252526"
+                BorderBrush="#3c3c3c"
+                BorderThickness="1"
+                CornerRadius="4"
+                Margin="10,10,0,0"
+                Padding="20">
+          <Grid RowDefinitions="Auto,*">
+            <TextBlock Grid.Row="0"
+                       Text="通信阵列 (网络)"
+                       FontSize="16"
+                       FontWeight="SemiBold"
+                       Foreground="#4ec9b0"
+                       Margin="0,0,0,16"/>
+
+            <Grid Grid.Row="1" RowDefinitions="Auto,Auto,Auto" Margin="0,8,0,0">
+              <!-- Upload -->
+              <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,16">
+                <TextBlock Grid.Column="0"
+                           Text="▲"
+                           FontSize="20"
+                           Foreground="#4ec9b0"
+                           Margin="0,0,12,0"/>
+                <TextBlock Grid.Column="1"
+                           Text="上传速度"
+                           FontSize="14"
+                           Foreground="#808080"
+                           VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="2"
+                           Text="{Binding NetworkUploadSpeed, StringFormat='{}{0:F1} KB/s'}"
+                           FontSize="16"
+                           Foreground="#ffffff"
+                           VerticalAlignment="Center"/>
+              </Grid>
+
+              <!-- Download -->
+              <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,16">
+                <TextBlock Grid.Column="0"
+                           Text="▼"
+                           FontSize="20"
+                           Foreground="#007acc"
+                           Margin="0,0,12,0"/>
+                <TextBlock Grid.Column="1"
+                           Text="下载速度"
+                           FontSize="14"
+                           Foreground="#808080"
+                           VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="2"
+                           Text="{Binding NetworkDownloadSpeed, StringFormat='{}{0:F1} KB/s'}"
+                           FontSize="16"
+                           Foreground="#ffffff"
+                           VerticalAlignment="Center"/>
+              </Grid>
+
+              <!-- Connections -->
+              <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto">
+                <TextBlock Grid.Column="0"
+                           Text="◉"
+                           FontSize="20"
+                           Foreground="#d7ba7d"
+                           Margin="0,0,12,0"/>
+                <TextBlock Grid.Column="1"
+                           Text="活动连接"
+                           FontSize="14"
+                           Foreground="#808080"
+                           VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="2"
+                           Text="{Binding NetworkConnections}"
+                           FontSize="16"
+                           Foreground="#ffffff"
+                           VerticalAlignment="Center"/>
+              </Grid>
+            </Grid>
+          </Grid>
+        </Border>
+      </Grid>
+    </ScrollViewer>
+
+    <!-- Status Bar -->
+    <Border Grid.Row="2"
+            Background="#007acc"
+            Padding="20,8">
+      <TextBlock Text="{Binding StatusMessage}"
+                 Foreground="#ffffff"
+                 FontSize="12"/>
+    </Border>
+  </Grid>
+</Window>
