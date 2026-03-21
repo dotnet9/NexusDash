@@ -4,7 +4,7 @@ using NexusDash.ViewModels;
 
 namespace NexusDash
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : AtomUI.Desktop.Controls.Window
     {
         private MainWindowViewModel? _viewModel;
 

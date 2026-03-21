@@ -1,7 +1,6 @@
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using NexusDash.Models;
 using NexusDash.Services;
+using ReactiveUI;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -9,51 +8,93 @@ using System.Threading.Tasks;
 
 namespace NexusDash.ViewModels
 {
-    public partial class MainWindowViewModel : ObservableObject, IDisposable
+    public partial class MainWindowViewModel : ReactiveObject, IDisposable
     {
         private readonly SystemMonitorService _monitorService;
 
-        [ObservableProperty]
-        private double _cpuUsage;
+        private double CpuUsage
+        {
+            get;
+            set => this.RaiseAndSetIfChanged(ref field, value);
+        }
 
-        [ObservableProperty]
-        private int _cpuCoreCount;
+        private int CpuCoreCount
+        {
+            get;
+            set => this.RaiseAndSetIfChanged(ref field, value);
+        }
 
-        [ObservableProperty]
-        private double _cpuTemperature;
+        private double CpuTemperature
+        {
+            get;
+            set => this.RaiseAndSetIfChanged(ref field, value);
+        }
 
-        [ObservableProperty]
-        private double _memoryUsage;
+        private double MemoryUsage
+        {
+            get;
+            set => this.RaiseAndSetIfChanged(ref field, value);
+        }
 
-        [ObservableProperty]
-        private string _memoryUsedText = "0 GB";
+        private string MemoryUsedText
+        {
+            get;
+            set => this.RaiseAndSetIfChanged(ref field, value);
+        } = "0 GB";
 
-        [ObservableProperty]
-        private string _memoryTotalText = "0 GB";
+        private string MemoryTotalText
+        {
+            get;
+            set => this.RaiseAndSetIfChanged(ref field, value);
+        } = "0 GB";
 
-        [ObservableProperty]
-        private ObservableCollection<DiskMetrics> _disks = new();
+        private ObservableCollection<DiskMetrics> Disks
+        {
+            get;
+            set => this.RaiseAndSetIfChanged(ref field, value);
+        } = new();
 
-        [ObservableProperty]
-        private double _networkUploadSpeed;
+        private double NetworkUploadSpeed
+        {
+            get;
+            set => this.RaiseAndSetIfChanged(ref field, value);
+        }
 
-        [ObservableProperty]
-        private double _networkDownloadSpeed;
+        private double NetworkDownloadSpeed
+        {
+            get;
+            set => this.RaiseAndSetIfChanged(ref field, value);
+        }
 
-        [ObservableProperty]
-        private string _networkUploadSpeedText = "0 KB/s";
+        private string NetworkUploadSpeedText
+        {
+            get;
+            set => this.RaiseAndSetIfChanged(ref field, value);
+        } = "0 KB/s";
 
-        [ObservableProperty]
-        private string _networkDownloadSpeedText = "0 KB/s";
+        private string NetworkDownloadSpeedText
+        {
+            get;
+            set => this.RaiseAndSetIfChanged(ref field, value);
+        } = "0 KB/s";
 
-        [ObservableProperty]
-        private int _networkConnections;
+        private int NetworkConnections
+        {
+            get;
+            set => this.RaiseAndSetIfChanged(ref field, value);
+        }
 
-        [ObservableProperty]
-        private bool _isRunning = true;
+        private bool IsRunning
+        {
+            get;
+            set => this.RaiseAndSetIfChanged(ref field, value);
+        } = true;
 
-        [ObservableProperty]
-        private string _statusMessage = "系统监控运行中...";
+        private string StatusMessage
+        {
+            get;
+            set => this.RaiseAndSetIfChanged(ref field, value);
+        } = "系统监控运行中...";
 
         public MainWindowViewModel()
         {
@@ -117,8 +158,7 @@ namespace NexusDash.ViewModels
             });
         }
 
-        [RelayCommand]
-        private void TogglePause()
+        public void RaiseTogglePauseHandler()
         {
             IsRunning = !IsRunning;
             StatusMessage = IsRunning ? "系统监控运行中..." : "系统监控已暂停";

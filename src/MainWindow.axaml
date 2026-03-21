@@ -54,7 +54,7 @@
 
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
           <Button Content="⏸ 暂停"
-                  Command="{Binding TogglePauseCommand}"
+                  Command="{Binding RaiseTogglePauseHandler}"
                   IsVisible="{Binding IsRunning}"
                   Background="#2d2d44"
                   Foreground="#4ec9b0"
@@ -77,7 +77,7 @@
             </Button.Styles>
           </Button>
           <Button Content="▶ 继续"
-                  Command="{Binding TogglePauseCommand}"
+                  Command="{Binding RaiseTogglePauseHandler}"
                   IsVisible="{Binding !IsRunning}"
                   Background="#007acc"
                   Foreground="#ffffff"

@@ -1,3 +1,6 @@
+using AtomUI.Desktop.Controls;
+using AtomUI.Theme;
+using AtomUI.Theme.Language;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -9,6 +12,15 @@ namespace NexusDash
         public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
+
+
+            this.UseAtomUI(builder =>
+            {
+                builder.WithDefaultLanguageVariant(LanguageVariant.zh_CN);
+                builder.WithDefaultTheme(IThemeManager.DEFAULT_THEME_ID);
+                builder.UseAlibabaSansFont(); // 配置字体
+                builder.UseDesktopControls();
+            });
         }
 
         public override void OnFrameworkInitializationCompleted()
