@@ -10,9 +10,6 @@ namespace NexusDash.Controls
         public static readonly StyledProperty<double> CpuUsageProperty =
             AvaloniaProperty.Register<CpuCoreControl, double>(nameof(CpuUsage), 0.0);
 
-        public static readonly StyledProperty<double> RotationAngleProperty =
-            AvaloniaProperty.Register<CpuCoreControl, double>(nameof(RotationAngle), 0.0);
-
         public static readonly StyledProperty<double> CoreSizeProperty =
             AvaloniaProperty.Register<CpuCoreControl, double>(nameof(CoreSize), 180.0);
 
@@ -28,9 +25,6 @@ namespace NexusDash.Controls
         public static readonly StyledProperty<IBrush> InnerRingColorProperty =
             AvaloniaProperty.Register<CpuCoreControl, IBrush>(nameof(InnerRingColor), new SolidColorBrush(Color.Parse("#4ec9b0")));
 
-        public static readonly StyledProperty<IBrush> SegmentColorProperty =
-            AvaloniaProperty.Register<CpuCoreControl, IBrush>(nameof(SegmentColor), new SolidColorBrush(Color.Parse("#4ec9b0")));
-
         public static readonly StyledProperty<IBrush> TextColorProperty =
             AvaloniaProperty.Register<CpuCoreControl, IBrush>(nameof(TextColor), new SolidColorBrush(Color.Parse("#ffffff")));
 
@@ -44,12 +38,6 @@ namespace NexusDash.Controls
         {
             get => GetValue(CpuUsageProperty);
             set => SetValue(CpuUsageProperty, value);
-        }
-
-        public double RotationAngle
-        {
-            get => GetValue(RotationAngleProperty);
-            set => SetValue(RotationAngleProperty, value);
         }
 
         public double CoreSize
@@ -80,12 +68,6 @@ namespace NexusDash.Controls
         {
             get => GetValue(InnerRingColorProperty);
             set => SetValue(InnerRingColorProperty, value);
-        }
-
-        public IBrush SegmentColor
-        {
-            get => GetValue(SegmentColorProperty);
-            set => SetValue(SegmentColorProperty, value);
         }
 
         public IBrush TextColor
@@ -131,7 +113,6 @@ namespace NexusDash.Controls
                 CoreColor = new SolidColorBrush(Color.Parse("#007acc")); // Blue
                 GlowColor = new SolidColorBrush(Color.Parse("#007acc"));
                 InnerRingColor = new SolidColorBrush(Color.Parse("#4ec9b0")); // Cyan
-                SegmentColor = new SolidColorBrush(Color.Parse("#4ec9b0"));
                 IsWarning = false;
                 WarningOpacity = 0.0;
             }
@@ -140,7 +121,6 @@ namespace NexusDash.Controls
                 CoreColor = new SolidColorBrush(Color.Parse("#d7ba7d")); // Amber
                 GlowColor = new SolidColorBrush(Color.Parse("#d7ba7d"));
                 InnerRingColor = new SolidColorBrush(Color.Parse("#d7ba7d"));
-                SegmentColor = new SolidColorBrush(Color.Parse("#d7ba7d"));
                 IsWarning = false;
                 WarningOpacity = 0.0;
             }
@@ -149,14 +129,9 @@ namespace NexusDash.Controls
                 CoreColor = new SolidColorBrush(Color.Parse("#f14c4c")); // Red
                 GlowColor = new SolidColorBrush(Color.Parse("#f14c4c"));
                 InnerRingColor = new SolidColorBrush(Color.Parse("#f14c4c"));
-                SegmentColor = new SolidColorBrush(Color.Parse("#f14c4c"));
                 IsWarning = true;
                 WarningOpacity = 0.3;
             }
-
-            // Update rotation speed based on usage
-            // Higher usage = faster rotation
-            var targetSpeed = 0.5 + (usage / 100.0) * 3.0;
         }
     }
 }

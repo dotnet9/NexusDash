@@ -4,22 +4,17 @@ using NexusDash.Models;
 using NexusDash.Services;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
-using System.Timers;
-using Timer = System.Timers.Timer;
 
 namespace NexusDash.ViewModels
 {
     public partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         private readonly SystemMonitorService _monitorService;
-        private readonly Timer _animationTimer;
 
         [ObservableProperty]
         private double _cpuUsage;
-
-        [ObservableProperty]
-        private double _cpuRotationAngle;
 
         [ObservableProperty]
         private int _cpuCoreCount;
@@ -46,6 +41,12 @@ namespace NexusDash.ViewModels
         private double _networkDownloadSpeed;
 
         [ObservableProperty]
+        private string _networkUploadSpeedText = "0 KB/s";
+
+        [ObservableProperty]
+        private string _networkDownloadSpeedText = "0 KB/s";
+
+        [ObservableProperty]
         private int _networkConnections;
 
         [ObservableProperty]
@@ -54,19 +55,10 @@ namespace NexusDash.ViewModels
         [ObservableProperty]
         private string _statusMessage = "系统监控运行中...";
 
-        private double _targetRotationSpeed = 0.5;
-        private double _currentRotationSpeed = 0.5;
-
         public MainWindowViewModel()
         {
             _monitorService = new SystemMonitorService();
             _monitorService.MetricsUpdated += OnMetricsUpdated;
-
-            _animationTimer = new Timer(16); // ~60 FPS
-            _animationTimer.Elapsed += OnAnimationTick;
-            _animationTimer.AutoReset = true;
-            _animationTimer.Start();
-
             _monitorService.Start();
         }
 
@@ -78,39 +70,51 @@ namespace NexusDash.ViewModels
                 CpuCoreCount = metrics.Cpu.CoreCount;
                 CpuTemperature = metrics.Cpu.Temperature;
 
-                MemoryUsage = metrics.Memory.UsagePercentage;
-                MemoryUsedText = FormatBytes(metrics.Memory.UsedBytes);
-                MemoryTotalText = FormatBytes(metrics.Memory.TotalBytes);
+                var memoryUsage = metrics.Memory.UsagePercentage;
+                var memoryUsed = FormatBytes(metrics.Memory.UsedBytes);
+                var memoryTotal = FormatBytes(metrics.Memory.TotalBytes);
 
-                Disks.Clear();
-                foreach (var disk in metrics.Disks)
+                System.Diagnostics.Debug.WriteLine($"ViewModel: MemoryUsage={memoryUsage:F2}%, Used={memoryUsed}, Total={memoryTotal}");
+
+                MemoryUsage = memoryUsage;
+                MemoryUsedText = memoryUsed;
+                MemoryTotalText = memoryTotal;
+
+                // 更新磁盘列表，根据Name匹配更新
+                foreach (var newDisk in metrics.Disks)
                 {
-                    Disks.Add(disk);
+                    var existingDisk = Disks.FirstOrDefault(d => d.Name == newDisk.Name);
+                    if (existingDisk != null)
+                    {
+                        // 更新现有磁盘数据
+                        existingDisk.DriveLetter = newDisk.DriveLetter;
+                        existingDisk.TotalBytes = newDisk.TotalBytes;
+                        existingDisk.UsedBytes = newDisk.UsedBytes;
+                        existingDisk.FreeBytes = newDisk.FreeBytes;
+                        existingDisk.ReadSpeed = newDisk.ReadSpeed;
+                        existingDisk.WriteSpeed = newDisk.WriteSpeed;
+                    }
+                    else
+                    {
+                        // 添加新磁盘
+                        Disks.Add(newDisk);
+                    }
+                }
+                // 移除不再存在的磁盘
+                for (int i = Disks.Count - 1; i >= 0; i--)
+                {
+                    if (!metrics.Disks.Any(d => d.Name == Disks[i].Name))
+                    {
+                        Disks.RemoveAt(i);
+                    }
                 }
 
                 NetworkUploadSpeed = metrics.Network.UploadSpeed;
                 NetworkDownloadSpeed = metrics.Network.DownloadSpeed;
+                NetworkUploadSpeedText = FormatSpeed(metrics.Network.UploadSpeed);
+                NetworkDownloadSpeedText = FormatSpeed(metrics.Network.DownloadSpeed);
                 NetworkConnections = metrics.Network.ConnectionCount;
-
-                // Update rotation speed based on CPU usage
-                // 0% = 0.5 deg/frame, 100% = 4.0 deg/frame
-                _targetRotationSpeed = 0.5 + (metrics.Cpu.TotalUsage / 100.0) * 3.5;
             });
-        }
-
-        private void OnAnimationTick(object? sender, ElapsedEventArgs e)
-        {
-            if (!IsRunning) return;
-
-            // Smooth rotation speed transition
-            _currentRotationSpeed += (_targetRotationSpeed - _currentRotationSpeed) * 0.1;
-
-            // Update rotation angle
-            CpuRotationAngle += _currentRotationSpeed;
-            if (CpuRotationAngle >= 360)
-            {
-                CpuRotationAngle -= 360;
-            }
         }
 
         [RelayCommand]
@@ -132,7 +136,7 @@ namespace NexusDash.ViewModels
         private static string FormatBytes(ulong bytes)
         {
             string[] sizes = { "B", "KB", "MB", "GB", "TB" };
-            double len = bytes;
+            double len = (double)bytes;
             int order = 0;
             while (len >= 1024 && order < sizes.Length - 1)
             {
@@ -142,9 +146,22 @@ namespace NexusDash.ViewModels
             return $"{len:F2} {sizes[order]}";
         }
 
+        private static string FormatSpeed(double bytesPerSecond)
+        {
+            string[] sizes = { "B/s", "KB/s", "MB/s", "GB/s", "TB/s" };
+            double len = bytesPerSecond;
+            int order = 0;
+            while (len >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                len /= 1024;
+            }
+            string format = order == 0 ? "F0" : "F2";
+            return $"{len.ToString(format)} {sizes[order]}";
+        }
+
         public void Dispose()
         {
-            _animationTimer?.Dispose();
             _monitorService?.Dispose();
         }
     }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Management;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,13 +18,15 @@ namespace NexusDash.Services
         private readonly PerformanceCounter _cpuCounter;
         private readonly List<PerformanceCounter> _coreCounters = new();
         private readonly PerformanceCounter _memoryCounter;
+        private PerformanceCounter _availableBytesCounter;
+        private PerformanceCounter _totalVisibleMemoryCounter;
         private readonly Dictionary<string, (PerformanceCounter readCounter, PerformanceCounter writeCounter)> _diskCounters = new();
         private PerformanceCounter _networkSentCounter;
         private PerformanceCounter _networkReceivedCounter;
-        
+
         private readonly Queue<SystemMetrics> _history = new();
         private const int MaxHistorySize = 60;
-        
+
         private ulong _lastNetworkSent;
         private ulong _lastNetworkReceived;
         private DateTime _lastNetworkTime;
@@ -48,6 +51,19 @@ namespace NexusDash.Services
 
             _memoryCounter = new PerformanceCounter("Memory", "% Committed Bytes In Use");
             _memoryCounter.NextValue();
+
+            try
+            {
+                _availableBytesCounter = new PerformanceCounter("Memory", "Available Bytes");
+                _totalVisibleMemoryCounter = new PerformanceCounter("Memory", "Total Visible Memory Size");
+                _availableBytesCounter.NextValue();
+                _totalVisibleMemoryCounter.NextValue();
+            }
+            catch
+            {
+                _availableBytesCounter = null;
+                _totalVisibleMemoryCounter = null;
+            }
 
             InitializeDiskCounters();
             InitializeNetworkCounters();
@@ -94,7 +110,7 @@ namespace NexusDash.Services
             {
                 var category = new PerformanceCounterCategory("Network Interface");
                 var instanceNames = category.GetInstanceNames();
-                
+
                 if (instanceNames.Length > 0)
                 {
                     var instanceName = instanceNames.FirstOrDefault(n => !n.ToLower().Contains("loopback")) ?? instanceNames[0];
@@ -139,7 +155,7 @@ namespace NexusDash.Services
                     var cpuUsage = _cpuCounter.NextValue();
                     metrics.Cpu.TotalUsage = Math.Min(100, Math.Max(0, cpuUsage));
                     metrics.Cpu.CoreCount = _coreCounters.Count;
-                    
+
                     foreach (var coreCounter in _coreCounters)
                     {
                         var coreUsage = coreCounter.NextValue();
@@ -170,31 +186,60 @@ namespace NexusDash.Services
                 // Memory Metrics
                 await Task.Run(() =>
                 {
-                    var memoryUsage = _memoryCounter.NextValue();
-                    
-                    // Get memory info using GC and Environment
-                    var totalMemory = GC.GetTotalMemory(false);
-                    var workingSet = Environment.WorkingSet;
-                    
-                    // Use PerformanceCounter for more accurate memory info
                     try
                     {
-                        using var availableBytesCounter = new PerformanceCounter("Memory", "Available Bytes");
-                        using var totalVisibleMemoryCounter = new PerformanceCounter("Memory", "Total Visible Memory Size");
-                        
-                        var availableBytes = (ulong)availableBytesCounter.NextValue();
-                        var totalBytes = (ulong)totalVisibleMemoryCounter.NextValue() * 1024; // Convert from KB to bytes
-                        
-                        metrics.Memory.TotalBytes = totalBytes;
-                        metrics.Memory.AvailableBytes = availableBytes;
-                        metrics.Memory.UsedBytes = totalBytes - availableBytes;
+                        // Use PerformanceCounter for system memory info
+                        if (_availableBytesCounter != null && _totalVisibleMemoryCounter != null)
+                        {
+                            var availableBytes = (ulong)_availableBytesCounter.NextValue();
+                            var totalBytes = (ulong)_totalVisibleMemoryCounter.NextValue() * 1024; // Convert from KB to bytes
+                            var usedBytes = totalBytes - availableBytes;
+
+                            metrics.Memory.TotalBytes = totalBytes;
+                            metrics.Memory.AvailableBytes = availableBytes;
+                            metrics.Memory.UsedBytes = usedBytes;
+
+                            Debug.WriteLine($"Memory (PerformanceCounter): Total={FormatBytes(totalBytes)}, Available={FormatBytes(availableBytes)}, Used={FormatBytes(usedBytes)}, Usage={metrics.Memory.UsagePercentage:F2}%");
+                        }
+                        else
+                        {
+                            // Fallback: Use WMI to get system memory info
+                            try
+                            {
+                                var searcher = new ManagementObjectSearcher("SELECT TotalVisibleMemorySize, FreePhysicalMemory FROM Win32_OperatingSystem");
+                                var results = searcher.Get();
+
+                                foreach (var result in results)
+                                {
+                                    var totalKb = Convert.ToUInt64(result["TotalVisibleMemorySize"]);
+                                    var freeKb = Convert.ToUInt64(result["FreePhysicalMemory"]);
+                                    var totalBytes = totalKb * 1024;
+                                    var freeBytes = freeKb * 1024;
+                                    var usedBytes = totalBytes - freeBytes;
+
+                                    metrics.Memory.TotalBytes = totalBytes;
+                                    metrics.Memory.AvailableBytes = freeBytes;
+                                    metrics.Memory.UsedBytes = usedBytes;
+
+                                    Debug.WriteLine($"Memory (WMI): Total={FormatBytes(totalBytes)}, Available={FormatBytes(freeBytes)}, Used={FormatBytes(usedBytes)}, Usage={metrics.Memory.UsagePercentage:F2}%");
+                                    break;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"Memory (WMI Error): {ex.Message}");
+                                // Last fallback: use GC info (not accurate for system memory)
+                                metrics.Memory.TotalBytes = (ulong)GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
+                                metrics.Memory.UsedBytes = (ulong)Environment.WorkingSet;
+                                metrics.Memory.AvailableBytes = metrics.Memory.TotalBytes - metrics.Memory.UsedBytes;
+
+                                Debug.WriteLine($"Memory (GC Fallback - Process only): Total={FormatBytes(metrics.Memory.TotalBytes)}, Used={FormatBytes(metrics.Memory.UsedBytes)}, Usage={metrics.Memory.UsagePercentage:F2}%");
+                            }
+                        }
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // Fallback to GC info
-                        metrics.Memory.TotalBytes = (ulong)GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
-                        metrics.Memory.UsedBytes = (ulong)workingSet;
-                        metrics.Memory.AvailableBytes = metrics.Memory.TotalBytes - metrics.Memory.UsedBytes;
+                        Debug.WriteLine($"Memory Error: {ex.Message}");
                     }
                 });
 
@@ -209,7 +254,7 @@ namespace NexusDash.Services
                     {
                         var driveMetrics = new DiskMetrics
                         {
-                            Name = drive.VolumeLabel,
+                            Name = drive.Name.TrimEnd('\\', ':', '/'),
                             DriveLetter = drive.Name.TrimEnd('\\', ':', '/'),
                             TotalBytes = (ulong)drive.TotalSize,
                             FreeBytes = (ulong)drive.AvailableFreeSpace,
@@ -284,7 +329,9 @@ namespace NexusDash.Services
             _updateTimer?.Dispose();
             _cpuCounter?.Dispose();
             _memoryCounter?.Dispose();
-            
+            _availableBytesCounter?.Dispose();
+            _totalVisibleMemoryCounter?.Dispose();
+
             foreach (var counter in _coreCounters)
             {
                 counter?.Dispose();
@@ -298,6 +345,19 @@ namespace NexusDash.Services
 
             _networkSentCounter?.Dispose();
             _networkReceivedCounter?.Dispose();
+        }
+
+        private static string FormatBytes(ulong bytes)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+            double len = (double)bytes;
+            int order = 0;
+            while (len >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                len /= 1024;
+            }
+            return $"{len:F2} {sizes[order]}";
         }
     }
 }

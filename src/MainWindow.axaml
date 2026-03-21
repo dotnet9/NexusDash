@@ -4,13 +4,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:NexusDash.ViewModels"
         xmlns:ctrl="using:NexusDash.Controls"
-        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        xmlns:converters="using:NexusDash.Converters"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="680"
         x:Class="NexusDash.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="NexusDash - 系统监控仪表盘"
         Background="#1e1e1e"
         Foreground="#ffffff"
-        FontFamily="Segoe UI, Microsoft YaHei UI">
+        FontFamily="Segoe UI, Microsoft YaHei UI" Width="800" Height="680">
 
   <Design.DataContext>
     <vm:MainWindowViewModel/>
@@ -19,35 +20,85 @@
   <Grid RowDefinitions="Auto,*,Auto">
     <!-- Header -->
     <Border Grid.Row="0"
-            Background="#252526"
-            BorderBrush="#3c3c3c"
-            BorderThickness="0,0,0,1"
-            Padding="20,12">
+            Background="#1a1a2e"
+            BorderBrush="#007acc"
+            BorderThickness="0,0,0,2"
+            Padding="24,16">
       <Grid ColumnDefinitions="*,Auto">
-        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12">
-          <TextBlock Text="NexusDash"
-                     FontSize="24"
-                     FontWeight="Bold"
-                     Foreground="#007acc"/>
-          <TextBlock Text="系统监控仪表盘"
-                     FontSize="14"
-                     Foreground="#808080"
-                     VerticalAlignment="Center"/>
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="16">
+          <Border Width="48" Height="48" CornerRadius="8" Background="#007acc">
+            <TextBlock Text="ND"
+                       FontSize="20"
+                       FontWeight="Bold"
+                       Foreground="#ffffff"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
+          </Border>
+          <StackPanel VerticalAlignment="Center" Spacing="2">
+            <TextBlock Text="NexusDash"
+                       FontSize="28"
+                       FontWeight="SemiBold"
+                       Foreground="#ffffff"
+                       FontFamily="Segoe UI, Microsoft YaHei UI">
+              <TextBlock.Effect>
+                <DropShadowEffect Color="#007acc" OffsetX="0" OffsetY="0" BlurRadius="8" Opacity="0.5"/>
+              </TextBlock.Effect>
+            </TextBlock>
+            <TextBlock Text="系统监控仪表盘"
+                       FontSize="12"
+                       Foreground="#4ec9b0"
+                       FontWeight="SemiBold"
+                       LetterSpacing="2"/>
+          </StackPanel>
         </StackPanel>
 
-        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
           <Button Content="⏸ 暂停"
                   Command="{Binding TogglePauseCommand}"
                   IsVisible="{Binding IsRunning}"
-                  Background="#3c3c3c"
-                  Foreground="#ffffff"
-                  Padding="12,6"/>
+                  Background="#2d2d44"
+                  Foreground="#4ec9b0"
+                  BorderBrush="#4ec9b0"
+                  BorderThickness="1"
+                  Padding="16,8"
+                  CornerRadius="6"
+                  FontWeight="SemiBold"
+                  FontSize="13">
+            <Button.Styles>
+              <Style Selector="Button:pointerover">
+                <Setter Property="Background" Value="#3d3d5c"/>
+                <Setter Property="BorderBrush" Value="#4ec9b0"/>
+                <Setter Property="Cursor" Value="Hand"/>
+              </Style>
+              <Style Selector="Button:pressed">
+                <Setter Property="Background" Value="#1d1d2c"/>
+                <Setter Property="RenderTransform" Value="scale(0.98)"/>
+              </Style>
+            </Button.Styles>
+          </Button>
           <Button Content="▶ 继续"
                   Command="{Binding TogglePauseCommand}"
                   IsVisible="{Binding !IsRunning}"
                   Background="#007acc"
                   Foreground="#ffffff"
-                  Padding="12,6"/>
+                  BorderBrush="#00a3ff"
+                  BorderThickness="1"
+                  Padding="16,8"
+                  CornerRadius="6"
+                  FontWeight="SemiBold"
+                  FontSize="13">
+            <Button.Styles>
+              <Style Selector="Button:pointerover">
+                <Setter Property="Background" Value="#0096e8"/>
+                <Setter Property="BorderBrush" Value="#00b3ff"/>
+                <Setter Property="Cursor" Value="Hand"/>
+              </Style>
+              <Style Selector="Button:pressed">
+                <Setter Property="Background" Value="#0064a8"/>
+                <Setter Property="RenderTransform" Value="scale(0.98)"/>
+              </Style>
+            </Button.Styles>
+          </Button>
         </StackPanel>
       </Grid>
     </Border>
@@ -75,7 +126,6 @@
               <!-- CPU Core Visualization -->
               <ctrl:CpuCoreControl Grid.Column="0"
                                    CpuUsage="{Binding CpuUsage}"
-                                   RotationAngle="{Binding CpuRotationAngle}"
                                    CoreSize="160"
                                    Width="180"
                                    Height="180"
@@ -115,28 +165,24 @@
                        Foreground="#4ec9b0"
                        Margin="0,0,0,16"/>
 
-            <Grid Grid.Row="1">
-              <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-              </Grid.RowDefinitions>
+            <Grid Grid.Row="1" RowDefinitions="Auto Auto Auto">
 
               <!-- Memory Bar -->
-              <Border Grid.Row="0" x:Name="MemoryBarGrid" Height="40" Background="#3c3c3c" CornerRadius="4">
-                <Grid>
-                  <Border x:Name="MemoryFill"
-                          Background="#007acc"
-                          CornerRadius="4"
-                          HorizontalAlignment="Left"/>
-                  <TextBlock Text="{Binding MemoryUsage, StringFormat='{}{0:F1} %'}"
-                             HorizontalAlignment="Center"
-                             VerticalAlignment="Center"
-                             FontSize="16"
-                             FontWeight="Bold"
-                             Foreground="#ffffff"/>
-                </Grid>
-              </Border>
+              <Grid Height="56">
+                <ProgressBar Value="{Binding MemoryUsage}"
+                             Maximum="100"
+                             Minimum="0"
+                             Height="32"
+                             Foreground="{Binding MemoryUsage, Converter={x:Static converters:UsageToColorConverter.Instance}}"
+                             Background="#3c3c3c"
+                             CornerRadius="6"/>
+                <TextBlock Text="{Binding MemoryUsage, StringFormat='{}{0:F1} %'}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           Foreground="#ffffff"/>
+              </Grid>
 
               <!-- Memory Details -->
               <Grid Grid.Row="1" Margin="0,16,0,0" ColumnDefinitions="*,*">
@@ -178,11 +224,7 @@
             <ItemsControl Grid.Row="1" ItemsSource="{Binding Disks}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                  <Grid Margin="0,0,0,12">
-                    <Grid.RowDefinitions>
-                      <RowDefinition Height="Auto"/>
-                      <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                  <Grid Margin="0,0,0,12" RowDefinitions="Auto Auto Auto">
 
                     <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
                       <TextBlock Grid.Column="0"
@@ -195,12 +237,26 @@
                                  Foreground="#808080"/>
                     </Grid>
 
-                    <Border Grid.Row="1" x:Name="DiskBarGrid" Height="24" Background="#3c3c3c" CornerRadius="4" Margin="0,4,0,0">
-                      <Border x:Name="DiskFill"
-                              Background="#d7ba7d"
-                              CornerRadius="4"
-                              HorizontalAlignment="Left"/>
-                    </Border>
+                    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                      <TextBlock Grid.Column="0"
+                                 Text="{Binding UsedBytes, Converter={x:Static converters:BytesToTextConverter.Instance}, StringFormat='已用: {0}'}"
+                                 FontSize="12"
+                                 Foreground="#808080"/>
+                      <TextBlock Grid.Column="1"
+                                 Text="{Binding TotalBytes, Converter={x:Static converters:BytesToTextConverter.Instance}, StringFormat='总计: {0}'}"
+                                 FontSize="12"
+                                 Foreground="#808080"/>
+                    </Grid>
+
+                    <ProgressBar Grid.Row="2"
+                                 Height="15"
+                                 Value="{Binding UsagePercentage}"
+                                 Maximum="100"
+                                 Minimum="0"
+                                 Margin="0,4,0,0"
+                                 Foreground="{Binding UsagePercentage, Converter={x:Static converters:UsageToColorConverter.Instance}}"
+                                 Background="#3c3c3c"
+                                 CornerRadius="6"/>
                   </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
@@ -238,7 +294,7 @@
                            Foreground="#808080"
                            VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="2"
-                           Text="{Binding NetworkUploadSpeed, StringFormat='{}{0:F1} KB/s'}"
+                           Text="{Binding NetworkUploadSpeedText}"
                            FontSize="16"
                            Foreground="#ffffff"
                            VerticalAlignment="Center"/>
@@ -257,7 +313,7 @@
                            Foreground="#808080"
                            VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="2"
-                           Text="{Binding NetworkDownloadSpeed, StringFormat='{}{0:F1} KB/s'}"
+                           Text="{Binding NetworkDownloadSpeedText}"
                            FontSize="16"
                            Foreground="#ffffff"
                            VerticalAlignment="Center"/>
