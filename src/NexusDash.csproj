@@ -10,8 +10,8 @@
 
   <ItemGroup>
     <PackageReference Include="AtomUI.Desktop.Controls" Version="5.1.5-build.11" />
-    <PackageReference Include="Avalonia" Version="12.0.0-rc1" />
-    <PackageReference Include="Avalonia.Desktop" Version="12.0.0-rc1" />
+    <PackageReference Include="Avalonia" Version="11.3.12" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.12" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="11.0.0-preview.2.26159.112" />
     <PackageReference Include="System.Management" Version="11.0.0-preview.2.26159.112" />
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->

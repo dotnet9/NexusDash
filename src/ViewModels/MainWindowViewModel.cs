@@ -12,85 +12,85 @@ namespace NexusDash.ViewModels
     {
         private readonly SystemMonitorService _monitorService;
 
-        private double CpuUsage
+        public double CpuUsage
         {
             get;
             set => this.RaiseAndSetIfChanged(ref field, value);
         }
 
-        private int CpuCoreCount
+        public int CpuCoreCount
         {
             get;
             set => this.RaiseAndSetIfChanged(ref field, value);
         }
 
-        private double CpuTemperature
+        public double CpuTemperature
         {
             get;
             set => this.RaiseAndSetIfChanged(ref field, value);
         }
 
-        private double MemoryUsage
+        public double MemoryUsage
         {
             get;
             set => this.RaiseAndSetIfChanged(ref field, value);
         }
 
-        private string MemoryUsedText
+        public string MemoryUsedText
         {
             get;
             set => this.RaiseAndSetIfChanged(ref field, value);
         } = "0 GB";
 
-        private string MemoryTotalText
+        public string MemoryTotalText
         {
             get;
             set => this.RaiseAndSetIfChanged(ref field, value);
         } = "0 GB";
 
-        private ObservableCollection<DiskMetrics> Disks
+        public ObservableCollection<DiskMetrics> Disks
         {
             get;
             set => this.RaiseAndSetIfChanged(ref field, value);
         } = new();
 
-        private double NetworkUploadSpeed
+        public double NetworkUploadSpeed
         {
             get;
             set => this.RaiseAndSetIfChanged(ref field, value);
         }
 
-        private double NetworkDownloadSpeed
+        public double NetworkDownloadSpeed
         {
             get;
             set => this.RaiseAndSetIfChanged(ref field, value);
         }
 
-        private string NetworkUploadSpeedText
+        public string NetworkUploadSpeedText
         {
             get;
             set => this.RaiseAndSetIfChanged(ref field, value);
         } = "0 KB/s";
 
-        private string NetworkDownloadSpeedText
+        public string NetworkDownloadSpeedText
         {
             get;
             set => this.RaiseAndSetIfChanged(ref field, value);
         } = "0 KB/s";
 
-        private int NetworkConnections
+        public int NetworkConnections
         {
             get;
             set => this.RaiseAndSetIfChanged(ref field, value);
         }
 
-        private bool IsRunning
+        public bool IsRunning
         {
             get;
             set => this.RaiseAndSetIfChanged(ref field, value);
         } = true;
 
-        private string StatusMessage
+        public string StatusMessage
         {
             get;
             set => this.RaiseAndSetIfChanged(ref field, value);
