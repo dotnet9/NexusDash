@@ -50,4 +50,28 @@ namespace NexusDash.Models
         public ulong TotalBytesDownloaded { get; set; }
         public int ConnectionCount { get; set; }
     }
+
+    public class ProcessMetrics
+    {
+        public int Pid { get; set; }
+        public int? ParentPid { get; set; }
+        public string Name { get; set; } = "";
+        public double CpuPercent { get; set; }
+        public ulong WorkingSetBytes { get; set; }
+        public double DiskReadBytesPerSecond { get; set; }
+        public double DiskWriteBytesPerSecond { get; set; }
+        public double? NetworkBytesPerSecond { get; set; }
+        public double? GpuPercent { get; set; }
+        public string? CommandLine { get; set; }
+        public DateTime? StartTime { get; set; }
+        public string? ExecutablePath { get; set; }
+        public bool IsAccessDenied { get; set; }
+    }
+
+    public class ProcessSnapshot
+    {
+        public DateTime Timestamp { get; set; } = DateTime.Now;
+        public SystemMetrics System { get; set; } = new();
+        public List<ProcessMetrics> Processes { get; set; } = new();
+    }
 }

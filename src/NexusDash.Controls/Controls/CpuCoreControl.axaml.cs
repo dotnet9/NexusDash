@@ -1,14 +1,13 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
-using System;
 
 namespace NexusDash.Controls
 {
     public partial class CpuCoreControl : UserControl
     {
         public static readonly StyledProperty<double> CpuUsageProperty =
-            AvaloniaProperty.Register<CpuCoreControl, double>(nameof(CpuUsage), 0.0);
+            AvaloniaProperty.Register<CpuCoreControl, double>(nameof(CpuUsage));
 
         public static readonly StyledProperty<double> CoreSizeProperty =
             AvaloniaProperty.Register<CpuCoreControl, double>(nameof(CoreSize), 180.0);
@@ -26,13 +25,13 @@ namespace NexusDash.Controls
             AvaloniaProperty.Register<CpuCoreControl, IBrush>(nameof(InnerRingColor), new SolidColorBrush(Color.Parse("#4ec9b0")));
 
         public static readonly StyledProperty<IBrush> TextColorProperty =
-            AvaloniaProperty.Register<CpuCoreControl, IBrush>(nameof(TextColor), new SolidColorBrush(Color.Parse("#ffffff")));
+            AvaloniaProperty.Register<CpuCoreControl, IBrush>(nameof(TextColor), Brushes.White);
 
         public static readonly StyledProperty<bool> IsWarningProperty =
-            AvaloniaProperty.Register<CpuCoreControl, bool>(nameof(IsWarning), false);
+            AvaloniaProperty.Register<CpuCoreControl, bool>(nameof(IsWarning));
 
         public static readonly StyledProperty<double> WarningOpacityProperty =
-            AvaloniaProperty.Register<CpuCoreControl, double>(nameof(WarningOpacity), 0.0);
+            AvaloniaProperty.Register<CpuCoreControl, double>(nameof(WarningOpacity));
 
         public double CpuUsage
         {
@@ -105,28 +104,25 @@ namespace NexusDash.Controls
 
         private void UpdateVisualState()
         {
-            var usage = CpuUsage;
-
-            // Update colors based on usage
-            if (usage < 50)
+            if (CpuUsage < 50)
             {
-                CoreColor = new SolidColorBrush(Color.Parse("#007acc")); // Blue
+                CoreColor = new SolidColorBrush(Color.Parse("#007acc"));
                 GlowColor = new SolidColorBrush(Color.Parse("#007acc"));
-                InnerRingColor = new SolidColorBrush(Color.Parse("#4ec9b0")); // Cyan
+                InnerRingColor = new SolidColorBrush(Color.Parse("#4ec9b0"));
                 IsWarning = false;
-                WarningOpacity = 0.0;
+                WarningOpacity = 0;
             }
-            else if (usage < 80)
+            else if (CpuUsage < 80)
             {
-                CoreColor = new SolidColorBrush(Color.Parse("#d7ba7d")); // Amber
+                CoreColor = new SolidColorBrush(Color.Parse("#d7ba7d"));
                 GlowColor = new SolidColorBrush(Color.Parse("#d7ba7d"));
                 InnerRingColor = new SolidColorBrush(Color.Parse("#d7ba7d"));
                 IsWarning = false;
-                WarningOpacity = 0.0;
+                WarningOpacity = 0;
             }
             else
             {
-                CoreColor = new SolidColorBrush(Color.Parse("#f14c4c")); // Red
+                CoreColor = new SolidColorBrush(Color.Parse("#f14c4c"));
                 GlowColor = new SolidColorBrush(Color.Parse("#f14c4c"));
                 InnerRingColor = new SolidColorBrush(Color.Parse("#f14c4c"));
                 IsWarning = true;

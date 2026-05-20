@@ -7,8 +7,8 @@
     <PackageVersion Include="AtomUI.Desktop.Controls" Version="6.0.0-build.3" />
     <PackageVersion Include="Avalonia" Version="12.0.3" />
     <PackageVersion Include="Avalonia.Desktop" Version="12.0.3" />
+    <PackageVersion Include="Lang.Avalonia.Json" Version="12.0.2.1" />
     <PackageVersion Include="ReactiveUI.Avalonia" Version="12.0.1" />
-    <PackageVersion Include="System.Diagnostics.PerformanceCounter" Version="10.0.8" />
     <PackageVersion Include="System.Management" Version="10.0.8" />
     <PackageVersion Include="Tmds.DBus.Protocol" Version="0.93.0" />
   </ItemGroup>

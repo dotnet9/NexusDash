@@ -1,0 +1,10 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:themes="using:NexusDash.Controls.Themes"
+             x:Class="NexusDash.App"
+             Name="NexusDash"
+             RequestedThemeVariant="Dark">
+  <Application.Styles>
+    <themes:NexusDashControlsThemes />
+  </Application.Styles>
+</Application>

@@ -6,7 +6,7 @@ NexusDash 是一个 Avalonia 桌面仪表盘，用于本机系统监控。项目
 
 ## 第三方开源组件审计（2026-05-20）
 
-检查方式：`dotnet restore NexusDash.slnx`、`dotnet list src/NexusDash.csproj package --include-transitive`、NuGet `.nuspec`、NuGet.org 与源码仓库信息。优先接受 MIT / Apache-2.0 / BSD；LGPL-3.0 等其它开源协议在源码与传递依赖均可追溯时单独标注。
+检查方式：`dotnet restore NexusDash.slnx`、`dotnet list src/NexusDash/NexusDash.csproj package --include-transitive`、NuGet `.nuspec`、NuGet.org 与源码仓库信息。优先接受 MIT / Apache-2.0 / BSD；LGPL-3.0 等其它开源协议在源码与传递依赖均可追溯时单独标注。
 
 整改：
 

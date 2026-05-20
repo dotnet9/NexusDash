@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using NexusDash.ViewModels;
+using System.Linq;
 
 namespace NexusDash
 {
@@ -24,6 +25,16 @@ namespace NexusDash
         {
             _viewModel?.Dispose();
             base.OnClosing(e);
+        }
+
+        private void ProcessList_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (_viewModel is null || sender is not ListBox listBox)
+            {
+                return;
+            }
+
+            _viewModel.SetSelectedProcesses(listBox.SelectedItems?.OfType<ProcessRowViewModel>() ?? []);
         }
     }
 }

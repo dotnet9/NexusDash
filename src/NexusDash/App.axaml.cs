@@ -6,6 +6,11 @@ using AtomUI.Theme.Language;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Lang.Avalonia;
+using Lang.Avalonia.Json;
+using System;
+using System.Globalization;
+using System.IO;
 
 namespace NexusDash
 {
@@ -13,7 +18,14 @@ namespace NexusDash
     {
         public override void Initialize()
         {
+            base.Initialize();
             AvaloniaXamlLoader.Load(this);
+
+            var langPlugin = new JsonLangPlugin
+            {
+                ResourceFolder = Path.Combine(AppContext.BaseDirectory, "I18n")
+            };
+            I18nManager.Instance.Register(langPlugin, new CultureInfo("zh-CN"), out _);
 
             this.UseAtomUI(builder =>
             {

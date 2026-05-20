@@ -4,5 +4,7 @@
     <File Path="README.md" />
     <File Path="README.zh-CN.md" />
   </Folder>
-  <Project Path="src/NexusDash.csproj" />
+  <Project Path="src/NexusDash.Controls/NexusDash.Controls.csproj" />
+  <Project Path="src/NexusDash.Controls.Themes/NexusDash.Controls.Themes.csproj" />
+  <Project Path="src/NexusDash/NexusDash.csproj" />
 </Solution>

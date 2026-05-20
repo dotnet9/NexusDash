@@ -6,7 +6,7 @@ NexusDash is an Avalonia desktop dashboard for local system monitoring. The proj
 
 ## Third-Party Open Source Audit (2026-05-20)
 
-Checked with `dotnet restore NexusDash.slnx`, `dotnet list src/NexusDash.csproj package --include-transitive`, NuGet `.nuspec` metadata, NuGet.org, and upstream source repositories. MIT / Apache-2.0 / BSD are preferred; LGPL-3.0 and other source-open licenses are explicitly marked when source and transitive dependencies are traceable.
+Checked with `dotnet restore NexusDash.slnx`, `dotnet list src/NexusDash/NexusDash.csproj package --include-transitive`, NuGet `.nuspec` metadata, NuGet.org, and upstream source repositories. MIT / Apache-2.0 / BSD are preferred; LGPL-3.0 and other source-open licenses are explicitly marked when source and transitive dependencies are traceable.
 
 Remediation:
 

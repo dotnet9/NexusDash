@@ -1,0 +1,41 @@
+<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="AppBackgroundBrush" Color="#111318" />
+          <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#191d24" />
+          <SolidColorBrush x:Key="PanelAltBackgroundBrush" Color="#202631" />
+          <SolidColorBrush x:Key="PanelBorderBrush" Color="#303847" />
+          <SolidColorBrush x:Key="PrimaryTextBrush" Color="#f4f7fb" />
+          <SolidColorBrush x:Key="SecondaryTextBrush" Color="#9aa6b5" />
+          <SolidColorBrush x:Key="MutedTextBrush" Color="#697386" />
+          <SolidColorBrush x:Key="AccentBrush" Color="#2f8cff" />
+          <SolidColorBrush x:Key="SuccessBrush" Color="#3bb273" />
+          <SolidColorBrush x:Key="WarningBrush" Color="#d99a2b" />
+          <SolidColorBrush x:Key="DangerBrush" Color="#e25555" />
+          <SolidColorBrush x:Key="RowHoverBrush" Color="#253044" />
+          <SolidColorBrush x:Key="RowSelectedBrush" Color="#1c3f67" />
+        </ResourceDictionary>
+
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="AppBackgroundBrush" Color="#f5f7fb" />
+          <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#ffffff" />
+          <SolidColorBrush x:Key="PanelAltBackgroundBrush" Color="#eef2f7" />
+          <SolidColorBrush x:Key="PanelBorderBrush" Color="#d8dee8" />
+          <SolidColorBrush x:Key="PrimaryTextBrush" Color="#18202c" />
+          <SolidColorBrush x:Key="SecondaryTextBrush" Color="#5d6878" />
+          <SolidColorBrush x:Key="MutedTextBrush" Color="#8a95a6" />
+          <SolidColorBrush x:Key="AccentBrush" Color="#1f6feb" />
+          <SolidColorBrush x:Key="SuccessBrush" Color="#248a55" />
+          <SolidColorBrush x:Key="WarningBrush" Color="#b7791f" />
+          <SolidColorBrush x:Key="DangerBrush" Color="#c93333" />
+          <SolidColorBrush x:Key="RowHoverBrush" Color="#e8eef7" />
+          <SolidColorBrush x:Key="RowSelectedBrush" Color="#d5e7ff" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Styles.Resources>
+</Styles>
