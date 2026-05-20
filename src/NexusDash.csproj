@@ -12,12 +12,11 @@
 	</ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AtomUI.Desktop.Controls" Version="5.1.5-build.11" />
-    <PackageReference Include="Avalonia" Version="11.3.12" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.3.12" />
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="11.0.0-preview.2.26159.112" />
-    <PackageReference Include="System.Management" Version="11.0.0-preview.2.26159.112" />
-    <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.3.12" />
+    <PackageReference Include="AtomUI.Desktop.Controls" />
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="ReactiveUI.Avalonia" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" />
+    <PackageReference Include="System.Management" />
   </ItemGroup>
 </Project>
