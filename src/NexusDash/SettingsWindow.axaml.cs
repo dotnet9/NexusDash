@@ -1,3 +1,6 @@
+using AtomUI.Controls;
+using AtomUI.Theme;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Prism.Regions;
@@ -10,6 +13,8 @@ namespace NexusDash
 {
     public partial class SettingsWindow : AtomUI.Desktop.Controls.Window
     {
+        private const string DarkClass = "dark";
+
         private readonly IRegionManager? _regionManager;
         private AtomTabControl? _settingsRegionTabs;
 
@@ -27,6 +32,13 @@ namespace NexusDash
             }
 
             AvaloniaXamlLoader.Load(this);
+            SetDarkThemeClass(Application.Current?.IsDarkThemeMode() ?? false);
+            if (Application.Current?.GetThemeManager() is { } themeManager)
+            {
+                themeManager.BindingSource.PropertyChanged += HandleThemeManagerPropertyChanged;
+                Closed += (_, _) => themeManager.BindingSource.PropertyChanged -= HandleThemeManagerPropertyChanged;
+            }
+
             _settingsRegionTabs = this.FindControl<AtomTabControl>("SettingsRegionTabs");
 
             if (_regionManager is not null && _settingsRegionTabs is not null)
@@ -51,6 +63,29 @@ namespace NexusDash
             }
 
             base.OnClosed(e);
+        }
+
+        private void HandleThemeManagerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        {
+            if (e.Property == IThemeManager.IsDarkThemeModeProperty)
+            {
+                SetDarkThemeClass(e.GetNewValue<bool>());
+            }
+        }
+
+        private void SetDarkThemeClass(bool isDarkTheme)
+        {
+            if (isDarkTheme)
+            {
+                if (!Classes.Contains(DarkClass))
+                {
+                    Classes.Add(DarkClass);
+                }
+
+                return;
+            }
+
+            Classes.Remove(DarkClass);
         }
     }
 }
