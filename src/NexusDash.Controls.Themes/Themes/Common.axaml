@@ -18,6 +18,15 @@
           <SolidColorBrush x:Key="DangerBrush" Color="#e25555" />
           <SolidColorBrush x:Key="RowHoverBrush" Color="#253044" />
           <SolidColorBrush x:Key="RowSelectedBrush" Color="#1c3f67" />
+          <SolidColorBrush x:Key="MarkdownTextBrush" Color="#e6edf3" />
+          <SolidColorBrush x:Key="MarkdownMutedTextBrush" Color="#9ba7b4" />
+          <SolidColorBrush x:Key="MarkdownBorderBrush" Color="#303847" />
+          <SolidColorBrush x:Key="MarkdownAccentBrush" Color="#d1d5db" />
+          <SolidColorBrush x:Key="MarkdownQuoteBackgroundBrush" Color="#242b36" />
+          <SolidColorBrush x:Key="MarkdownCodeBackgroundBrush" Color="#0d1117" />
+          <SolidColorBrush x:Key="MarkdownInlineCodeBackgroundBrush" Color="#242b36" />
+          <SolidColorBrush x:Key="MarkdownTableHeaderBackgroundBrush" Color="#303847" />
+          <SolidColorBrush x:Key="MarkdownAccentForegroundBrush" Color="#111318" />
         </ResourceDictionary>
 
         <ResourceDictionary x:Key="Light">
@@ -34,6 +43,15 @@
           <SolidColorBrush x:Key="DangerBrush" Color="#c93333" />
           <SolidColorBrush x:Key="RowHoverBrush" Color="#e8eef7" />
           <SolidColorBrush x:Key="RowSelectedBrush" Color="#d5e7ff" />
+          <SolidColorBrush x:Key="MarkdownTextBrush" Color="#18202c" />
+          <SolidColorBrush x:Key="MarkdownMutedTextBrush" Color="#5d6878" />
+          <SolidColorBrush x:Key="MarkdownBorderBrush" Color="#d8dee8" />
+          <SolidColorBrush x:Key="MarkdownAccentBrush" Color="#1f6feb" />
+          <SolidColorBrush x:Key="MarkdownQuoteBackgroundBrush" Color="#f5f7fb" />
+          <SolidColorBrush x:Key="MarkdownCodeBackgroundBrush" Color="#f6f8fa" />
+          <SolidColorBrush x:Key="MarkdownInlineCodeBackgroundBrush" Color="#eef2f7" />
+          <SolidColorBrush x:Key="MarkdownTableHeaderBackgroundBrush" Color="#e8eef7" />
+          <SolidColorBrush x:Key="MarkdownAccentForegroundBrush" Color="#ffffff" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>

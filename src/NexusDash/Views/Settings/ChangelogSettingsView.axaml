@@ -12,6 +12,20 @@
              d:DesignHeight="420"
              x:Class="NexusDash.Views.Settings.ChangelogSettingsView"
              x:DataType="vm:ChangelogSettingsViewModel">
+  <UserControl.Styles>
+    <Style Selector="codewf|MarkdownViewer.changelogMarkdown">
+      <Setter Property="TextBrush" Value="{DynamicResource MarkdownTextBrush}" />
+      <Setter Property="MutedTextBrush" Value="{DynamicResource MarkdownMutedTextBrush}" />
+      <Setter Property="BorderLineBrush" Value="{DynamicResource MarkdownBorderBrush}" />
+      <Setter Property="AccentBrush" Value="{DynamicResource MarkdownAccentBrush}" />
+      <Setter Property="QuoteBackgroundBrush" Value="{DynamicResource MarkdownQuoteBackgroundBrush}" />
+      <Setter Property="CodeBackgroundBrush" Value="{DynamicResource MarkdownCodeBackgroundBrush}" />
+      <Setter Property="InlineCodeBackgroundBrush" Value="{DynamicResource MarkdownInlineCodeBackgroundBrush}" />
+      <Setter Property="TableHeaderBackgroundBrush" Value="{DynamicResource MarkdownTableHeaderBackgroundBrush}" />
+      <Setter Property="AccentForegroundBrush" Value="{DynamicResource MarkdownAccentForegroundBrush}" />
+    </Style>
+  </UserControl.Styles>
+
   <Grid Margin="4,6,18,18"
         RowDefinitions="Auto,*"
         RowSpacing="12">
@@ -38,16 +52,10 @@
             Padding="14">
       <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                     VerticalScrollBarVisibility="Auto">
-        <codewf:MarkdownViewer Markdown="{Binding Markdown}"
+        <codewf:MarkdownViewer Classes="changelogMarkdown"
+                               Markdown="{Binding Markdown}"
                                TypographyTheme="{x:Static codewf:MarkdownTypographyThemes.Simple}"
-                               TypographySize="{x:Static codewf:MarkdownTypographySizes.Small}"
-                               TextBrush="{DynamicResource PrimaryTextBrush}"
-                               MutedTextBrush="{DynamicResource SecondaryTextBrush}"
-                               BorderLineBrush="{DynamicResource PanelBorderBrush}"
-                               InlineCodeBackgroundBrush="{DynamicResource PanelBackgroundBrush}"
-                               QuoteBackgroundBrush="{DynamicResource PanelBackgroundBrush}"
-                               TableHeaderBackgroundBrush="{DynamicResource PanelBackgroundBrush}"
-                               AccentBrush="{DynamicResource AccentBrush}" />
+                               TypographySize="{x:Static codewf:MarkdownTypographySizes.Small}" />
       </ScrollViewer>
     </Border>
   </Grid>

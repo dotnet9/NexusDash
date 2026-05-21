@@ -18,6 +18,7 @@
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <Style Selector="SelectableTextBlock.aboutValue">
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
       <Setter Property="TextWrapping" Value="Wrap" />
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
@@ -46,6 +47,7 @@
                     Spacing="3"
                     VerticalAlignment="Center">
           <atom:TextBlock Text="{Binding AppName}"
+                          Foreground="{DynamicResource PrimaryTextBrush}"
                           FontSize="22"
                           FontWeight="SemiBold" />
           <atom:TextBlock Text="{Binding Description}"
@@ -95,6 +97,7 @@
                                 HorizontalContentAlignment="Left"
                                 VerticalAlignment="Center">
             <atom:TextBlock Text="{Binding RepositoryUrl}"
+                            Foreground="{DynamicResource AccentBrush}"
                             TextWrapping="Wrap" />
           </atom:HyperLinkButton>
 
