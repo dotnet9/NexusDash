@@ -31,6 +31,9 @@ namespace NexusDash.ViewModels
         public string Name => _metrics.Name;
         public double CpuPercent => _metrics.CpuPercent;
         public ulong WorkingSetBytes => _metrics.WorkingSetBytes;
+        public int TcpConnectionCount => _metrics.TcpConnectionCount;
+        public int UdpConnectionCount => _metrics.UdpConnectionCount;
+        public int NetworkConnectionCount => _metrics.NetworkConnectionCount;
         public string? ExecutablePath => _metrics.ExecutablePath;
         public string? CommandLine => _metrics.CommandLine;
         public DateTime? StartTime => _metrics.StartTime;
@@ -40,7 +43,9 @@ namespace NexusDash.ViewModels
         public string CpuText => $"{CpuPercent:F1}%";
         public string MemoryText => FormatBytes(WorkingSetBytes);
         public string DiskText => FormatSpeed(_metrics.DiskReadBytesPerSecond + _metrics.DiskWriteBytesPerSecond);
-        public string NetworkText => _metrics.NetworkBytesPerSecond is { } value ? FormatSpeed(value) : _unavailableText;
+        public string NetworkText => NetworkConnectionCount > 0
+            ? string.Format(CultureInfo.CurrentCulture, "{0}/{1}", TcpConnectionCount, UdpConnectionCount)
+            : "0";
         public string GpuText => _metrics.GpuPercent is { } value ? $"{value:F1}%" : _unavailableText;
         public string StartTimeText => StartTime?.ToString("G", CultureInfo.CurrentCulture) ?? "";
         public string ExpanderGlyph => IsExpanded ? "v" : ">";
@@ -90,6 +95,9 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(WorkingSetBytes));
             this.RaisePropertyChanged(nameof(MemoryText));
             this.RaisePropertyChanged(nameof(DiskText));
+            this.RaisePropertyChanged(nameof(TcpConnectionCount));
+            this.RaisePropertyChanged(nameof(UdpConnectionCount));
+            this.RaisePropertyChanged(nameof(NetworkConnectionCount));
             this.RaisePropertyChanged(nameof(NetworkText));
             this.RaisePropertyChanged(nameof(GpuText));
             this.RaisePropertyChanged(nameof(ExecutablePath));

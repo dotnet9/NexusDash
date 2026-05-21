@@ -61,6 +61,9 @@ namespace NexusDash.Models
         public double DiskReadBytesPerSecond { get; set; }
         public double DiskWriteBytesPerSecond { get; set; }
         public double? NetworkBytesPerSecond { get; set; }
+        public int TcpConnectionCount { get; set; }
+        public int UdpConnectionCount { get; set; }
+        public int NetworkConnectionCount => TcpConnectionCount + UdpConnectionCount;
         public double? GpuPercent { get; set; }
         public string? CommandLine { get; set; }
         public DateTime? StartTime { get; set; }

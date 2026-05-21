@@ -1,9 +1,11 @@
-<Window xmlns="https://github.com/avaloniaui"
+<atom:Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:atom="https://atomui.net"
+        xmlns:antdicons="https://atomui.net/icons/antdesign"
         xmlns:ndc="https://nexusdash.net/controls"
+        xmlns:models="using:NexusDash.Models"
         xmlns:vm="using:NexusDash.ViewModels"
         xmlns:converters="using:NexusDash.Converters"
         mc:Ignorable="d"
@@ -16,12 +18,46 @@
         Height="820"
         MinWidth="1060"
         MinHeight="680"
+        Icon="/Assets/logo.ico"
+        TitleBarFrameBackground="{DynamicResource PanelBackgroundBrush}"
         Background="{DynamicResource AppBackgroundBrush}"
         Foreground="{DynamicResource PrimaryTextBrush}">
 
   <Design.DataContext>
     <vm:MainWindowViewModel />
   </Design.DataContext>
+
+  <atom:Window.Logo>
+    <Image Source="/Assets/logo.png" />
+  </atom:Window.Logo>
+
+  <atom:Window.Styles>
+    <Style Selector="Border.panel">
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="BoxShadow" Value="0 8 22 0 #14000000" />
+    </Style>
+    <Style Selector="Border.metricBadge">
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="10,8" />
+      <Setter Property="Background" Value="{DynamicResource PanelAltBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    </Style>
+    <Style Selector="TextBlock.sectionTitle">
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+    </Style>
+    <Style Selector="TextBlock.columnHeader">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+    </Style>
+  </atom:Window.Styles>
 
   <Grid RowDefinitions="Auto,Auto,*,Auto">
     <Border Grid.Row="0"
@@ -34,13 +70,12 @@
           <Border Width="40"
                   Height="40"
                   CornerRadius="8"
-                  Background="{DynamicResource AccentBrush}">
-            <TextBlock Text="ND"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       Foreground="White"
-                       FontWeight="SemiBold"
-                       FontSize="15" />
+                  Background="{DynamicResource PanelAltBackgroundBrush}"
+                  BorderBrush="{DynamicResource PanelBorderBrush}"
+                  BorderThickness="1"
+                  Padding="5">
+            <Image Source="/Assets/logo.png"
+                   Stretch="Uniform" />
           </Border>
           <StackPanel Spacing="1">
             <TextBlock Text="{Binding AppNameText}"
@@ -62,26 +97,16 @@
 
         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
           <atom:Button Content="{Binding PauseResumeText}"
+                       Icon="{antdicons:AntDesignIconProvider Kind=PauseCircleOutlined}"
                        Command="{Binding TogglePause}" />
           <atom:Button Content="{Binding EndProcessText}"
+                       Icon="{antdicons:AntDesignIconProvider Kind=StopOutlined}"
                        Command="{Binding EndSelectedProcesses}"
                        IsEnabled="{Binding HasSelectedProcesses}" />
           <atom:Button Content="{Binding EndProcessTreeText}"
+                       Icon="{antdicons:AntDesignIconProvider Kind=ApartmentOutlined}"
                        Command="{Binding EndSelectedProcessTrees}"
                        IsEnabled="{Binding HasSelectedProcesses}" />
-          <atom:Button Content="{Binding DarkThemeText}"
-                       Command="{Binding SetDarkTheme}" />
-          <atom:Button Content="{Binding LightThemeText}"
-                       Command="{Binding SetLightTheme}" />
-          <ComboBox Width="150"
-                    ItemsSource="{Binding Languages}"
-                    SelectedItem="{Binding SelectedLanguage, Mode=TwoWay}">
-            <ComboBox.ItemTemplate>
-              <DataTemplate x:DataType="vm:LanguageOption">
-                <TextBlock Text="{Binding DisplayName}" />
-              </DataTemplate>
-            </ComboBox.ItemTemplate>
-          </ComboBox>
         </StackPanel>
       </Grid>
     </Border>
@@ -91,6 +116,7 @@
           ColumnDefinitions="*,*,*,*"
           ColumnSpacing="12">
       <Border Grid.Column="0"
+              Classes="panel"
               Background="{DynamicResource PanelBackgroundBrush}"
               BorderBrush="{DynamicResource PanelBorderBrush}"
               BorderThickness="1"
@@ -115,6 +141,7 @@
       </Border>
 
       <Border Grid.Column="1"
+              Classes="panel"
               Background="{DynamicResource PanelBackgroundBrush}"
               BorderBrush="{DynamicResource PanelBorderBrush}"
               BorderThickness="1"
@@ -137,6 +164,7 @@
       </Border>
 
       <Border Grid.Column="2"
+              Classes="panel"
               Background="{DynamicResource PanelBackgroundBrush}"
               BorderBrush="{DynamicResource PanelBorderBrush}"
               BorderThickness="1"
@@ -159,6 +187,7 @@
       </Border>
 
       <Border Grid.Column="3"
+              Classes="panel"
               Background="{DynamicResource PanelBackgroundBrush}"
               BorderBrush="{DynamicResource PanelBorderBrush}"
               BorderThickness="1"
@@ -187,6 +216,7 @@
           ColumnSpacing="12">
       <Grid Grid.Column="0" RowDefinitions="*,220" RowSpacing="12">
         <Border Grid.Row="0"
+                Classes="panel"
                 Background="{DynamicResource PanelBackgroundBrush}"
                 BorderBrush="{DynamicResource PanelBorderBrush}"
                 BorderThickness="1"
@@ -217,34 +247,40 @@
               </Grid>
             </Border>
 
-            <ListBox x:Name="ProcessList"
-                     Grid.Row="2"
-                     ItemsSource="{Binding VisibleProcesses}"
-                     SelectionMode="Multiple"
-                     SelectionChanged="ProcessList_SelectionChanged"
-                     Background="Transparent">
-              <ListBox.Styles>
-                <Style Selector="ListBoxItem">
+            <atom:ListBox x:Name="ProcessList"
+                          Grid.Row="2"
+                          ItemsSource="{Binding VisibleProcesses}"
+                          SelectionMode="Multiple"
+                          SelectionChanged="ProcessList_SelectionChanged"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          Padding="0"
+                          SizeType="Small"
+                          IsBorderless="True"
+                          ItemHoverBg="{DynamicResource RowHoverBrush}"
+                          ItemSelectedBg="{DynamicResource RowSelectedBrush}">
+              <atom:ListBox.Styles>
+                <Style Selector="atom|ListBoxItem">
                   <Setter Property="Padding" Value="0" />
                   <Setter Property="MinHeight" Value="30" />
+                  <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                 </Style>
-                <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
-                  <Setter Property="Background" Value="{DynamicResource RowHoverBrush}" />
-                </Style>
-                <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
-                  <Setter Property="Background" Value="{DynamicResource RowSelectedBrush}" />
-                </Style>
-              </ListBox.Styles>
-              <ListBox.ItemTemplate>
-                <DataTemplate x:DataType="vm:ProcessRowViewModel">
-                  <Border Padding="12,5">
+              </atom:ListBox.Styles>
+              <atom:ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:ProcessRowViewModel"
+                              x:CompileBindings="False">
+                  <Border Padding="12,5"
+                          BorderBrush="{Binding $parent[Window].DataContext.ProcessRowDividerBrush}"
+                          BorderThickness="0,0,0,1">
                     <Grid ColumnDefinitions="80,90,*,80,110,110,100,80"
                           ColumnSpacing="8">
-                      <TextBlock Text="{Binding Pid}" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding Pid}"
+                                 VerticalAlignment="Center"
+                                 Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}" />
                       <TextBlock Grid.Column="1"
                                  Text="{Binding ParentPidText}"
                                  VerticalAlignment="Center"
-                                 Foreground="{DynamicResource SecondaryTextBrush}" />
+                                 Foreground="{Binding $parent[Window].DataContext.ProcessRowSecondaryTextBrush}" />
                       <Grid Grid.Column="2"
                             ColumnDefinitions="Auto,24,*"
                             Margin="{Binding Depth, Converter={x:Static converters:DepthToMarginConverter.Instance}}">
@@ -258,22 +294,24 @@
                         <TextBlock Grid.Column="2"
                                    Text="{Binding Name}"
                                    VerticalAlignment="Center"
+                                   Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}"
                                    TextTrimming="CharacterEllipsis" />
                       </Grid>
-                      <TextBlock Grid.Column="3" Text="{Binding CpuText}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="4" Text="{Binding MemoryText}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="5" Text="{Binding DiskText}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="6" Text="{Binding NetworkText}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="7" Text="{Binding GpuText}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="3" Text="{Binding CpuText}" VerticalAlignment="Center" Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}" />
+                      <TextBlock Grid.Column="4" Text="{Binding MemoryText}" VerticalAlignment="Center" Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}" />
+                      <TextBlock Grid.Column="5" Text="{Binding DiskText}" VerticalAlignment="Center" Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}" />
+                      <TextBlock Grid.Column="6" Text="{Binding NetworkText}" VerticalAlignment="Center" Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}" />
+                      <TextBlock Grid.Column="7" Text="{Binding GpuText}" VerticalAlignment="Center" Foreground="{Binding $parent[Window].DataContext.ProcessRowSecondaryTextBrush}" />
                     </Grid>
                   </Border>
                 </DataTemplate>
-              </ListBox.ItemTemplate>
-            </ListBox>
+              </atom:ListBox.ItemTemplate>
+            </atom:ListBox>
           </Grid>
         </Border>
 
         <Border Grid.Row="1"
+                Classes="panel"
                 Background="{DynamicResource PanelBackgroundBrush}"
                 BorderBrush="{DynamicResource PanelBorderBrush}"
                 BorderThickness="1"
@@ -291,12 +329,13 @@
       </Grid>
 
       <Border Grid.Column="1"
+              Classes="panel"
               Background="{DynamicResource PanelBackgroundBrush}"
               BorderBrush="{DynamicResource PanelBorderBrush}"
               BorderThickness="1"
               CornerRadius="8">
-        <TabControl>
-          <TabItem Header="{Binding DetailsText}">
+        <atom:TabControl SizeType="Small">
+          <atom:TabItem Header="{Binding DetailsText}">
             <Grid Margin="14">
               <TextBlock Text="{Binding NoProcessSelectedText}"
                          IsVisible="{Binding !HasSelectedProcess}"
@@ -344,9 +383,9 @@
                 </Grid>
               </Grid>
             </Grid>
-          </TabItem>
+          </atom:TabItem>
 
-          <TabItem Header="{Binding HandlesText}">
+          <atom:TabItem Header="{Binding HandlesText}">
             <Grid Margin="14" RowDefinitions="Auto,*" RowSpacing="12">
               <TextBox PlaceholderText="{Binding HandlesSearchPlaceholderText}" />
               <TextBlock Grid.Row="1"
@@ -354,29 +393,164 @@
                          TextWrapping="Wrap"
                          Foreground="{DynamicResource SecondaryTextBrush}" />
             </Grid>
-          </TabItem>
+          </atom:TabItem>
 
-          <TabItem Header="{Binding NetworkText}">
-            <TextBlock Margin="14"
-                       Text="{Binding NetworkUnavailableText}"
-                       TextWrapping="Wrap"
-                       Foreground="{DynamicResource SecondaryTextBrush}" />
-          </TabItem>
+          <atom:TabItem Header="{Binding NetworkText}">
+            <Grid Margin="14"
+                  RowDefinitions="Auto,Auto,Auto,*"
+                  RowSpacing="10">
+              <Grid ColumnDefinitions="*,Auto"
+                    ColumnSpacing="10">
+                <StackPanel Spacing="3"
+                            VerticalAlignment="Center">
+                  <TextBlock Classes="sectionTitle"
+                             Text="{Binding ProcessNetworkConnectionsText}"
+                             Foreground="{Binding ProcessRowPrimaryTextBrush}" />
+                  <TextBlock Classes="muted"
+                             Text="{Binding SelectedProcessNetworkSummaryText}"
+                             FontSize="12"
+                             Foreground="{Binding ProcessRowSecondaryTextBrush}"
+                             TextWrapping="Wrap" />
+                </StackPanel>
+                <Border Grid.Column="1"
+                        Classes="metricBadge"
+                        MinWidth="92">
+                  <TextBlock Text="{Binding SelectedProcessConnectionTotalText}"
+                             FontWeight="SemiBold"
+                             Foreground="{Binding ProcessRowPrimaryTextBrush}"
+                             HorizontalAlignment="Center" />
+                </Border>
+              </Grid>
 
-          <TabItem Header="{Binding ServicesText}">
+              <Grid Grid.Row="1"
+                    ColumnDefinitions="*,*"
+                    ColumnSpacing="8">
+                <Border Grid.Column="0"
+                        Classes="metricBadge">
+                  <Grid ColumnDefinitions="Auto,*"
+                        ColumnSpacing="8">
+                    <Border Width="8"
+                            Height="8"
+                            CornerRadius="4"
+                            Background="{DynamicResource AccentBrush}"
+                            VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding SelectedProcessTcpConnectionCountText}"
+                               Foreground="{Binding ProcessRowPrimaryTextBrush}"
+                               FontWeight="SemiBold" />
+                  </Grid>
+                </Border>
+                <Border Grid.Column="1"
+                        Classes="metricBadge">
+                  <Grid ColumnDefinitions="Auto,*"
+                        ColumnSpacing="8">
+                    <Border Width="8"
+                            Height="8"
+                            CornerRadius="4"
+                            Background="{DynamicResource SuccessBrush}"
+                            VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding SelectedProcessUdpConnectionCountText}"
+                               Foreground="{Binding ProcessRowPrimaryTextBrush}"
+                               FontWeight="SemiBold" />
+                  </Grid>
+                </Border>
+              </Grid>
+
+              <Border Grid.Row="2"
+                      Background="{DynamicResource PanelAltBackgroundBrush}"
+                      Padding="10,8"
+                      IsVisible="{Binding HasSelectedProcessNetworkConnections}">
+                <Grid ColumnDefinitions="68,*,*,92"
+                      ColumnSpacing="10">
+                  <TextBlock Classes="columnHeader"
+                             Text="{Binding ProtocolText}"
+                             Foreground="{Binding ProcessRowSecondaryTextBrush}" />
+                  <TextBlock Grid.Column="1"
+                             Classes="columnHeader"
+                             Text="{Binding LocalEndpointText}"
+                             Foreground="{Binding ProcessRowSecondaryTextBrush}" />
+                  <TextBlock Grid.Column="2"
+                             Classes="columnHeader"
+                             Text="{Binding RemoteEndpointText}"
+                             Foreground="{Binding ProcessRowSecondaryTextBrush}" />
+                  <TextBlock Grid.Column="3"
+                             Classes="columnHeader"
+                             Text="{Binding StateText}"
+                             Foreground="{Binding ProcessRowSecondaryTextBrush}" />
+                </Grid>
+              </Border>
+
+              <Grid Grid.Row="3">
+                <TextBlock Text="{Binding NetworkSelectProcessText}"
+                           IsVisible="{Binding !HasSelectedProcess}"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource SecondaryTextBrush}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+
+                <TextBlock Text="{Binding NetworkNoConnectionsText}"
+                           IsVisible="{Binding HasSelectedProcessWithoutNetworkConnections}"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource SecondaryTextBrush}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+
+                <ScrollViewer IsVisible="{Binding HasSelectedProcessNetworkConnections}"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto">
+                  <ItemsControl ItemsSource="{Binding SelectedProcessNetworkConnections}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="models:ProcessNetworkConnection"
+                                    x:CompileBindings="False">
+                        <Border Padding="10,7"
+                                BorderBrush="{Binding $parent[Window].DataContext.ProcessRowDividerBrush}"
+                                BorderThickness="0,0,0,1">
+                          <Grid ColumnDefinitions="68,*,*,92"
+                                ColumnSpacing="10">
+                            <TextBlock Text="{Binding Protocol}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding LocalEndpointText}"
+                                       TextTrimming="CharacterEllipsis"
+                                       Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding RemoteEndpointText}"
+                                       TextTrimming="CharacterEllipsis"
+                                       Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="3"
+                                       Text="{Binding State}"
+                                       TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center"
+                                       Foreground="{Binding $parent[Window].DataContext.ProcessRowSecondaryTextBrush}" />
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </Grid>
+            </Grid>
+          </atom:TabItem>
+
+          <atom:TabItem Header="{Binding ServicesText}">
             <TextBlock Margin="14"
                        Text="{Binding ServicesUnavailableText}"
                        TextWrapping="Wrap"
                        Foreground="{DynamicResource SecondaryTextBrush}" />
-          </TabItem>
+          </atom:TabItem>
 
-          <TabItem Header="{Binding StartupText}">
+          <atom:TabItem Header="{Binding StartupText}">
             <TextBlock Margin="14"
                        Text="{Binding StartupUnavailableText}"
                        TextWrapping="Wrap"
                        Foreground="{DynamicResource SecondaryTextBrush}" />
-          </TabItem>
-        </TabControl>
+          </atom:TabItem>
+        </atom:TabControl>
       </Border>
     </Grid>
 
@@ -391,4 +565,4 @@
       </Grid>
     </Border>
   </Grid>
-</Window>
+</atom:Window>

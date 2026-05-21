@@ -1,0 +1,100 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:atom="https://atomui.net"
+             xmlns:antdicons="https://atomui.net/icons/antdesign"
+             xmlns:vm="using:NexusDash.ViewModels"
+             x:Class="NexusDash.Views.TitleBarLeftAddOn"
+             x:DataType="vm:MainWindowViewModel"
+             Height="28">
+
+  <Design.DataContext>
+    <vm:MainWindowViewModel />
+  </Design.DataContext>
+
+  <UserControl.Styles>
+    <Style Selector="atom|MenuItem /template/ atom|Icon#MenuIndicatorIcon">
+      <Setter Property="IsVisible" Value="False" />
+      <Setter Property="Width" Value="0" />
+      <Setter Property="Height" Value="0" />
+    </Style>
+    <Style Selector="atom|MenuItem /template/ Panel#PART_MenuIndicatorIconHost">
+      <Setter Property="Width" Value="0" />
+      <Setter Property="Margin" Value="0" />
+    </Style>
+    <Style Selector="atom|MenuItem:toplevel">
+      <Setter Property="MinHeight" Value="26" />
+      <Setter Property="Height" Value="26" />
+      <Setter Property="Padding" Value="7,0" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+  </UserControl.Styles>
+
+  <StackPanel Orientation="Horizontal"
+              VerticalAlignment="Center"
+              Spacing="8"
+              Height="28">
+    <TextBlock Text="{Binding AppNameText}"
+               FontSize="12"
+               FontWeight="SemiBold"
+               Foreground="{DynamicResource PrimaryTextBrush}"
+               VerticalAlignment="Center" />
+
+    <atom:Menu Margin="-6,0,0,0"
+               Height="28"
+               FontSize="12"
+               VerticalAlignment="Center">
+      <atom:MenuItem Header="{Binding ActionMenuText}"
+                     Icon="{antdicons:AntDesignIconProvider Kind=ControlOutlined}"
+                     AutomationProperties.Name="{Binding ActionMenuText}">
+        <atom:MenuItem Header="{Binding PauseResumeText}"
+                       Command="{Binding TogglePause}"
+                       Icon="{antdicons:AntDesignIconProvider Kind=PauseCircleOutlined}" />
+        <atom:MenuSeparator />
+        <atom:MenuItem Header="{Binding EndProcessText}"
+                       Command="{Binding EndSelectedProcesses}"
+                       IsEnabled="{Binding HasSelectedProcesses}"
+                       Icon="{antdicons:AntDesignIconProvider Kind=StopOutlined}" />
+        <atom:MenuItem Header="{Binding EndProcessTreeText}"
+                       Command="{Binding EndSelectedProcessTrees}"
+                       IsEnabled="{Binding HasSelectedProcesses}"
+                       Icon="{antdicons:AntDesignIconProvider Kind=ApartmentOutlined}" />
+      </atom:MenuItem>
+
+      <atom:MenuItem Header="{Binding ThemeMenuText}"
+                     Icon="{antdicons:AntDesignIconProvider Kind=BgColorsOutlined}"
+                     AutomationProperties.Name="{Binding ThemeMenuText}">
+        <atom:MenuItem Header="{Binding LightThemeText}"
+                       Command="{Binding SetLightTheme}"
+                       Icon="{antdicons:AntDesignIconProvider Kind=SunOutlined}"
+                       ToggleType="Radio"
+                       IsChecked="{Binding IsLightTheme, Mode=OneWay}" />
+        <atom:MenuItem Header="{Binding DarkThemeText}"
+                       Command="{Binding SetDarkTheme}"
+                       Icon="{antdicons:AntDesignIconProvider Kind=MoonOutlined}"
+                       ToggleType="Radio"
+                       IsChecked="{Binding IsDarkTheme, Mode=OneWay}" />
+      </atom:MenuItem>
+
+      <atom:MenuItem Header="{Binding LanguageMenuText}"
+                     Icon="{antdicons:AntDesignIconProvider Kind=TranslationOutlined}"
+                     AutomationProperties.Name="{Binding LanguageMenuText}">
+        <atom:MenuItem Header="{Binding Languages[0].DisplayName}"
+                       Command="{Binding SelectSimplifiedChinese}"
+                       ToggleType="Radio"
+                       IsChecked="{Binding IsSimplifiedChinese, Mode=OneWay}" />
+        <atom:MenuItem Header="{Binding Languages[1].DisplayName}"
+                       Command="{Binding SelectTraditionalChinese}"
+                       ToggleType="Radio"
+                       IsChecked="{Binding IsTraditionalChinese, Mode=OneWay}" />
+        <atom:MenuItem Header="{Binding Languages[2].DisplayName}"
+                       Command="{Binding SelectEnglish}"
+                       ToggleType="Radio"
+                       IsChecked="{Binding IsEnglish, Mode=OneWay}" />
+        <atom:MenuItem Header="{Binding Languages[3].DisplayName}"
+                       Command="{Binding SelectJapanese}"
+                       ToggleType="Radio"
+                       IsChecked="{Binding IsJapanese, Mode=OneWay}" />
+      </atom:MenuItem>
+    </atom:Menu>
+  </StackPanel>
+</UserControl>
