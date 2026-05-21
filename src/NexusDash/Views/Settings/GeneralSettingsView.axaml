@@ -3,7 +3,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:atom="https://atomui.net"
+             xmlns:prism="http://prismlibrary.com/"
              xmlns:vm="using:NexusDash.ViewModels.Settings"
+             prism:ViewModelLocator.AutoWireViewModel="True"
              mc:Ignorable="d"
              d:DesignWidth="540"
              d:DesignHeight="420"
@@ -50,11 +52,25 @@
                           Foreground="{DynamicResource SecondaryTextBrush}"
                           TextWrapping="Wrap" />
         </StackPanel>
-        <atom:TextBlock Grid.Column="1"
-                        Text="1s"
-                        FontWeight="SemiBold"
-                        Foreground="{DynamicResource AccentBrush}"
-                        VerticalAlignment="Center" />
+        <Grid Grid.Column="1"
+              ColumnDefinitions="Auto,Auto,Auto"
+              ColumnSpacing="10"
+              VerticalAlignment="Center">
+          <atom:RadioButton GroupName="RefreshCadence"
+                            Content="1s"
+                            Command="{Binding SetOneSecondRefreshInterval}"
+                            IsChecked="{Binding IsOneSecondRefreshInterval, Mode=OneWay}" />
+          <atom:RadioButton Grid.Column="1"
+                            GroupName="RefreshCadence"
+                            Content="2s"
+                            Command="{Binding SetTwoSecondRefreshInterval}"
+                            IsChecked="{Binding IsTwoSecondRefreshInterval, Mode=OneWay}" />
+          <atom:RadioButton Grid.Column="2"
+                            GroupName="RefreshCadence"
+                            Content="5s"
+                            Command="{Binding SetFiveSecondRefreshInterval}"
+                            IsChecked="{Binding IsFiveSecondRefreshInterval, Mode=OneWay}" />
+        </Grid>
       </Grid>
     </Border>
   </Grid>

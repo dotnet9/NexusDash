@@ -72,7 +72,10 @@ namespace NexusDash
             containerRegistry.RegisterSingleton<SettingsTabControlRegionAdapter>();
             containerRegistry.RegisterSingleton<ProcessListViewModel>();
             containerRegistry.RegisterSingleton<MainWindowViewModel>();
+            containerRegistry.Register<GeneralSettingsViewModel>();
             containerRegistry.Register<AppearanceSettingsViewModel>();
+            containerRegistry.Register<ProcessSettingsViewModel>();
+            containerRegistry.Register<NetworkSettingsViewModel>();
             containerRegistry.Register<ChangelogSettingsViewModel>();
             containerRegistry.Register<AboutSettingsViewModel>();
             containerRegistry.Register<MainWindow>();

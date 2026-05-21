@@ -15,18 +15,27 @@ namespace NexusDash
         {
             var regionManager = containerProvider.Resolve<IRegionManager>();
             regionManager
+                .RegisterSettingsTab<GeneralSettingsView>(containerProvider, 0)
                 .RegisterSettingsTab<AppearanceSettingsView>(containerProvider, 10)
-                .RegisterSettingsTab<ChangelogSettingsView>(containerProvider, 20)
-                .RegisterSettingsTab<AboutSettingsView>(containerProvider, 30);
+                .RegisterSettingsTab<ProcessSettingsView>(containerProvider, 20)
+                .RegisterSettingsTab<NetworkSettingsView>(containerProvider, 30)
+                .RegisterSettingsTab<ChangelogSettingsView>(containerProvider, 40)
+                .RegisterSettingsTab<AboutSettingsView>(containerProvider, 50);
         }
 
         public void RegisterTypes(IContainerRegistry containerRegistry)
         {
+            containerRegistry.Register<GeneralSettingsView>();
             containerRegistry.Register<AppearanceSettingsView>();
+            containerRegistry.Register<ProcessSettingsView>();
+            containerRegistry.Register<NetworkSettingsView>();
             containerRegistry.Register<ChangelogSettingsView>();
             containerRegistry.Register<AboutSettingsView>();
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
+            ViewModelLocationProvider.Register<GeneralSettingsView, GeneralSettingsViewModel>();
             ViewModelLocationProvider.Register<AppearanceSettingsView, AppearanceSettingsViewModel>();
+            ViewModelLocationProvider.Register<ProcessSettingsView, ProcessSettingsViewModel>();
+            ViewModelLocationProvider.Register<NetworkSettingsView, NetworkSettingsViewModel>();
             ViewModelLocationProvider.Register<ChangelogSettingsView, ChangelogSettingsViewModel>();
             ViewModelLocationProvider.Register<AboutSettingsView, AboutSettingsViewModel>();
         }

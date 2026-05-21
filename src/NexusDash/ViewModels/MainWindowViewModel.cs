@@ -71,6 +71,10 @@ namespace NexusDash.ViewModels
         private string _memoryUsedText = "0 B";
         private string _memoryTotalText = "0 B";
         private string _statusMessage = "";
+        private string _topCpuProcessText = "";
+        private string _topMemoryProcessText = "";
+        private string _topDiskProcessText = "";
+        private string _topNetworkProcessText = "";
         private int _processTotalCount;
         private ProcessRowViewModel? _selectedProcess;
         private LanguageOption? _selectedLanguage;
@@ -82,6 +86,8 @@ namespace NexusDash.ViewModels
         private IReadOnlyList<double> _memoryHistory = [];
         private IReadOnlyList<double> _diskHistory = [];
         private IReadOnlyList<double> _networkHistory = [];
+        private bool _isRefreshPaused;
+        private int _refreshIntervalSeconds = 1;
 
         public MainWindowViewModel()
             : this(EventBus.Default, new ProcessListViewModel(EventBus.Default))
@@ -96,6 +102,7 @@ namespace NexusDash.ViewModels
 
             var preferences = UserPreferencesService.Load();
             _isDarkTheme = preferences.IsDarkTheme;
+            _refreshIntervalSeconds = NormalizeRefreshIntervalSeconds(preferences.RefreshIntervalSeconds);
             Application.Current?.SetDarkThemeMode(_isDarkTheme);
             InitializeLanguageOptions();
             var unavailableText = T(NexusDashL.MetricUnavailable);
@@ -134,6 +141,8 @@ namespace NexusDash.ViewModels
         public string DarkThemeText => T(NexusDashL.DarkTheme);
         public string LightThemeText => T(NexusDashL.LightTheme);
         public string LanguageMenuText => T(NexusDashL.LanguageMenu);
+        public string PauseText => T(NexusDashL.Pause);
+        public string ResumeText => T(NexusDashL.Resume);
         public string SearchPlaceholderText => T(NexusDashL.SearchPlaceholder);
         public string SearchNoResultsText => string.Format(CultureInfo.CurrentCulture, T(NexusDashL.SearchNoResults), SearchQuery.Trim());
         public string EndProcessText => T(NexusDashL.EndProcess);
@@ -239,6 +248,30 @@ namespace NexusDash.ViewModels
             private set => this.RaiseAndSetIfChanged(ref _isEndProcessConfirmationVisible, value);
         }
         public bool IsLightTheme => !IsDarkTheme;
+        public bool IsRefreshPaused
+        {
+            get => _isRefreshPaused;
+            private set
+            {
+                if (SetField(ref _isRefreshPaused, value, nameof(IsRefreshPaused)))
+                {
+                    this.RaisePropertyChanged(nameof(IsRefreshRunning));
+                }
+            }
+        }
+        public bool IsRefreshRunning => !IsRefreshPaused;
+        public int RefreshIntervalSeconds
+        {
+            get => _refreshIntervalSeconds;
+            private set
+            {
+                if (SetField(ref _refreshIntervalSeconds, value, nameof(RefreshIntervalSeconds)))
+                {
+                    this.RaisePropertyChanged(nameof(RefreshIntervalText));
+                }
+            }
+        }
+        public string RefreshIntervalText => $"{RefreshIntervalSeconds}s";
         public IBrush ProcessRowPrimaryTextBrush => IsDarkTheme ? DarkProcessRowPrimaryTextBrush : LightProcessRowPrimaryTextBrush;
         public IBrush ProcessRowSecondaryTextBrush => IsDarkTheme ? DarkProcessRowSecondaryTextBrush : LightProcessRowSecondaryTextBrush;
         public IBrush ProcessRowDividerBrush => IsDarkTheme ? DarkProcessRowDividerBrush : LightProcessRowDividerBrush;
@@ -377,6 +410,30 @@ namespace NexusDash.ViewModels
             set => this.RaiseAndSetIfChanged(ref _statusMessage, value);
         }
 
+        public string TopCpuProcessText
+        {
+            get => _topCpuProcessText;
+            private set => this.RaiseAndSetIfChanged(ref _topCpuProcessText, value);
+        }
+
+        public string TopMemoryProcessText
+        {
+            get => _topMemoryProcessText;
+            private set => this.RaiseAndSetIfChanged(ref _topMemoryProcessText, value);
+        }
+
+        public string TopDiskProcessText
+        {
+            get => _topDiskProcessText;
+            private set => this.RaiseAndSetIfChanged(ref _topDiskProcessText, value);
+        }
+
+        public string TopNetworkProcessText
+        {
+            get => _topNetworkProcessText;
+            private set => this.RaiseAndSetIfChanged(ref _topNetworkProcessText, value);
+        }
+
         public int ProcessTotalCount
         {
             get => _processTotalCount;
@@ -462,6 +519,44 @@ namespace NexusDash.ViewModels
         {
             IsDarkTheme = false;
             StatusMessage = string.Format(CultureInfo.CurrentCulture, T(NexusDashL.StatusThemeChanged), T(NexusDashL.LightTheme));
+        }
+
+        public void PauseRefresh()
+        {
+            if (IsRefreshPaused)
+            {
+                return;
+            }
+
+            IsRefreshPaused = true;
+            StatusMessage = T(NexusDashL.StatusPaused);
+        }
+
+        public void ResumeRefresh()
+        {
+            if (!IsRefreshPaused)
+            {
+                return;
+            }
+
+            IsRefreshPaused = false;
+            StatusMessage = T(NexusDashL.StatusRunning);
+        }
+
+        public void SetRefreshIntervalSeconds(int seconds)
+        {
+            var normalizedSeconds = NormalizeRefreshIntervalSeconds(seconds);
+            if (RefreshIntervalSeconds == normalizedSeconds)
+            {
+                return;
+            }
+
+            RefreshIntervalSeconds = normalizedSeconds;
+            UserPreferencesService.Update(preferences => preferences.RefreshIntervalSeconds = normalizedSeconds);
+            StatusMessage = string.Format(
+                CultureInfo.CurrentCulture,
+                T(NexusDashL.StatusRefreshCadenceChanged),
+                RefreshIntervalText);
         }
 
         public void SelectSimplifiedChinese()
@@ -632,9 +727,12 @@ namespace NexusDash.ViewModels
             {
                 try
                 {
-                    await RefreshAsync(cancellationToken);
+                    if (!IsRefreshPaused)
+                    {
+                        await RefreshAsync(cancellationToken);
+                    }
 
-                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                    await Task.Delay(TimeSpan.FromSeconds(RefreshIntervalSeconds), cancellationToken);
                 }
                 catch (OperationCanceledException)
                 {
@@ -702,6 +800,7 @@ namespace NexusDash.ViewModels
             NetworkBytesPerSecond = networkBytesPerSecond;
             MemoryUsedText = ProcessRowViewModel.FormatBytes(systemMetrics.Memory.UsedBytes);
             MemoryTotalText = ProcessRowViewModel.FormatBytes(systemMetrics.Memory.TotalBytes);
+            UpdateTopProcessInsights(processSnapshot);
 
             CpuHistory = AppendHistory(CpuHistory, cpuUsage);
             MemoryHistory = AppendHistory(MemoryHistory, MemoryUsage);
@@ -769,6 +868,58 @@ namespace NexusDash.ViewModels
                     process.UdpConnectionCount = counts.Udp;
                 }
             }
+        }
+
+        private void UpdateTopProcessInsights(IReadOnlyList<ProcessMetrics> processes)
+        {
+            var topCpu = processes
+                .OrderByDescending(static process => process.CpuPercent)
+                .ThenByDescending(static process => process.WorkingSetBytes)
+                .FirstOrDefault();
+            var topMemory = processes
+                .OrderByDescending(static process => process.WorkingSetBytes)
+                .FirstOrDefault();
+            var topDisk = processes
+                .Select(static process => new
+                {
+                    Process = process,
+                    BytesPerSecond = process.DiskReadBytesPerSecond + process.DiskWriteBytesPerSecond
+                })
+                .OrderByDescending(static item => item.BytesPerSecond)
+                .FirstOrDefault();
+            var topNetwork = processes
+                .OrderByDescending(static process => process.NetworkConnectionCount)
+                .ThenByDescending(static process => process.TcpConnectionCount)
+                .FirstOrDefault();
+
+            TopCpuProcessText = topCpu is null
+                ? ""
+                : string.Format(
+                    CultureInfo.CurrentCulture,
+                    T(NexusDashL.TopCpuProcess),
+                    topCpu.Name,
+                    topCpu.CpuPercent);
+            TopMemoryProcessText = topMemory is null
+                ? ""
+                : string.Format(
+                    CultureInfo.CurrentCulture,
+                    T(NexusDashL.TopMemoryProcess),
+                    topMemory.Name,
+                    ProcessRowViewModel.FormatBytes(topMemory.WorkingSetBytes));
+            TopDiskProcessText = topDisk is null || topDisk.BytesPerSecond <= 0
+                ? T(NexusDashL.NoDiskActivity)
+                : string.Format(
+                    CultureInfo.CurrentCulture,
+                    T(NexusDashL.TopDiskProcess),
+                    topDisk.Process.Name,
+                    ProcessRowViewModel.FormatSpeed(topDisk.BytesPerSecond));
+            TopNetworkProcessText = topNetwork is null || topNetwork.NetworkConnectionCount <= 0
+                ? T(NexusDashL.NoNetworkConnectionsVisible)
+                : string.Format(
+                    CultureInfo.CurrentCulture,
+                    T(NexusDashL.TopNetworkConnections),
+                    topNetwork.Name,
+                    topNetwork.NetworkConnectionCount);
         }
 
         private void RebuildProcessTree(IReadOnlyList<ProcessMetrics> processes)
@@ -1305,6 +1456,9 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(DarkThemeText));
             this.RaisePropertyChanged(nameof(LightThemeText));
             this.RaisePropertyChanged(nameof(LanguageMenuText));
+            this.RaisePropertyChanged(nameof(PauseText));
+            this.RaisePropertyChanged(nameof(ResumeText));
+            this.RaisePropertyChanged(nameof(RefreshIntervalText));
             this.RaisePropertyChanged(nameof(SearchPlaceholderText));
             this.RaisePropertyChanged(nameof(SearchNoResultsText));
             this.RaisePropertyChanged(nameof(EndProcessText));
@@ -1355,6 +1509,19 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(SelectedProcessConnectionTotalText));
             this.RaisePropertyChanged(nameof(SelectedProcessTcpConnectionCountText));
             this.RaisePropertyChanged(nameof(SelectedProcessUdpConnectionCountText));
+            UpdateTopProcessInsights(_rowCache.Values
+                .Where(static row => !row.IsGroupHeader)
+                .Select(static row => new ProcessMetrics
+                {
+                    Pid = row.Pid,
+                    Name = row.Name,
+                    CpuPercent = row.CpuPercent,
+                    WorkingSetBytes = row.WorkingSetBytes,
+                    DiskReadBytesPerSecond = row.DiskBytesPerSecond,
+                    TcpConnectionCount = row.TcpConnectionCount,
+                    UdpConnectionCount = row.UdpConnectionCount
+                })
+                .ToArray());
             this.RaisePropertyChanged(nameof(ConfirmText));
             this.RaisePropertyChanged(nameof(CancelText));
             RaiseTerminationConfirmationProperties();
@@ -1388,6 +1555,16 @@ namespace NexusDash.ViewModels
             }
 
             return "zh-CN";
+        }
+
+        private static int NormalizeRefreshIntervalSeconds(int seconds)
+        {
+            return seconds switch
+            {
+                2 => 2,
+                5 => 5,
+                _ => 1
+            };
         }
 
         private static string T(string key)

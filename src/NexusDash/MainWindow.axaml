@@ -58,6 +58,11 @@
     <Style Selector="atom|TextBlock.muted">
       <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
     </Style>
+    <Style Selector="atom|TextBlock.metricHint">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
     <Style Selector="Border.dialogMask">
       <Setter Property="Background" Value="#99000000" />
     </Style>
@@ -100,7 +105,7 @@
               BorderThickness="1"
               CornerRadius="8"
               Padding="14">
-        <Grid RowDefinitions="Auto,*,Auto">
+        <Grid RowDefinitions="Auto,*,Auto,Auto">
           <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
             <atom:TextBlock Text="{Binding CpuText}" Foreground="{DynamicResource SecondaryTextBrush}" />
             <atom:TextBlock Grid.Column="1" Text="{Binding CpuUsageText}" FontWeight="SemiBold" />
@@ -115,6 +120,10 @@
                             Minimum="0"
                             Maximum="100"
                             IsProgressInfoVisible="False" />
+          <atom:TextBlock Grid.Row="3"
+                          Classes="metricHint"
+                          Text="{Binding TopCpuProcessText}"
+                          Margin="0,8,0,0" />
         </Grid>
       </Border>
 
@@ -125,7 +134,7 @@
               BorderThickness="1"
               CornerRadius="8"
               Padding="14">
-        <Grid RowDefinitions="Auto,*,Auto">
+        <Grid RowDefinitions="Auto,*,Auto,Auto">
           <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
             <atom:TextBlock Text="{Binding MemoryText}" Foreground="{DynamicResource SecondaryTextBrush}" />
             <atom:TextBlock Grid.Column="1" Text="{Binding MemoryUsageText}" FontWeight="SemiBold" />
@@ -138,6 +147,10 @@
           <atom:TextBlock Grid.Row="2"
                      Text="{Binding MemorySummaryText}"
                      Foreground="{DynamicResource SecondaryTextBrush}" />
+          <atom:TextBlock Grid.Row="3"
+                          Classes="metricHint"
+                          Text="{Binding TopMemoryProcessText}"
+                          Margin="0,6,0,0" />
         </Grid>
       </Border>
 
@@ -159,8 +172,8 @@
                                       Values="{Binding DiskHistory}"
                                       Stroke="{DynamicResource WarningBrush}" />
           <atom:TextBlock Grid.Row="2"
-                     Text="{Binding TreemapText}"
-                     Foreground="{DynamicResource SecondaryTextBrush}" />
+                          Classes="metricHint"
+                          Text="{Binding TopDiskProcessText}" />
         </Grid>
       </Border>
 
@@ -182,8 +195,8 @@
                                       Values="{Binding NetworkHistory}"
                                       Stroke="{DynamicResource DangerBrush}" />
           <atom:TextBlock Grid.Row="2"
-                     Text="{Binding SelectedCountText}"
-                     Foreground="{DynamicResource SecondaryTextBrush}" />
+                          Classes="metricHint"
+                          Text="{Binding TopNetworkProcessText}" />
         </Grid>
       </Border>
     </Grid>
@@ -494,7 +507,7 @@
             BorderBrush="{DynamicResource PanelBorderBrush}"
             BorderThickness="0,1,0,0"
             Padding="16,8">
-      <Grid ColumnDefinitions="Auto,*,Auto"
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto"
             ColumnSpacing="10">
         <atom:IconButton Width="26"
                          MinWidth="26"
@@ -509,11 +522,41 @@
                          Click="SettingsButton_Click"
                          AutomationProperties.Name="{Binding SettingsText}"
                          ToolTip.Tip="{Binding SettingsText}" />
-        <atom:TextBlock Grid.Column="1"
+        <atom:IconButton Grid.Column="1"
+                         Width="26"
+                         MinWidth="26"
+                         MaxWidth="26"
+                         Height="26"
+                         MinHeight="26"
+                         MaxHeight="26"
+                         Padding="0"
+                         IconWidth="16"
+                         IconHeight="16"
+                         Icon="{antdicons:AntDesignIconProvider Kind=PauseCircleOutlined}"
+                         Command="{Binding PauseRefresh}"
+                         AutomationProperties.Name="{Binding PauseText}"
+                         ToolTip.Tip="{Binding PauseText}"
+                         IsVisible="{Binding IsRefreshRunning}" />
+        <atom:IconButton Grid.Column="1"
+                         Width="26"
+                         MinWidth="26"
+                         MaxWidth="26"
+                         Height="26"
+                         MinHeight="26"
+                         MaxHeight="26"
+                         Padding="0"
+                         IconWidth="16"
+                         IconHeight="16"
+                         Icon="{antdicons:AntDesignIconProvider Kind=PlayCircleOutlined}"
+                         Command="{Binding ResumeRefresh}"
+                         AutomationProperties.Name="{Binding ResumeText}"
+                         ToolTip.Tip="{Binding ResumeText}"
+                         IsVisible="{Binding IsRefreshPaused}" />
+        <atom:TextBlock Grid.Column="2"
                    Text="{Binding StatusMessage}"
                    Foreground="{DynamicResource SecondaryTextBrush}"
                    VerticalAlignment="Center" />
-        <atom:TextBlock Grid.Column="2"
+        <atom:TextBlock Grid.Column="3"
                    Text="{Binding SelectedCountText}"
                    Foreground="{DynamicResource SecondaryTextBrush}"
                    VerticalAlignment="Center" />

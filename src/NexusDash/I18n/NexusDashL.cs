@@ -23,6 +23,12 @@ public static class NexusDashL
     public const string SearchPlaceholder = "NexusDash.NexusDashL.SearchPlaceholder";
     public const string SearchResultCount = "NexusDash.NexusDashL.SearchResultCount";
     public const string SearchNoResults = "NexusDash.NexusDashL.SearchNoResults";
+    public const string TopCpuProcess = "NexusDash.NexusDashL.TopCpuProcess";
+    public const string TopMemoryProcess = "NexusDash.NexusDashL.TopMemoryProcess";
+    public const string TopDiskProcess = "NexusDash.NexusDashL.TopDiskProcess";
+    public const string TopNetworkConnections = "NexusDash.NexusDashL.TopNetworkConnections";
+    public const string NoDiskActivity = "NexusDash.NexusDashL.NoDiskActivity";
+    public const string NoNetworkConnectionsVisible = "NexusDash.NexusDashL.NoNetworkConnectionsVisible";
     public const string ProcessGroupApplications = "NexusDash.NexusDashL.ProcessGroupApplications";
     public const string ProcessGroupBackground = "NexusDash.NexusDashL.ProcessGroupBackground";
     public const string ProcessGroupWindows = "NexusDash.NexusDashL.ProcessGroupWindows";
@@ -114,6 +120,7 @@ public static class NexusDashL
     public const string StatusThemeChanged = "NexusDash.NexusDashL.StatusThemeChanged";
     public const string StatusColumnShown = "NexusDash.NexusDashL.StatusColumnShown";
     public const string StatusColumnHidden = "NexusDash.NexusDashL.StatusColumnHidden";
+    public const string StatusRefreshCadenceChanged = "NexusDash.NexusDashL.StatusRefreshCadenceChanged";
     public const string Confirm = "NexusDash.NexusDashL.Confirm";
     public const string Cancel = "NexusDash.NexusDashL.Cancel";
     public const string ConfirmEndProcessTitle = "NexusDash.NexusDashL.ConfirmEndProcessTitle";
