@@ -5,10 +5,16 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="AtomUI.Desktop.Controls" Version="6.0.0-build.3" />
+    <PackageVersion Include="AtomUI.Desktop.Controls.DataGrid" Version="6.0.0-build.3" />
     <PackageVersion Include="Avalonia" Version="12.0.3" />
     <PackageVersion Include="Avalonia.Desktop" Version="12.0.3" />
-    <PackageVersion Include="Lang.Avalonia.Json" Version="12.0.2.1" />
+    <PackageVersion Include="CodeWF.Markdown.Lite.Themes" Version="12.0.3.2" />
+    <PackageVersion Include="CodeWF.EventBus" Version="3.4.5.5" />
+    <PackageVersion Include="Lang.Avalonia.Json" Version="12.0.3.1" />
+    <PackageVersion Include="Prism.Avalonia" Version="8.1.97.11073" />
+    <PackageVersion Include="Prism.DryIoc.Avalonia" Version="8.1.97.11073" />
     <PackageVersion Include="ReactiveUI.Avalonia" Version="12.0.1" />
+    <PackageVersion Include="System.Drawing.Common" Version="10.0.8" />
     <PackageVersion Include="System.Management" Version="10.0.8" />
     <PackageVersion Include="Tmds.DBus.Protocol" Version="0.93.0" />
   </ItemGroup>

@@ -4,21 +4,28 @@ using AtomUI.Desktop.Controls;
 using AtomUI.Theme;
 using AtomUI.Theme.Language;
 using Avalonia;
-using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using CodeWF.EventBus;
+using DryIoc;
 using Lang.Avalonia;
 using Lang.Avalonia.Json;
+using NexusDash.Regions;
+using NexusDash.ViewModels;
+using NexusDash.ViewModels.Settings;
+using Prism.DryIoc;
+using Prism.Ioc;
+using Prism.Modularity;
+using Prism.Regions;
 using System;
 using System.Globalization;
 using System.IO;
 
 namespace NexusDash
 {
-    public partial class App : Application
+    public partial class App : PrismApplication
     {
         public override void Initialize()
         {
-            base.Initialize();
             AvaloniaXamlLoader.Load(this);
 
             var langPlugin = new JsonLangPlugin
@@ -33,19 +40,43 @@ namespace NexusDash
                 builder.WithDefaultTheme(IThemeManager.DEFAULT_THEME_ID);
                 builder.UseAlibabaSansFont();
                 builder.UseDesktopControls();
+                builder.UseDesktopDataGrid();
             });
 
             this.SetDarkThemeMode(true);
+            base.Initialize();
         }
 
-        public override void OnFrameworkInitializationCompleted()
+        protected override void ConfigureModuleCatalog(IModuleCatalog moduleCatalog)
         {
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                desktop.MainWindow = new MainWindow();
-            }
+            moduleCatalog.AddModule<MainModule>();
+            base.ConfigureModuleCatalog(moduleCatalog);
+        }
 
-            base.OnFrameworkInitializationCompleted();
+        protected override AvaloniaObject CreateShell()
+        {
+            return Container.Resolve<MainWindow>();
+        }
+
+        protected override void ConfigureRegionAdapterMappings(RegionAdapterMappings regionAdapterMappings)
+        {
+            base.ConfigureRegionAdapterMappings(regionAdapterMappings);
+            regionAdapterMappings.RegisterMapping(
+                typeof(AtomUI.Desktop.Controls.TabControl),
+                Container.Resolve<SettingsTabControlRegionAdapter>());
+        }
+
+        protected override void RegisterTypes(IContainerRegistry containerRegistry)
+        {
+            containerRegistry.RegisterInstance<IEventBus>(EventBus.Default);
+            containerRegistry.RegisterSingleton<SettingsTabControlRegionAdapter>();
+            containerRegistry.RegisterSingleton<ProcessListViewModel>();
+            containerRegistry.RegisterSingleton<MainWindowViewModel>();
+            containerRegistry.Register<AppearanceSettingsViewModel>();
+            containerRegistry.Register<ChangelogSettingsViewModel>();
+            containerRegistry.Register<AboutSettingsViewModel>();
+            containerRegistry.Register<MainWindow>();
+            containerRegistry.Register<SettingsWindow>();
         }
     }
 }

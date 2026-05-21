@@ -1,0 +1,120 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:atom="https://atomui.net"
+             xmlns:prism="http://prismlibrary.com/"
+             xmlns:vm="using:NexusDash.ViewModels.Settings"
+             prism:ViewModelLocator.AutoWireViewModel="True"
+             mc:Ignorable="d"
+             d:DesignWidth="540"
+             d:DesignHeight="420"
+             x:Class="NexusDash.Views.Settings.AboutSettingsView"
+             x:DataType="vm:AboutSettingsViewModel">
+  <UserControl.Styles>
+    <Style Selector="atom|TextBlock.aboutLabel">
+      <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+      <Setter Property="Margin" Value="0,0,18,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="SelectableTextBlock.aboutValue">
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer Margin="4,6,18,18"
+                HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto">
+    <StackPanel Spacing="14">
+      <Grid ColumnDefinitions="56,*"
+            ColumnSpacing="14">
+        <Border Width="52"
+                Height="52"
+                CornerRadius="8"
+                Background="{DynamicResource PanelAltBackgroundBrush}"
+                BorderBrush="{DynamicResource PanelBorderBrush}"
+                BorderThickness="1">
+          <Image Source="/Assets/logo.png"
+                 Width="34"
+                 Height="34"
+                 Stretch="Uniform"
+                 HorizontalAlignment="Center"
+                 VerticalAlignment="Center" />
+        </Border>
+        <StackPanel Grid.Column="1"
+                    Spacing="3"
+                    VerticalAlignment="Center">
+          <atom:TextBlock Text="{Binding AppName}"
+                          FontSize="22"
+                          FontWeight="SemiBold" />
+          <atom:TextBlock Text="{Binding Description}"
+                          Foreground="{DynamicResource SecondaryTextBrush}"
+                          TextWrapping="Wrap" />
+        </StackPanel>
+      </Grid>
+
+      <Border Background="{DynamicResource PanelAltBackgroundBrush}"
+              BorderBrush="{DynamicResource PanelBorderBrush}"
+              BorderThickness="1"
+              CornerRadius="8"
+              Padding="16,14">
+        <Grid ColumnDefinitions="120,*"
+              RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+              RowSpacing="10">
+          <atom:TextBlock Text="{Binding VersionLabel}"
+                          Classes="aboutLabel" />
+          <SelectableTextBlock Grid.Column="1"
+                               Text="{Binding Version}"
+                               Classes="aboutValue" />
+
+          <atom:TextBlock Grid.Row="1"
+                          Text="{Binding CompileTimeLabel}"
+                          Classes="aboutLabel" />
+          <SelectableTextBlock Grid.Row="1"
+                               Grid.Column="1"
+                               Text="{Binding CompileTime}"
+                               Classes="aboutValue" />
+
+          <atom:TextBlock Grid.Row="2"
+                          Text="{Binding AuthorLabel}"
+                          Classes="aboutLabel" />
+          <SelectableTextBlock Grid.Row="2"
+                               Grid.Column="1"
+                               Text="{Binding Author}"
+                               Classes="aboutValue" />
+
+          <atom:TextBlock Grid.Row="3"
+                          Text="{Binding RepositoryLabel}"
+                          Classes="aboutLabel" />
+          <atom:HyperLinkButton Grid.Row="3"
+                                Grid.Column="1"
+                                NavigateUri="{Binding RepositoryUri}"
+                                Padding="0"
+                                HorizontalAlignment="Left"
+                                HorizontalContentAlignment="Left"
+                                VerticalAlignment="Center">
+            <atom:TextBlock Text="{Binding RepositoryUrl}"
+                            TextWrapping="Wrap" />
+          </atom:HyperLinkButton>
+
+          <atom:TextBlock Grid.Row="4"
+                          Text="{Binding LicenseLabel}"
+                          Classes="aboutLabel" />
+          <SelectableTextBlock Grid.Row="4"
+                               Grid.Column="1"
+                               Text="{Binding License}"
+                               Classes="aboutValue" />
+
+          <atom:TextBlock Grid.Row="5"
+                          Text="{Binding CopyrightLabel}"
+                          Classes="aboutLabel" />
+          <SelectableTextBlock Grid.Row="5"
+                               Grid.Column="1"
+                               Text="{Binding Copyright}"
+                               Classes="aboutValue" />
+        </Grid>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

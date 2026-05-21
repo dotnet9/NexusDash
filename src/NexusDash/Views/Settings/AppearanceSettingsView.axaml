@@ -1,0 +1,96 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:atom="https://atomui.net"
+             xmlns:prism="http://prismlibrary.com/"
+             xmlns:vm="using:NexusDash.ViewModels.Settings"
+             prism:ViewModelLocator.AutoWireViewModel="True"
+             mc:Ignorable="d"
+             d:DesignWidth="540"
+             d:DesignHeight="420"
+             x:Class="NexusDash.Views.Settings.AppearanceSettingsView"
+             x:DataType="vm:AppearanceSettingsViewModel">
+  <UserControl.Styles>
+    <Style Selector="Border.settingSection">
+      <Setter Property="Background" Value="{DynamicResource PanelAltBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="16,14" />
+    </Style>
+    <Style Selector="atom|RadioButton.settingOption">
+      <Setter Property="MinHeight" Value="30" />
+      <Setter Property="FontSize" Value="13" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid Margin="4,6,18,18"
+        RowDefinitions="Auto,Auto,*"
+        RowSpacing="12">
+    <Border Classes="settingSection">
+      <Grid ColumnDefinitions="96,*"
+            ColumnSpacing="18">
+        <atom:TextBlock Text="{Binding ThemeLabel}"
+                        FontWeight="SemiBold"
+                        VerticalAlignment="Center" />
+        <Grid Grid.Column="1"
+              ColumnDefinitions="*,*"
+              ColumnSpacing="12">
+          <atom:RadioButton Classes="settingOption"
+                            GroupName="SettingsTheme"
+                            Command="{Binding SetLightTheme}"
+                            IsChecked="{Binding IsLightTheme, Mode=OneWay}"
+                            Content="{Binding LightThemeText}" />
+          <atom:RadioButton Grid.Column="1"
+                            Classes="settingOption"
+                            GroupName="SettingsTheme"
+                            Command="{Binding SetDarkTheme}"
+                            IsChecked="{Binding IsDarkTheme, Mode=OneWay}"
+                            Content="{Binding DarkThemeText}" />
+        </Grid>
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="1"
+            Classes="settingSection">
+      <Grid ColumnDefinitions="96,*"
+            ColumnSpacing="18">
+        <atom:TextBlock Text="{Binding LanguageLabel}"
+                        FontWeight="SemiBold"
+                        VerticalAlignment="Top"
+                        Margin="0,4,0,0" />
+        <Grid Grid.Column="1"
+              ColumnDefinitions="*,*"
+              RowDefinitions="Auto,Auto"
+              ColumnSpacing="12"
+              RowSpacing="8">
+          <atom:RadioButton Classes="settingOption"
+                            GroupName="SettingsLanguage"
+                            Command="{Binding SelectSimplifiedChinese}"
+                            IsChecked="{Binding IsSimplifiedChinese, Mode=OneWay}"
+                            Content="{Binding SimplifiedChineseText}" />
+          <atom:RadioButton Grid.Column="1"
+                            Classes="settingOption"
+                            GroupName="SettingsLanguage"
+                            Command="{Binding SelectTraditionalChinese}"
+                            IsChecked="{Binding IsTraditionalChinese, Mode=OneWay}"
+                            Content="{Binding TraditionalChineseText}" />
+          <atom:RadioButton Grid.Row="1"
+                            Classes="settingOption"
+                            GroupName="SettingsLanguage"
+                            Command="{Binding SelectEnglish}"
+                            IsChecked="{Binding IsEnglish, Mode=OneWay}"
+                            Content="{Binding EnglishText}" />
+          <atom:RadioButton Grid.Row="1"
+                            Grid.Column="1"
+                            Classes="settingOption"
+                            GroupName="SettingsLanguage"
+                            Command="{Binding SelectJapanese}"
+                            IsChecked="{Binding IsJapanese, Mode=OneWay}"
+                            Content="{Binding JapaneseText}" />
+        </Grid>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

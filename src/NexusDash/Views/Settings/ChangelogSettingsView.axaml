@@ -1,0 +1,47 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:atom="https://atomui.net"
+             xmlns:codewf="https://codewf.com"
+             xmlns:prism="http://prismlibrary.com/"
+             xmlns:vm="using:NexusDash.ViewModels.Settings"
+             prism:ViewModelLocator.AutoWireViewModel="True"
+             mc:Ignorable="d"
+             d:DesignWidth="540"
+             d:DesignHeight="420"
+             x:Class="NexusDash.Views.Settings.ChangelogSettingsView"
+             x:DataType="vm:ChangelogSettingsViewModel">
+  <Grid Margin="4,6,18,18"
+        RowDefinitions="Auto,*"
+        RowSpacing="12">
+    <StackPanel Orientation="Horizontal"
+                Spacing="8"
+                HorizontalAlignment="Right">
+      <atom:Button Content="{Binding ChineseText}"
+                   MinWidth="88"
+                   Height="30"
+                   Padding="12,4"
+                   Command="{Binding LoadChinese}" />
+      <atom:Button Content="{Binding EnglishText}"
+                   MinWidth="88"
+                   Height="30"
+                   Padding="12,4"
+                   Command="{Binding LoadEnglish}" />
+    </StackPanel>
+
+    <Border Grid.Row="1"
+            Background="{DynamicResource PanelAltBackgroundBrush}"
+            BorderBrush="{DynamicResource PanelBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="14">
+      <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto">
+        <codewf:MarkdownViewer Markdown="{Binding Markdown}"
+                               TypographyTheme="{x:Static codewf:MarkdownTypographyThemes.Simple}"
+                               TypographySize="{x:Static codewf:MarkdownTypographySizes.Small}" />
+      </ScrollViewer>
+    </Border>
+  </Grid>
+</UserControl>

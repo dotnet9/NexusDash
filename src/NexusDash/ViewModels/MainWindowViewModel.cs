@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Threading;
 using AtomUI;
 using AtomUI.Controls;
+using CodeWF.EventBus;
 using Lang.Avalonia;
 using NexusDash.Controls.Models;
 using NexusDash.Models;
@@ -27,21 +28,42 @@ namespace NexusDash.ViewModels
         private static readonly IBrush LightProcessRowPrimaryTextBrush = new SolidColorBrush(Color.Parse("#18202c"));
         private static readonly IBrush LightProcessRowSecondaryTextBrush = new SolidColorBrush(Color.Parse("#5d6878"));
         private static readonly IBrush LightProcessRowDividerBrush = new SolidColorBrush(Color.Parse("#e4e9f2"));
+        private static readonly IBrush DarkDialogSurfaceBrush = new SolidColorBrush(Color.Parse("#1b2028"));
+        private static readonly IBrush DarkDialogInsetBrush = new SolidColorBrush(Color.Parse("#242b36"));
+        private static readonly IBrush LightDialogSurfaceBrush = new SolidColorBrush(Color.Parse("#ffffff"));
+        private static readonly IBrush LightDialogInsetBrush = new SolidColorBrush(Color.Parse("#f2f5fa"));
+
+        public const string ProcessColumnPid = "pid";
+        public const string ProcessColumnParentPid = "parentPid";
+        public const string ProcessColumnName = "name";
+        public const string ProcessColumnPublisher = "publisher";
+        public const string ProcessColumnCpu = "cpu";
+        public const string ProcessColumnMemory = "memory";
+        public const string ProcessColumnDisk = "disk";
+        public const string ProcessColumnNetwork = "network";
+        public const string ProcessColumnGpu = "gpu";
 
         private readonly SystemMonitorService _systemMonitorService = new();
         private readonly ProcessTelemetryService _processTelemetryService = new();
         private readonly ProcessNetworkConnectionService _processNetworkConnectionService = new();
         private readonly CancellationTokenSource _refreshCancellation = new();
+        private readonly IEventBus _processEventBus;
         private readonly Dictionary<int, ProcessRowViewModel> _rowCache = new();
         private readonly HashSet<int> _expandedPids = new();
         private readonly HashSet<int> _collapsedPids = new();
         private readonly List<ProcessRowViewModel> _rootRows = new();
+        private readonly ProcessRowViewModel _applicationGroupRow;
+        private readonly ProcessRowViewModel _backgroundGroupRow;
+        private readonly ProcessRowViewModel _windowsGroupRow;
+        private readonly Dictionary<string, ProcessColumnOptionViewModel> _processColumnOptions = new(StringComparer.OrdinalIgnoreCase);
+        private IReadOnlyList<ProcessRowViewModel> _pendingTerminationRows = [];
         private IReadOnlyList<ProcessRowViewModel> _selectedRows = [];
         private bool _isUpdatingLanguageOptions;
         private string _selectedCultureName = "zh-CN";
         private string _searchQuery = "";
-        private bool _isRunning = true;
         private bool _isDarkTheme = true;
+        private bool _pendingTerminationEntireProcessTree;
+        private bool _isEndProcessConfirmationVisible;
         private double _cpuUsage;
         private double _memoryUsage;
         private double _diskBytesPerSecond;
@@ -62,26 +84,58 @@ namespace NexusDash.ViewModels
         private IReadOnlyList<double> _networkHistory = [];
 
         public MainWindowViewModel()
+            : this(EventBus.Default, new ProcessListViewModel(EventBus.Default))
         {
+        }
+
+        public MainWindowViewModel(IEventBus processEventBus, ProcessListViewModel processList)
+        {
+            _processEventBus = processEventBus;
+            ProcessList = processList;
+            _processEventBus.Subscribe(this);
+
+            var preferences = UserPreferencesService.Load();
+            _isDarkTheme = preferences.IsDarkTheme;
+            Application.Current?.SetDarkThemeMode(_isDarkTheme);
             InitializeLanguageOptions();
-            SetLanguage(NormalizeCulture(CultureInfo.CurrentUICulture.Name), showStatus: false);
+            var unavailableText = T(NexusDashL.MetricUnavailable);
+            _applicationGroupRow = ProcessRowViewModel.CreateGroupHeader(
+                ProcessCategory.Application,
+                -1,
+                unavailableText,
+                HandleRowExpansionChanged);
+            _backgroundGroupRow = ProcessRowViewModel.CreateGroupHeader(
+                ProcessCategory.BackgroundProcess,
+                -2,
+                unavailableText,
+                HandleRowExpansionChanged);
+            _windowsGroupRow = ProcessRowViewModel.CreateGroupHeader(
+                ProcessCategory.WindowsProcess,
+                -3,
+                unavailableText,
+                HandleRowExpansionChanged);
+            SetLanguage(NormalizeCulture(preferences.CultureName), showStatus: false);
+            InitializeProcessColumnOptions(preferences);
             StatusMessage = T(NexusDashL.StatusRunning);
+            PublishProcessListState();
             _ = RefreshLoopAsync(_refreshCancellation.Token);
         }
 
+        public ProcessListViewModel ProcessList { get; }
         public ObservableCollection<ProcessRowViewModel> VisibleProcesses { get; } = new();
+        public ObservableCollection<ProcessColumnOptionViewModel> ProcessColumns { get; } = new();
         public ObservableCollection<LanguageOption> Languages { get; } = new();
 
         public string WindowTitle => $"{T(NexusDashL.AppName)} - {T(NexusDashL.AppSubtitle)}";
         public string AppNameText => T(NexusDashL.AppName);
         public string AppSubtitleText => T(NexusDashL.AppSubtitle);
+        public string SettingsText => T(NexusDashL.Settings);
         public string ThemeMenuText => T(NexusDashL.ThemeMenu);
         public string DarkThemeText => T(NexusDashL.DarkTheme);
         public string LightThemeText => T(NexusDashL.LightTheme);
         public string LanguageMenuText => T(NexusDashL.LanguageMenu);
-        public string ActionMenuText => T(NexusDashL.ActionMenu);
         public string SearchPlaceholderText => T(NexusDashL.SearchPlaceholder);
-        public string PauseResumeText => IsRunning ? T(NexusDashL.Pause) : T(NexusDashL.Resume);
+        public string SearchNoResultsText => string.Format(CultureInfo.CurrentCulture, T(NexusDashL.SearchNoResults), SearchQuery.Trim());
         public string EndProcessText => T(NexusDashL.EndProcess);
         public string EndProcessTreeText => T(NexusDashL.EndProcessTree);
         public string ProcessTreeText => T(NexusDashL.ProcessTree);
@@ -94,6 +148,7 @@ namespace NexusDash.ViewModels
         public string PidText => T(NexusDashL.Pid);
         public string ParentPidText => T(NexusDashL.ParentPid);
         public string ProcessNameText => T(NexusDashL.ProcessName);
+        public string PublisherText => T(NexusDashL.Publisher);
         public string CpuText => T(NexusDashL.Cpu);
         public string MemoryText => T(NexusDashL.Memory);
         public string DiskText => T(NexusDashL.Disk);
@@ -102,6 +157,8 @@ namespace NexusDash.ViewModels
         public string PathText => T(NexusDashL.Path);
         public string CommandLineText => T(NexusDashL.CommandLine);
         public string StartTimeText => T(NexusDashL.StartTime);
+        public string AccessLimitedText => T(NexusDashL.AccessLimited);
+        public string AccessLimitedDescriptionText => T(NexusDashL.AccessLimitedDescription);
         public string NoProcessSelectedText => T(NexusDashL.NoProcessSelected);
         public string HandlesSearchPlaceholderText => T(NexusDashL.HandlesSearchPlaceholder);
         public string HandlesUnavailableText => T(NexusDashL.HandlesUnavailable);
@@ -118,8 +175,13 @@ namespace NexusDash.ViewModels
         public string LocalEndpointText => T(NexusDashL.LocalEndpoint);
         public string RemoteEndpointText => T(NexusDashL.RemoteEndpoint);
         public string StateText => T(NexusDashL.State);
+        public string LastSeenText => T(NexusDashL.LastSeen);
         public string OwnerProcessText => T(NexusDashL.OwnerProcess);
-        public string ProcessCountText => $"{VisibleProcesses.Count}/{ProcessTotalCount}";
+        public string ColumnVisibilityText => T(NexusDashL.ColumnVisibility);
+        public string RequiredColumnText => T(NexusDashL.RequiredColumn);
+        public string ProcessCountText => IsSearchActive
+            ? string.Format(CultureInfo.CurrentCulture, T(NexusDashL.SearchResultCount), VisibleProcessCount, ProcessTotalCount)
+            : $"{VisibleProcessCount}/{ProcessTotalCount}";
         public string SelectedCountText => string.Format(CultureInfo.CurrentCulture, T(NexusDashL.StatusSelected), SelectedProcessCount);
         public string CpuUsageText => $"{CpuUsage:F1}%";
         public string MemoryUsageText => $"{MemoryUsage:F1}%";
@@ -147,19 +209,47 @@ namespace NexusDash.ViewModels
             CultureInfo.CurrentCulture,
             T(NexusDashL.UdpConnectionCount),
             SelectedProcessUdpConnectionCount);
+        public string ConfirmText => T(NexusDashL.Confirm);
+        public string CancelText => T(NexusDashL.Cancel);
+        public string EndProcessConfirmationTitleText => T(_pendingTerminationEntireProcessTree
+            ? NexusDashL.ConfirmEndProcessTreeTitle
+            : NexusDashL.ConfirmEndProcessTitle);
+        public string EndProcessConfirmationMessageText => string.Format(
+            CultureInfo.CurrentCulture,
+            T(_pendingTerminationEntireProcessTree
+                ? NexusDashL.ConfirmEndProcessTreeMessage
+                : NexusDashL.ConfirmEndProcessMessage),
+            _pendingTerminationRows.Count);
+        public string EndProcessConfirmationProcessListText => string.Join(
+            Environment.NewLine,
+            _pendingTerminationRows
+                .Take(6)
+                .Select(row => $"{row.Name} ({row.Pid})")
+                .Concat(_pendingTerminationRows.Count > 6 ? [$"+{_pendingTerminationRows.Count - 6}"] : []));
         public bool HasSelectedProcesses => SelectedProcessCount > 0;
         public bool HasSelectedProcess => SelectedProcess is not null;
+        public bool IsSearchActive => !string.IsNullOrWhiteSpace(SearchQuery);
+        public bool HasNoVisibleProcesses => IsSearchActive && VisibleProcessCount == 0;
+        public bool HasSelectedProcessAccessLimit => SelectedProcess?.IsAccessDenied == true;
         public bool HasSelectedProcessNetworkConnections => SelectedProcessNetworkConnections.Count > 0;
         public bool HasSelectedProcessWithoutNetworkConnections => HasSelectedProcess && !HasSelectedProcessNetworkConnections;
+        public bool IsEndProcessConfirmationVisible
+        {
+            get => _isEndProcessConfirmationVisible;
+            private set => this.RaiseAndSetIfChanged(ref _isEndProcessConfirmationVisible, value);
+        }
         public bool IsLightTheme => !IsDarkTheme;
         public IBrush ProcessRowPrimaryTextBrush => IsDarkTheme ? DarkProcessRowPrimaryTextBrush : LightProcessRowPrimaryTextBrush;
         public IBrush ProcessRowSecondaryTextBrush => IsDarkTheme ? DarkProcessRowSecondaryTextBrush : LightProcessRowSecondaryTextBrush;
         public IBrush ProcessRowDividerBrush => IsDarkTheme ? DarkProcessRowDividerBrush : LightProcessRowDividerBrush;
+        public IBrush DialogSurfaceBrush => IsDarkTheme ? DarkDialogSurfaceBrush : LightDialogSurfaceBrush;
+        public IBrush DialogInsetBrush => IsDarkTheme ? DarkDialogInsetBrush : LightDialogInsetBrush;
         public bool IsSimplifiedChinese => string.Equals(_selectedCultureName, "zh-CN", StringComparison.OrdinalIgnoreCase);
         public bool IsTraditionalChinese => string.Equals(_selectedCultureName, "zh-Hant", StringComparison.OrdinalIgnoreCase);
         public bool IsEnglish => string.Equals(_selectedCultureName, "en-US", StringComparison.OrdinalIgnoreCase);
         public bool IsJapanese => string.Equals(_selectedCultureName, "ja-JP", StringComparison.OrdinalIgnoreCase);
         public int SelectedProcessCount => _selectedRows.Count;
+        private int VisibleProcessCount => VisibleProcesses.Count(static row => !row.IsGroupHeader);
         public int SelectedProcessTcpConnectionCount => SelectedProcessNetworkConnections.Count(static connection => connection.Protocol == "TCP");
         public int SelectedProcessUdpConnectionCount => SelectedProcessNetworkConnections.Count(static connection => connection.Protocol == "UDP");
 
@@ -189,18 +279,6 @@ namespace NexusDash.ViewModels
             }
         }
 
-        public bool IsRunning
-        {
-            get => _isRunning;
-            set
-            {
-                if (SetField(ref _isRunning, value, nameof(IsRunning)))
-                {
-                    this.RaisePropertyChanged(nameof(PauseResumeText));
-                }
-            }
-        }
-
         public bool IsDarkTheme
         {
             get => _isDarkTheme;
@@ -209,10 +287,14 @@ namespace NexusDash.ViewModels
                 if (SetField(ref _isDarkTheme, value, nameof(IsDarkTheme)))
                 {
                     Application.Current?.SetDarkThemeMode(value);
+                    UserPreferencesService.Update(preferences => preferences.IsDarkTheme = value);
                     this.RaisePropertyChanged(nameof(IsLightTheme));
                     this.RaisePropertyChanged(nameof(ProcessRowPrimaryTextBrush));
                     this.RaisePropertyChanged(nameof(ProcessRowSecondaryTextBrush));
                     this.RaisePropertyChanged(nameof(ProcessRowDividerBrush));
+                    this.RaisePropertyChanged(nameof(DialogSurfaceBrush));
+                    this.RaisePropertyChanged(nameof(DialogInsetBrush));
+                    PublishProcessListState();
                 }
             }
         }
@@ -315,6 +397,7 @@ namespace NexusDash.ViewModels
                 if (SetField(ref _selectedProcess, value, nameof(SelectedProcess)))
                 {
                     this.RaisePropertyChanged(nameof(HasSelectedProcess));
+                    this.RaisePropertyChanged(nameof(HasSelectedProcessAccessLimit));
                     RefreshSelectedNetworkConnections();
                 }
             }
@@ -369,12 +452,6 @@ namespace NexusDash.ViewModels
             set => this.RaiseAndSetIfChanged(ref _networkHistory, value);
         }
 
-        public void TogglePause()
-        {
-            IsRunning = !IsRunning;
-            StatusMessage = T(IsRunning ? NexusDashL.StatusRunning : NexusDashL.StatusPaused);
-        }
-
         public void SetDarkTheme()
         {
             IsDarkTheme = true;
@@ -409,22 +486,121 @@ namespace NexusDash.ViewModels
 
         public void EndSelectedProcesses()
         {
-            _ = EndSelectedProcessesAsync(entireProcessTree: false);
+            RequestEndSelectedProcesses(entireProcessTree: false);
         }
 
         public void EndSelectedProcessTrees()
         {
-            _ = EndSelectedProcessesAsync(entireProcessTree: true);
+            RequestEndSelectedProcesses(entireProcessTree: true);
+        }
+
+        public void ConfirmPendingProcessTermination()
+        {
+            var rows = _pendingTerminationRows;
+            var entireProcessTree = _pendingTerminationEntireProcessTree;
+            IsEndProcessConfirmationVisible = false;
+            _pendingTerminationRows = [];
+            RaiseTerminationConfirmationProperties();
+            _ = EndSelectedProcessesAsync(rows, entireProcessTree);
+        }
+
+        public void CancelPendingProcessTermination()
+        {
+            IsEndProcessConfirmationVisible = false;
+            _pendingTerminationRows = [];
+            RaiseTerminationConfirmationProperties();
         }
 
         public void SetSelectedProcesses(IEnumerable<ProcessRowViewModel> selectedRows)
         {
-            _selectedRows = selectedRows.ToArray();
+            _selectedRows = selectedRows.Where(static row => !row.IsGroupHeader).ToArray();
             SelectedProcess = _selectedRows.LastOrDefault();
             this.RaisePropertyChanged(nameof(SelectedProcessCount));
             this.RaisePropertyChanged(nameof(HasSelectedProcesses));
             this.RaisePropertyChanged(nameof(SelectedCountText));
             StatusMessage = SelectedCountText;
+            PublishProcessListState();
+        }
+
+        public bool IsProcessColumnVisible(string key)
+        {
+            return !_processColumnOptions.TryGetValue(key, out var option) || option.IsVisible;
+        }
+
+        public void SetProcessColumnVisibility(string key, bool isVisible)
+        {
+            if (_processColumnOptions.TryGetValue(key, out var option))
+            {
+                option.IsVisible = isVisible;
+            }
+        }
+
+        [EventHandler]
+        private void HandleProcessListSelectionChanged(ProcessListSelectionChangedCommand command)
+        {
+            SetSelectedProcesses(command.SelectedRows);
+        }
+
+        [EventHandler]
+        private void HandleProcessTerminationRequested(ProcessTerminationRequestedCommand command)
+        {
+            RequestEndSelectedProcesses(command.EntireProcessTree);
+        }
+
+        [EventHandler]
+        private void HandleProcessColumnVisibilityChanged(ProcessColumnVisibilityChangedCommand command)
+        {
+            SetProcessColumnVisibility(command.Key, command.IsVisible);
+        }
+
+        private void PublishProcessListState()
+        {
+            _processEventBus.Publish(new ProcessListStateChangedCommand(new ProcessListState
+            {
+                VisibleProcesses = VisibleProcesses.ToArray(),
+                ProcessColumns = ProcessColumns.ToArray(),
+                SelectedProcessPid = SelectedProcess?.Pid,
+                ProcessTreeText = ProcessTreeText,
+                ProcessCountText = ProcessCountText,
+                SearchNoResultsText = SearchNoResultsText,
+                EndProcessText = EndProcessText,
+                EndProcessTreeText = EndProcessTreeText,
+                PidText = PidText,
+                ParentPidText = ParentPidText,
+                ProcessNameText = ProcessNameText,
+                PublisherText = PublisherText,
+                CpuText = CpuText,
+                MemoryText = MemoryText,
+                DiskText = DiskText,
+                NetworkColumnText = NetworkColumnText,
+                GpuText = GpuText,
+                AccessLimitedText = AccessLimitedText,
+                ColumnVisibilityText = ColumnVisibilityText,
+                RequiredColumnText = RequiredColumnText,
+                HasSelectedProcesses = HasSelectedProcesses,
+                HasNoVisibleProcesses = HasNoVisibleProcesses,
+                ProcessRowPrimaryTextBrush = ProcessRowPrimaryTextBrush,
+                ProcessRowSecondaryTextBrush = ProcessRowSecondaryTextBrush
+            }));
+        }
+
+        private void RequestEndSelectedProcesses(bool entireProcessTree)
+        {
+            var rows = _selectedRows
+                .Where(static row => !row.IsGroupHeader)
+                .GroupBy(static row => row.Pid)
+                .Select(static group => group.First())
+                .ToArray();
+
+            if (rows.Length == 0)
+            {
+                return;
+            }
+
+            _pendingTerminationRows = rows;
+            _pendingTerminationEntireProcessTree = entireProcessTree;
+            IsEndProcessConfirmationVisible = true;
+            RaiseTerminationConfirmationProperties();
         }
 
         private void RefreshSelectedNetworkConnections()
@@ -456,10 +632,7 @@ namespace NexusDash.ViewModels
             {
                 try
                 {
-                    if (IsRunning)
-                    {
-                        await RefreshAsync(cancellationToken);
-                    }
+                    await RefreshAsync(cancellationToken);
 
                     await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
                 }
@@ -538,8 +711,8 @@ namespace NexusDash.ViewModels
             _networkConnections = enrichedNetworkConnections;
             RefreshSelectedNetworkConnections();
 
-            RebuildProcessTree(processSnapshot);
             ProcessTotalCount = processSnapshot.Length;
+            RebuildProcessTree(processSnapshot);
         }
 
         private static IReadOnlyList<ProcessNetworkConnection> EnrichNetworkConnections(
@@ -615,11 +788,13 @@ namespace NexusDash.ViewModels
                 {
                     row.Update(process);
                     row.RefreshLocalizedText(unavailableText);
+                    row.Parent = null;
                     row.Children.Clear();
                 }
                 else
                 {
-                    _rowCache[process.Pid] = new ProcessRowViewModel(process, unavailableText, HandleRowExpansionChanged);
+                    row = new ProcessRowViewModel(process, unavailableText, HandleRowExpansionChanged);
+                    _rowCache[process.Pid] = row;
                 }
             }
 
@@ -630,15 +805,17 @@ namespace NexusDash.ViewModels
                     parentPid != row.Pid &&
                     _rowCache.TryGetValue(parentPid, out var parent))
                 {
+                    row.Parent = parent;
                     parent.Children.Add(row);
                 }
                 else
                 {
+                    row.Parent = null;
                     _rootRows.Add(row);
                 }
             }
 
-            SortAndAssignDepth(_rootRows, 0);
+            SortAndAssignDepth(_rootRows, 1);
             RebuildVisibleProcesses();
             TreemapProcesses = _rowCache.Values
                 .OrderByDescending(static row => row.WorkingSetBytes)
@@ -666,7 +843,7 @@ namespace NexusDash.ViewModels
                 row.Depth = depth;
                 row.RefreshChildrenState();
 
-                if (depth == 0 && row.HasChildren && !_collapsedPids.Contains(row.Pid))
+                if (depth <= 1 && row.HasChildren && !_collapsedPids.Contains(row.Pid))
                 {
                     _expandedPids.Add(row.Pid);
                 }
@@ -697,24 +874,86 @@ namespace NexusDash.ViewModels
             var visible = new List<ProcessRowViewModel>();
             var query = SearchQuery.Trim();
 
-            foreach (var root in _rootRows)
+            foreach (var category in GetProcessCategoryOrder())
             {
+                var groupRow = GetGroupRow(category);
+                groupRow.Children.Clear();
+
                 if (query.Length == 0)
                 {
-                    AppendExpandedRows(root, visible);
+                    var roots = GetCategoryRoots(category)
+                        .ToArray();
+
+                    if (roots.Length == 0)
+                    {
+                        continue;
+                    }
+
+                    foreach (var root in roots)
+                    {
+                        root.Parent = groupRow;
+                        groupRow.Children.Add(root);
+                    }
+
+                    groupRow.Depth = 0;
+                    groupRow.UpdateGroupHeader(GetProcessCategoryText(category), CountProcessRows(roots, category));
+                    groupRow.RefreshChildrenState();
+                    AppendExpandedCategoryRows(groupRow, category, visible, 0);
                 }
-                else if (HasMatch(root, query))
+                else
                 {
-                    AppendSearchRows(root, query, visible);
+                    var matches = new List<ProcessRowViewModel>();
+                    foreach (var root in _rootRows)
+                    {
+                        CollectMatchingRows(root, category, query, matches);
+                    }
+
+                    if (matches.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    foreach (var match in matches)
+                    {
+                        match.Parent = groupRow;
+                        groupRow.Children.Add(match);
+                    }
+
+                    groupRow.Depth = 0;
+                    groupRow.UpdateGroupHeader(GetProcessCategoryText(category), matches.Count);
+                    groupRow.RefreshChildrenState();
+                    groupRow.SetDisplayDepth(0);
+                    visible.Add(groupRow);
+
+                    if (!groupRow.IsExpanded)
+                    {
+                        continue;
+                    }
+
+                    foreach (var match in matches)
+                    {
+                        match.SetDisplayDepth(1);
+                        visible.Add(match);
+                    }
                 }
             }
 
             ReplaceCollection(VisibleProcesses, visible);
+            RaiseProcessVisibilityProperties();
+            PublishProcessListState();
+        }
+
+        private void RaiseProcessVisibilityProperties()
+        {
+            this.RaisePropertyChanged(nameof(IsSearchActive));
+            this.RaisePropertyChanged(nameof(HasNoVisibleProcesses));
+            this.RaisePropertyChanged(nameof(SearchNoResultsText));
             this.RaisePropertyChanged(nameof(ProcessCountText));
         }
 
         private static void AppendExpandedRows(ProcessRowViewModel row, IList<ProcessRowViewModel> visible)
         {
+            row.SetDisplayDepth(row.Depth);
             visible.Add(row);
             if (!row.IsExpanded)
             {
@@ -727,18 +966,110 @@ namespace NexusDash.ViewModels
             }
         }
 
-        private static bool HasMatch(ProcessRowViewModel row, string query)
+        private static void AppendMatchingRows(ProcessRowViewModel row, string query, IList<ProcessRowViewModel> visible)
         {
-            return row.Matches(query) || row.Children.Any(child => HasMatch(child, query));
+            if (row.Matches(query))
+            {
+                row.SetDisplayDepth(0);
+                visible.Add(row);
+            }
+
+            foreach (var child in row.Children)
+            {
+                AppendMatchingRows(child, query, visible);
+            }
         }
 
-        private static void AppendSearchRows(ProcessRowViewModel row, string query, IList<ProcessRowViewModel> visible)
+        private static void AppendExpandedCategoryRows(
+            ProcessRowViewModel row,
+            ProcessCategory category,
+            IList<ProcessRowViewModel> visible,
+            int displayDepth)
         {
+            row.SetDisplayDepth(displayDepth);
             visible.Add(row);
-            foreach (var child in row.Children.Where(child => HasMatch(child, query)))
+            if (!row.IsExpanded)
             {
-                AppendSearchRows(child, query, visible);
+                return;
             }
+
+            foreach (var child in row.Children.Where(child => child.IsGroupHeader || child.Category == category))
+            {
+                AppendExpandedCategoryRows(child, category, visible, displayDepth + 1);
+            }
+        }
+
+        private static void CollectMatchingRows(
+            ProcessRowViewModel row,
+            ProcessCategory category,
+            string query,
+            IList<ProcessRowViewModel> matches)
+        {
+            if (row.Category == category && row.Matches(query))
+            {
+                matches.Add(row);
+            }
+
+            foreach (var child in row.Children)
+            {
+                CollectMatchingRows(child, category, query, matches);
+            }
+        }
+
+        private static int CountProcessRows(IEnumerable<ProcessRowViewModel> rows, ProcessCategory category)
+        {
+            var count = 0;
+            foreach (var row in rows)
+            {
+                if (!row.IsGroupHeader && row.Category == category)
+                {
+                    count++;
+                }
+
+                count += CountProcessRows(row.Children.Where(child => child.Category == category), category);
+            }
+
+            return count;
+        }
+
+        private IEnumerable<ProcessRowViewModel> GetCategoryRoots(ProcessCategory category)
+        {
+            return _rowCache.Values
+                .Where(row => !row.IsGroupHeader &&
+                              row.Category == category &&
+                              (row.Parent is null || row.Parent.Category != category))
+                .OrderBy(static row => row.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ThenBy(static row => row.Pid);
+        }
+
+        private ProcessRowViewModel GetGroupRow(ProcessCategory category)
+        {
+            return category switch
+            {
+                ProcessCategory.Application => _applicationGroupRow,
+                ProcessCategory.WindowsProcess => _windowsGroupRow,
+                _ => _backgroundGroupRow
+            };
+        }
+
+        private string GetProcessCategoryText(ProcessCategory category)
+        {
+            return category switch
+            {
+                ProcessCategory.Application => T(NexusDashL.ProcessGroupApplications),
+                ProcessCategory.WindowsProcess => T(NexusDashL.ProcessGroupWindows),
+                _ => T(NexusDashL.ProcessGroupBackground)
+            };
+        }
+
+        private static IReadOnlyList<ProcessCategory> GetProcessCategoryOrder()
+        {
+            return
+            [
+                ProcessCategory.Application,
+                ProcessCategory.BackgroundProcess,
+                ProcessCategory.WindowsProcess
+            ];
         }
 
         private static void ReplaceCollection<T>(ObservableCollection<T> target, IReadOnlyList<T> source)
@@ -765,9 +1096,13 @@ namespace NexusDash.ViewModels
             }
         }
 
-        private async Task EndSelectedProcessesAsync(bool entireProcessTree)
+        private async Task EndSelectedProcessesAsync(IReadOnlyList<ProcessRowViewModel> rows, bool entireProcessTree)
         {
-            var pids = _selectedRows.Select(static row => row.Pid).Distinct().ToArray();
+            var pids = rows
+                .Where(static row => !row.IsGroupHeader)
+                .Select(static row => row.Pid)
+                .Distinct()
+                .ToArray();
             if (pids.Length == 0)
             {
                 return;
@@ -799,6 +1134,85 @@ namespace NexusDash.ViewModels
                 .ToArray();
         }
 
+        private void RaiseTerminationConfirmationProperties()
+        {
+            this.RaisePropertyChanged(nameof(EndProcessConfirmationTitleText));
+            this.RaisePropertyChanged(nameof(EndProcessConfirmationMessageText));
+            this.RaisePropertyChanged(nameof(EndProcessConfirmationProcessListText));
+        }
+
+        private void InitializeProcessColumnOptions(UserPreferences preferences)
+        {
+            var visibility = preferences.ProcessColumnVisibility ?? new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            AddProcessColumnOption(ProcessColumnPid, PidText, isRequired: true, visibility);
+            AddProcessColumnOption(ProcessColumnParentPid, ParentPidText, isRequired: true, visibility);
+            AddProcessColumnOption(ProcessColumnName, ProcessNameText, isRequired: true, visibility);
+            AddProcessColumnOption(ProcessColumnPublisher, PublisherText, isRequired: false, visibility);
+            AddProcessColumnOption(ProcessColumnCpu, CpuText, isRequired: false, visibility);
+            AddProcessColumnOption(ProcessColumnMemory, MemoryText, isRequired: false, visibility);
+            AddProcessColumnOption(ProcessColumnDisk, DiskText, isRequired: false, visibility);
+            AddProcessColumnOption(ProcessColumnNetwork, NetworkColumnText, isRequired: false, visibility);
+            AddProcessColumnOption(ProcessColumnGpu, GpuText, isRequired: false, visibility);
+        }
+
+        private void AddProcessColumnOption(
+            string key,
+            string header,
+            bool isRequired,
+            IReadOnlyDictionary<string, bool> visibility)
+        {
+            var isVisible = isRequired || !visibility.TryGetValue(key, out var savedVisible) || savedVisible;
+            var option = new ProcessColumnOptionViewModel(
+                key,
+                header,
+                isRequired,
+                isVisible,
+                HandleProcessColumnVisibilityChanged);
+            _processColumnOptions[key] = option;
+            ProcessColumns.Add(option);
+        }
+
+        private void HandleProcessColumnVisibilityChanged(ProcessColumnOptionViewModel option)
+        {
+            if (option.IsRequired)
+            {
+                return;
+            }
+
+            UserPreferencesService.Update(preferences =>
+            {
+                preferences.ProcessColumnVisibility ??= new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+                preferences.ProcessColumnVisibility[option.Key] = option.IsVisible;
+            });
+
+            StatusMessage = string.Format(
+                CultureInfo.CurrentCulture,
+                T(option.IsVisible ? NexusDashL.StatusColumnShown : NexusDashL.StatusColumnHidden),
+                option.Header);
+            PublishProcessListState();
+        }
+
+        private void RefreshProcessColumnHeaders()
+        {
+            RefreshProcessColumnHeader(ProcessColumnPid, PidText);
+            RefreshProcessColumnHeader(ProcessColumnParentPid, ParentPidText);
+            RefreshProcessColumnHeader(ProcessColumnName, ProcessNameText);
+            RefreshProcessColumnHeader(ProcessColumnPublisher, PublisherText);
+            RefreshProcessColumnHeader(ProcessColumnCpu, CpuText);
+            RefreshProcessColumnHeader(ProcessColumnMemory, MemoryText);
+            RefreshProcessColumnHeader(ProcessColumnDisk, DiskText);
+            RefreshProcessColumnHeader(ProcessColumnNetwork, NetworkColumnText);
+            RefreshProcessColumnHeader(ProcessColumnGpu, GpuText);
+        }
+
+        private void RefreshProcessColumnHeader(string key, string header)
+        {
+            if (_processColumnOptions.TryGetValue(key, out var option))
+            {
+                option.RefreshHeader(header);
+            }
+        }
+
         private void InitializeLanguageOptions()
         {
             Languages.Clear();
@@ -821,6 +1235,7 @@ namespace NexusDash.ViewModels
             CultureInfo.CurrentCulture = culture;
             CultureInfo.CurrentUICulture = culture;
             I18nManager.Instance.Culture = culture;
+            UserPreferencesService.Update(preferences => preferences.CultureName = culture.Name);
             Application.Current?.SetLanguageVariant(
                 culture.TwoLetterISOLanguageName.Equals("zh", StringComparison.OrdinalIgnoreCase)
                     ? LanguageVariant.zh_CN
@@ -833,6 +1248,11 @@ namespace NexusDash.ViewModels
             {
                 row.RefreshLocalizedText(T(NexusDashL.MetricUnavailable));
             }
+
+            _applicationGroupRow.RefreshLocalizedText(T(NexusDashL.MetricUnavailable));
+            _backgroundGroupRow.RefreshLocalizedText(T(NexusDashL.MetricUnavailable));
+            _windowsGroupRow.RefreshLocalizedText(T(NexusDashL.MetricUnavailable));
+            RebuildVisibleProcesses();
 
             if (showStatus)
             {
@@ -880,13 +1300,13 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(WindowTitle));
             this.RaisePropertyChanged(nameof(AppNameText));
             this.RaisePropertyChanged(nameof(AppSubtitleText));
+            this.RaisePropertyChanged(nameof(SettingsText));
             this.RaisePropertyChanged(nameof(ThemeMenuText));
             this.RaisePropertyChanged(nameof(DarkThemeText));
             this.RaisePropertyChanged(nameof(LightThemeText));
             this.RaisePropertyChanged(nameof(LanguageMenuText));
-            this.RaisePropertyChanged(nameof(ActionMenuText));
             this.RaisePropertyChanged(nameof(SearchPlaceholderText));
-            this.RaisePropertyChanged(nameof(PauseResumeText));
+            this.RaisePropertyChanged(nameof(SearchNoResultsText));
             this.RaisePropertyChanged(nameof(EndProcessText));
             this.RaisePropertyChanged(nameof(EndProcessTreeText));
             this.RaisePropertyChanged(nameof(ProcessTreeText));
@@ -899,6 +1319,7 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(PidText));
             this.RaisePropertyChanged(nameof(ParentPidText));
             this.RaisePropertyChanged(nameof(ProcessNameText));
+            this.RaisePropertyChanged(nameof(PublisherText));
             this.RaisePropertyChanged(nameof(CpuText));
             this.RaisePropertyChanged(nameof(MemoryText));
             this.RaisePropertyChanged(nameof(DiskText));
@@ -907,6 +1328,8 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(PathText));
             this.RaisePropertyChanged(nameof(CommandLineText));
             this.RaisePropertyChanged(nameof(StartTimeText));
+            this.RaisePropertyChanged(nameof(AccessLimitedText));
+            this.RaisePropertyChanged(nameof(AccessLimitedDescriptionText));
             this.RaisePropertyChanged(nameof(NoProcessSelectedText));
             this.RaisePropertyChanged(nameof(HandlesSearchPlaceholderText));
             this.RaisePropertyChanged(nameof(HandlesUnavailableText));
@@ -923,12 +1346,21 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(LocalEndpointText));
             this.RaisePropertyChanged(nameof(RemoteEndpointText));
             this.RaisePropertyChanged(nameof(StateText));
+            this.RaisePropertyChanged(nameof(LastSeenText));
             this.RaisePropertyChanged(nameof(OwnerProcessText));
+            this.RaisePropertyChanged(nameof(ColumnVisibilityText));
+            this.RaisePropertyChanged(nameof(RequiredColumnText));
+            this.RaisePropertyChanged(nameof(ProcessCountText));
             this.RaisePropertyChanged(nameof(SelectedProcessNetworkSummaryText));
             this.RaisePropertyChanged(nameof(SelectedProcessConnectionTotalText));
             this.RaisePropertyChanged(nameof(SelectedProcessTcpConnectionCountText));
             this.RaisePropertyChanged(nameof(SelectedProcessUdpConnectionCountText));
+            this.RaisePropertyChanged(nameof(ConfirmText));
+            this.RaisePropertyChanged(nameof(CancelText));
+            RaiseTerminationConfirmationProperties();
+            RefreshProcessColumnHeaders();
             this.RaisePropertyChanged(nameof(SelectedCountText));
+            PublishProcessListState();
         }
 
         private static string NormalizeCulture(string cultureName)
@@ -978,6 +1410,8 @@ namespace NexusDash.ViewModels
         {
             _refreshCancellation.Cancel();
             _refreshCancellation.Dispose();
+            _processEventBus.Unsubscribe(this);
+            ProcessList.Dispose();
             _systemMonitorService.Dispose();
         }
     }

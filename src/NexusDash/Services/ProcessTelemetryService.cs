@@ -8,6 +8,8 @@ using System.Linq;
 using System.Threading.Tasks;
 
 #if WINDOWS
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.Management;
 #endif
 
@@ -16,6 +18,9 @@ namespace NexusDash.Services
     public sealed class ProcessTelemetryService
     {
         private readonly Dictionary<int, ProcessSample> _previousSamples = new();
+        private readonly Dictionary<string, string?> _publisherCache = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, string?> _descriptionCache = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, byte[]?> _iconCache = new(StringComparer.OrdinalIgnoreCase);
 
         public Task<IReadOnlyList<ProcessMetrics>> GetProcessesAsync()
         {
@@ -47,12 +52,21 @@ namespace NexusDash.Services
 
                         var path = FirstNonEmpty(platform?.ExecutablePath, TryGetExecutablePath(process));
                         var commandLine = FirstNonEmpty(platform?.CommandLine, path, process.ProcessName);
+                        var publisher = TryGetPublisher(path);
+                        var rawName = FirstNonEmpty(process.ProcessName, platform?.Name, "Unknown")!;
+                        var displayName = FirstNonEmpty(platform?.ServiceDisplayName, TryGetFileDescription(path), rawName)!;
+                        var hasMainWindow = TryHasMainWindow(process);
+                        var category = ClassifyProcess(platform, path, rawName, hasMainWindow);
 
                         metrics = new ProcessMetrics
                         {
                             Pid = process.Id,
                             ParentPid = platform?.ParentPid,
-                            Name = FirstNonEmpty(process.ProcessName, platform?.Name, "Unknown")!,
+                            Name = displayName,
+                            RawName = rawName,
+                            Publisher = publisher,
+                            Category = category,
+                            IconBytes = TryGetProcessIconBytes(path),
                             CpuPercent = cpuPercent,
                             WorkingSetBytes = TryGetWorkingSet(process),
                             DiskReadBytesPerSecond = readRate,
@@ -71,6 +85,8 @@ namespace NexusDash.Services
                             {
                                 Pid = process.Id,
                                 Name = process.ProcessName,
+                                RawName = process.ProcessName,
+                                Category = ClassifyProcess(null, null, process.ProcessName, hasMainWindow: false),
                                 IsAccessDenied = true
                             };
                         }
@@ -222,6 +238,210 @@ namespace NexusDash.Services
             }
         }
 
+        private string? TryGetPublisher(string? executablePath)
+        {
+            if (string.IsNullOrWhiteSpace(executablePath))
+            {
+                return null;
+            }
+
+            if (_publisherCache.TryGetValue(executablePath, out var cachedPublisher))
+            {
+                return cachedPublisher;
+            }
+
+            try
+            {
+                var versionInfo = FileVersionInfo.GetVersionInfo(executablePath);
+                var publisher = FirstNonEmpty(versionInfo.CompanyName, versionInfo.LegalCopyright);
+                _publisherCache[executablePath] = publisher;
+                return publisher;
+            }
+            catch
+            {
+                _publisherCache[executablePath] = null;
+                return null;
+            }
+        }
+
+        private string? TryGetFileDescription(string? executablePath)
+        {
+            if (string.IsNullOrWhiteSpace(executablePath))
+            {
+                return null;
+            }
+
+            if (_descriptionCache.TryGetValue(executablePath, out var cachedDescription))
+            {
+                return cachedDescription;
+            }
+
+            try
+            {
+                var versionInfo = FileVersionInfo.GetVersionInfo(executablePath);
+                var fileName = Path.GetFileNameWithoutExtension(executablePath);
+                var description = FirstNonEmpty(versionInfo.FileDescription, versionInfo.ProductName);
+                if (string.Equals(description, fileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    description = null;
+                }
+
+                _descriptionCache[executablePath] = description;
+                return description;
+            }
+            catch
+            {
+                _descriptionCache[executablePath] = null;
+                return null;
+            }
+        }
+
+        private byte[]? TryGetProcessIconBytes(string? executablePath)
+        {
+            if (string.IsNullOrWhiteSpace(executablePath))
+            {
+                return null;
+            }
+
+            if (_iconCache.TryGetValue(executablePath, out var cachedIcon))
+            {
+                return cachedIcon;
+            }
+
+#if WINDOWS
+            try
+            {
+                if (!File.Exists(executablePath))
+                {
+                    _iconCache[executablePath] = null;
+                    return null;
+                }
+
+                using var icon = Icon.ExtractAssociatedIcon(executablePath);
+                if (icon is null)
+                {
+                    _iconCache[executablePath] = null;
+                    return null;
+                }
+
+                using var bitmap = icon.ToBitmap();
+                using var stream = new MemoryStream();
+                bitmap.Save(stream, ImageFormat.Png);
+                var bytes = stream.ToArray();
+                _iconCache[executablePath] = bytes;
+                return bytes;
+            }
+            catch
+            {
+                _iconCache[executablePath] = null;
+                return null;
+            }
+#else
+            _iconCache[executablePath] = null;
+            return null;
+#endif
+        }
+
+        private static bool TryHasMainWindow(Process process)
+        {
+            try
+            {
+                return process.MainWindowHandle != IntPtr.Zero;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static ProcessCategory ClassifyProcess(
+            PlatformProcessMetadata? metadata,
+            string? executablePath,
+            string rawName,
+            bool hasMainWindow)
+        {
+            if (hasMainWindow)
+            {
+                return ProcessCategory.Application;
+            }
+
+            if (IsWindowsProcess(metadata, executablePath, rawName))
+            {
+                return ProcessCategory.WindowsProcess;
+            }
+
+            return ProcessCategory.BackgroundProcess;
+        }
+
+        private static bool IsWindowsProcess(
+            PlatformProcessMetadata? metadata,
+            string? executablePath,
+            string rawName)
+        {
+            if (!OperatingSystem.IsWindows())
+            {
+                return false;
+            }
+
+            if (IsKnownWindowsProcessName(rawName))
+            {
+                return true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(metadata?.ServiceDisplayName))
+            {
+                return true;
+            }
+
+            return IsWindowsSystemPath(executablePath) || IsMicrosoftWindowsAppPath(executablePath);
+        }
+
+        private static bool IsKnownWindowsProcessName(string rawName)
+        {
+            var normalized = rawName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+                ? Path.GetFileNameWithoutExtension(rawName)
+                : rawName;
+
+            return normalized.Equals("System", StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Equals("Idle", StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Equals("Registry", StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Equals("smss", StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Equals("csrss", StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Equals("wininit", StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Equals("winlogon", StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Equals("services", StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Equals("lsass", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsWindowsSystemPath(string? executablePath)
+        {
+            if (string.IsNullOrWhiteSpace(executablePath))
+            {
+                return false;
+            }
+
+            var windowsDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            return !string.IsNullOrWhiteSpace(windowsDirectory) &&
+                   executablePath.StartsWith(windowsDirectory, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsMicrosoftWindowsAppPath(string? executablePath)
+        {
+            if (string.IsNullOrWhiteSpace(executablePath))
+            {
+                return false;
+            }
+
+            var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            if (string.IsNullOrWhiteSpace(programFiles))
+            {
+                return false;
+            }
+
+            var microsoftWindowsApps = Path.Combine(programFiles, "WindowsApps", "Microsoft.");
+            return executablePath.StartsWith(microsoftWindowsApps, StringComparison.OrdinalIgnoreCase);
+        }
+
         private static string? FirstNonEmpty(params string?[] values)
         {
             foreach (var value in values)
@@ -246,6 +466,8 @@ namespace NexusDash.Services
         {
             public int? ParentPid { get; init; }
             public string? Name { get; init; }
+            public string? ServiceDisplayName { get; init; }
+            public string? ServiceGroupName { get; init; }
             public string? CommandLine { get; init; }
             public string? ExecutablePath { get; init; }
             public ulong? ReadTransferBytes { get; init; }
@@ -289,11 +511,13 @@ namespace NexusDash.Services
                         using (item)
                         {
                             var pid = Convert.ToInt32(item["ProcessId"], CultureInfo.InvariantCulture);
+                            var commandLine = item["CommandLine"] as string;
                             result[pid] = new PlatformProcessMetadata
                             {
                                 ParentPid = TryConvertInt32(item["ParentProcessId"]),
                                 Name = item["Name"] as string,
-                                CommandLine = item["CommandLine"] as string,
+                                ServiceGroupName = ExtractWindowsServiceGroupName(commandLine),
+                                CommandLine = commandLine,
                                 ExecutablePath = item["ExecutablePath"] as string,
                                 ReadTransferBytes = TryConvertUInt64(item["ReadTransferCount"]),
                                 WriteTransferBytes = TryConvertUInt64(item["WriteTransferCount"])
@@ -304,6 +528,26 @@ namespace NexusDash.Services
                 catch
                 {
                     // WMI can be disabled or unavailable.
+                }
+
+                foreach (var serviceGroup in ReadWindowsServiceDisplayNames())
+                {
+                    if (!result.TryGetValue(serviceGroup.Key, out var processMetadata))
+                    {
+                        continue;
+                    }
+
+                    result[serviceGroup.Key] = new PlatformProcessMetadata
+                    {
+                        ParentPid = processMetadata.ParentPid,
+                        Name = processMetadata.Name,
+                        ServiceDisplayName = FormatWindowsServiceDisplayName(processMetadata.ServiceGroupName, serviceGroup.Value),
+                        ServiceGroupName = processMetadata.ServiceGroupName,
+                        CommandLine = processMetadata.CommandLine,
+                        ExecutablePath = processMetadata.ExecutablePath,
+                        ReadTransferBytes = processMetadata.ReadTransferBytes,
+                        WriteTransferBytes = processMetadata.WriteTransferBytes
+                    };
                 }
 
                 return result;
@@ -470,6 +714,95 @@ namespace NexusDash.Services
             }
 
 #if WINDOWS
+            private static IReadOnlyDictionary<int, IReadOnlyList<string>> ReadWindowsServiceDisplayNames()
+            {
+                var result = new Dictionary<int, List<string>>();
+
+                try
+                {
+                    using var searcher = new ManagementObjectSearcher(
+                        "SELECT ProcessId, Name, DisplayName FROM Win32_Service WHERE ProcessId <> 0");
+
+                    foreach (ManagementObject item in searcher.Get())
+                    {
+                        using (item)
+                        {
+                            var pid = TryConvertInt32(item["ProcessId"]);
+                            if (pid is null)
+                            {
+                                continue;
+                            }
+
+                            var displayName = FirstNonEmpty(item["DisplayName"] as string, item["Name"] as string);
+                            if (string.IsNullOrWhiteSpace(displayName))
+                            {
+                                continue;
+                            }
+
+                            if (!result.TryGetValue(pid.Value, out var services))
+                            {
+                                services = new List<string>();
+                                result[pid.Value] = services;
+                            }
+
+                            services.Add(displayName);
+                        }
+                    }
+                }
+                catch
+                {
+                    // Service Control Manager / WMI access can be restricted.
+                }
+
+                return result.ToDictionary(
+                    static pair => pair.Key,
+                    static pair => (IReadOnlyList<string>)pair.Value
+                        .Distinct(StringComparer.CurrentCultureIgnoreCase)
+                        .OrderBy(static name => name, StringComparer.CurrentCultureIgnoreCase)
+                        .ToArray());
+            }
+
+            private static string? FormatWindowsServiceDisplayName(string? serviceGroupName, IReadOnlyList<string> serviceNames)
+            {
+                if (serviceNames.Count == 0)
+                {
+                    return string.IsNullOrWhiteSpace(serviceGroupName) ? null : serviceGroupName;
+                }
+
+                if (serviceNames.Count == 1)
+                {
+                    return serviceNames[0];
+                }
+
+                var groupName = string.IsNullOrWhiteSpace(serviceGroupName) ? serviceNames[0] : serviceGroupName;
+                return string.Format(CultureInfo.CurrentCulture, "{0} ({1})", groupName, serviceNames.Count);
+            }
+
+            private static string? ExtractWindowsServiceGroupName(string? commandLine)
+            {
+                if (string.IsNullOrWhiteSpace(commandLine))
+                {
+                    return null;
+                }
+
+                var parts = commandLine.Split(
+                    ' ',
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                for (var index = 0; index < parts.Length - 1; index++)
+                {
+                    if (!parts[index].Equals("-k", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    var groupName = parts[index + 1].Trim('"');
+                    return string.IsNullOrWhiteSpace(groupName) ? null : groupName;
+                }
+
+                return null;
+            }
+
             private static int? TryConvertInt32(object? value)
             {
                 try

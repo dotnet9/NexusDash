@@ -6,6 +6,7 @@
         xmlns:antdicons="https://atomui.net/icons/antdesign"
         xmlns:ndc="https://nexusdash.net/controls"
         xmlns:models="using:NexusDash.Models"
+        xmlns:views="using:NexusDash.Views"
         xmlns:vm="using:NexusDash.ViewModels"
         xmlns:converters="using:NexusDash.Converters"
         mc:Ignorable="d"
@@ -44,75 +45,52 @@
       <Setter Property="Background" Value="{DynamicResource PanelAltBackgroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
     </Style>
-    <Style Selector="TextBlock.sectionTitle">
+    <Style Selector="atom|TextBlock.sectionTitle">
       <Setter Property="FontSize" Value="15" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
     </Style>
-    <Style Selector="TextBlock.columnHeader">
+    <Style Selector="atom|TextBlock.columnHeader">
       <Setter Property="FontSize" Value="12" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
     </Style>
-    <Style Selector="TextBlock.muted">
+    <Style Selector="atom|TextBlock.muted">
       <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+    </Style>
+    <Style Selector="Border.dialogMask">
+      <Setter Property="Background" Value="#99000000" />
+    </Style>
+    <Style Selector="Border.dialogCard">
+      <Setter Property="Width" Value="520" />
+      <Setter Property="MaxWidth" Value="520" />
+      <Setter Property="MinHeight" Value="236" />
+      <Setter Property="Padding" Value="22" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BoxShadow" Value="0 22 48 0 #66000000" />
+    </Style>
+    <Style Selector="Border.dialogIcon">
+      <Setter Property="Width" Value="32" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="CornerRadius" Value="16" />
+      <Setter Property="Background" Value="{DynamicResource PanelAltBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource WarningBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="antdicons|AppstoreOutlined.processCategoryIcon,
+                     antdicons|CloudServerOutlined.processCategoryIcon,
+                     antdicons|WindowsOutlined.processCategoryIcon">
+      <Setter Property="Width" Value="16" />
+      <Setter Property="Height" Value="16" />
+      <Setter Property="StrokeBrush" Value="{DynamicResource SecondaryTextBrush}" />
     </Style>
   </atom:Window.Styles>
 
-  <Grid RowDefinitions="Auto,Auto,*,Auto">
-    <Border Grid.Row="0"
-            Background="{DynamicResource PanelBackgroundBrush}"
-            BorderBrush="{DynamicResource PanelBorderBrush}"
-            BorderThickness="0,0,0,1"
-            Padding="16,12">
-      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
-        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-          <Border Width="40"
-                  Height="40"
-                  CornerRadius="8"
-                  Background="{DynamicResource PanelAltBackgroundBrush}"
-                  BorderBrush="{DynamicResource PanelBorderBrush}"
-                  BorderThickness="1"
-                  Padding="5">
-            <Image Source="/Assets/logo.png"
-                   Stretch="Uniform" />
-          </Border>
-          <StackPanel Spacing="1">
-            <TextBlock Text="{Binding AppNameText}"
-                       FontSize="20"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}" />
-            <TextBlock Text="{Binding AppSubtitleText}"
-                       FontSize="12"
-                       Foreground="{DynamicResource SecondaryTextBrush}" />
-          </StackPanel>
-        </StackPanel>
-
-        <TextBox Grid.Column="1"
-                 Height="36"
-                 VerticalAlignment="Center"
-                 PlaceholderText="{Binding SearchPlaceholderText}"
-                 Text="{Binding SearchQuery, Mode=TwoWay}"
-                 FontSize="13" />
-
-        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <atom:Button Content="{Binding PauseResumeText}"
-                       Icon="{antdicons:AntDesignIconProvider Kind=PauseCircleOutlined}"
-                       Command="{Binding TogglePause}" />
-          <atom:Button Content="{Binding EndProcessText}"
-                       Icon="{antdicons:AntDesignIconProvider Kind=StopOutlined}"
-                       Command="{Binding EndSelectedProcesses}"
-                       IsEnabled="{Binding HasSelectedProcesses}" />
-          <atom:Button Content="{Binding EndProcessTreeText}"
-                       Icon="{antdicons:AntDesignIconProvider Kind=ApartmentOutlined}"
-                       Command="{Binding EndSelectedProcessTrees}"
-                       IsEnabled="{Binding HasSelectedProcesses}" />
-        </StackPanel>
-      </Grid>
-    </Border>
-
-    <Grid Grid.Row="1"
-          Margin="16,14,16,0"
+  <Grid RowDefinitions="Auto,*,Auto">
+    <Grid Grid.Row="0"
+          Margin="16,16,16,0"
           ColumnDefinitions="*,*,*,*"
           ColumnSpacing="12">
       <Border Grid.Column="0"
@@ -124,8 +102,8 @@
               Padding="14">
         <Grid RowDefinitions="Auto,*,Auto">
           <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
-            <TextBlock Text="{Binding CpuText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-            <TextBlock Grid.Column="1" Text="{Binding CpuUsageText}" FontWeight="SemiBold" />
+            <atom:TextBlock Text="{Binding CpuText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+            <atom:TextBlock Grid.Column="1" Text="{Binding CpuUsageText}" FontWeight="SemiBold" />
           </Grid>
           <ndc:MetricSparklineControl Grid.Row="1"
                                       Height="54"
@@ -149,15 +127,15 @@
               Padding="14">
         <Grid RowDefinitions="Auto,*,Auto">
           <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
-            <TextBlock Text="{Binding MemoryText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-            <TextBlock Grid.Column="1" Text="{Binding MemoryUsageText}" FontWeight="SemiBold" />
+            <atom:TextBlock Text="{Binding MemoryText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+            <atom:TextBlock Grid.Column="1" Text="{Binding MemoryUsageText}" FontWeight="SemiBold" />
           </Grid>
           <ndc:MetricSparklineControl Grid.Row="1"
                                       Height="54"
                                       Margin="0,10"
                                       Values="{Binding MemoryHistory}"
                                       Stroke="{DynamicResource SuccessBrush}" />
-          <TextBlock Grid.Row="2"
+          <atom:TextBlock Grid.Row="2"
                      Text="{Binding MemorySummaryText}"
                      Foreground="{DynamicResource SecondaryTextBrush}" />
         </Grid>
@@ -172,15 +150,15 @@
               Padding="14">
         <Grid RowDefinitions="Auto,*,Auto">
           <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
-            <TextBlock Text="{Binding DiskText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-            <TextBlock Grid.Column="1" Text="{Binding DiskSpeedText}" FontWeight="SemiBold" />
+            <atom:TextBlock Text="{Binding DiskText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+            <atom:TextBlock Grid.Column="1" Text="{Binding DiskSpeedText}" FontWeight="SemiBold" />
           </Grid>
           <ndc:MetricSparklineControl Grid.Row="1"
                                       Height="54"
                                       Margin="0,10"
                                       Values="{Binding DiskHistory}"
                                       Stroke="{DynamicResource WarningBrush}" />
-          <TextBlock Grid.Row="2"
+          <atom:TextBlock Grid.Row="2"
                      Text="{Binding TreemapText}"
                      Foreground="{DynamicResource SecondaryTextBrush}" />
         </Grid>
@@ -195,120 +173,28 @@
               Padding="14">
         <Grid RowDefinitions="Auto,*,Auto">
           <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
-            <TextBlock Text="{Binding NetworkText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-            <TextBlock Grid.Column="1" Text="{Binding NetworkSpeedText}" FontWeight="SemiBold" />
+            <atom:TextBlock Text="{Binding NetworkText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+            <atom:TextBlock Grid.Column="1" Text="{Binding NetworkSpeedText}" FontWeight="SemiBold" />
           </Grid>
           <ndc:MetricSparklineControl Grid.Row="1"
                                       Height="54"
                                       Margin="0,10"
                                       Values="{Binding NetworkHistory}"
                                       Stroke="{DynamicResource DangerBrush}" />
-          <TextBlock Grid.Row="2"
+          <atom:TextBlock Grid.Row="2"
                      Text="{Binding SelectedCountText}"
                      Foreground="{DynamicResource SecondaryTextBrush}" />
         </Grid>
       </Border>
     </Grid>
 
-    <Grid Grid.Row="2"
+    <Grid Grid.Row="1"
           Margin="16,14,16,12"
-          ColumnDefinitions="2*,*"
+          ColumnDefinitions="5*,2*"
           ColumnSpacing="12">
       <Grid Grid.Column="0" RowDefinitions="*,220" RowSpacing="12">
-        <Border Grid.Row="0"
-                Classes="panel"
-                Background="{DynamicResource PanelBackgroundBrush}"
-                BorderBrush="{DynamicResource PanelBorderBrush}"
-                BorderThickness="1"
-                CornerRadius="8">
-          <Grid RowDefinitions="Auto,Auto,*">
-            <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="14,12,14,8">
-              <TextBlock Text="{Binding ProcessTreeText}"
-                         FontSize="16"
-                         FontWeight="SemiBold" />
-              <TextBlock Grid.Column="1"
-                         Text="{Binding ProcessCountText}"
-                         Foreground="{DynamicResource SecondaryTextBrush}" />
-            </Grid>
-
-            <Border Grid.Row="1"
-                    Background="{DynamicResource PanelAltBackgroundBrush}"
-                    Padding="12,8">
-              <Grid ColumnDefinitions="80,90,*,80,110,110,100,80"
-                    ColumnSpacing="8">
-                <TextBlock Text="{Binding PidText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                <TextBlock Grid.Column="1" Text="{Binding ParentPidText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                <TextBlock Grid.Column="2" Text="{Binding ProcessNameText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                <TextBlock Grid.Column="3" Text="{Binding CpuText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                <TextBlock Grid.Column="4" Text="{Binding MemoryText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                <TextBlock Grid.Column="5" Text="{Binding DiskText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                <TextBlock Grid.Column="6" Text="{Binding NetworkColumnText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                <TextBlock Grid.Column="7" Text="{Binding GpuText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-              </Grid>
-            </Border>
-
-            <atom:ListBox x:Name="ProcessList"
-                          Grid.Row="2"
-                          ItemsSource="{Binding VisibleProcesses}"
-                          SelectionMode="Multiple"
-                          SelectionChanged="ProcessList_SelectionChanged"
-                          Background="Transparent"
-                          BorderThickness="0"
-                          Padding="0"
-                          SizeType="Small"
-                          IsBorderless="True"
-                          ItemHoverBg="{DynamicResource RowHoverBrush}"
-                          ItemSelectedBg="{DynamicResource RowSelectedBrush}">
-              <atom:ListBox.Styles>
-                <Style Selector="atom|ListBoxItem">
-                  <Setter Property="Padding" Value="0" />
-                  <Setter Property="MinHeight" Value="30" />
-                  <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                </Style>
-              </atom:ListBox.Styles>
-              <atom:ListBox.ItemTemplate>
-                <DataTemplate x:DataType="vm:ProcessRowViewModel"
-                              x:CompileBindings="False">
-                  <Border Padding="12,5"
-                          BorderBrush="{Binding $parent[Window].DataContext.ProcessRowDividerBrush}"
-                          BorderThickness="0,0,0,1">
-                    <Grid ColumnDefinitions="80,90,*,80,110,110,100,80"
-                          ColumnSpacing="8">
-                      <TextBlock Text="{Binding Pid}"
-                                 VerticalAlignment="Center"
-                                 Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}" />
-                      <TextBlock Grid.Column="1"
-                                 Text="{Binding ParentPidText}"
-                                 VerticalAlignment="Center"
-                                 Foreground="{Binding $parent[Window].DataContext.ProcessRowSecondaryTextBrush}" />
-                      <Grid Grid.Column="2"
-                            ColumnDefinitions="Auto,24,*"
-                            Margin="{Binding Depth, Converter={x:Static converters:DepthToMarginConverter.Instance}}">
-                        <ToggleButton Grid.Column="1"
-                                      Width="22"
-                                      Height="22"
-                                      Padding="0"
-                                      Content="{Binding ExpanderGlyph}"
-                                      IsChecked="{Binding IsExpanded, Mode=TwoWay}"
-                                      IsVisible="{Binding HasChildren}" />
-                        <TextBlock Grid.Column="2"
-                                   Text="{Binding Name}"
-                                   VerticalAlignment="Center"
-                                   Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}"
-                                   TextTrimming="CharacterEllipsis" />
-                      </Grid>
-                      <TextBlock Grid.Column="3" Text="{Binding CpuText}" VerticalAlignment="Center" Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}" />
-                      <TextBlock Grid.Column="4" Text="{Binding MemoryText}" VerticalAlignment="Center" Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}" />
-                      <TextBlock Grid.Column="5" Text="{Binding DiskText}" VerticalAlignment="Center" Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}" />
-                      <TextBlock Grid.Column="6" Text="{Binding NetworkText}" VerticalAlignment="Center" Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}" />
-                      <TextBlock Grid.Column="7" Text="{Binding GpuText}" VerticalAlignment="Center" Foreground="{Binding $parent[Window].DataContext.ProcessRowSecondaryTextBrush}" />
-                    </Grid>
-                  </Border>
-                </DataTemplate>
-              </atom:ListBox.ItemTemplate>
-            </atom:ListBox>
-          </Grid>
-        </Border>
+        <views:ProcessListView x:Name="ProcessListPane"
+                               Grid.Row="0" />
 
         <Border Grid.Row="1"
                 Classes="panel"
@@ -318,7 +204,7 @@
                 CornerRadius="8"
                 Padding="14">
           <Grid RowDefinitions="Auto,*">
-            <TextBlock Text="{Binding TreemapText}"
+            <atom:TextBlock Text="{Binding TreemapText}"
                        FontSize="15"
                        FontWeight="SemiBold"
                        Margin="0,0,0,10" />
@@ -337,49 +223,69 @@
         <atom:TabControl SizeType="Small">
           <atom:TabItem Header="{Binding DetailsText}">
             <Grid Margin="14">
-              <TextBlock Text="{Binding NoProcessSelectedText}"
+              <atom:TextBlock Text="{Binding NoProcessSelectedText}"
                          IsVisible="{Binding !HasSelectedProcess}"
                          Foreground="{DynamicResource SecondaryTextBrush}"
                          HorizontalAlignment="Center"
                          VerticalAlignment="Center" />
 
               <Grid IsVisible="{Binding HasSelectedProcess}"
-                    RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*"
+                    RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*"
                     RowSpacing="10">
-                <TextBlock Text="{Binding SelectedProcess.Name}"
+                <atom:TextBlock Text="{Binding SelectedProcess.Name}"
                            FontSize="20"
                            FontWeight="SemiBold" />
-                <Grid Grid.Row="1" ColumnDefinitions="120,*">
-                  <TextBlock Text="{Binding PidText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                  <TextBlock Grid.Column="1" Text="{Binding SelectedProcess.Pid}" />
-                </Grid>
+                <Border Grid.Row="1"
+                        IsVisible="{Binding HasSelectedProcessAccessLimit}"
+                        Background="{DynamicResource PanelAltBackgroundBrush}"
+                        BorderBrush="{DynamicResource WarningBrush}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="10,8">
+                  <StackPanel Spacing="3">
+                    <atom:TextBlock Text="{Binding AccessLimitedText}"
+                               Foreground="{DynamicResource WarningBrush}"
+                               FontWeight="SemiBold" />
+                    <atom:TextBlock Text="{Binding AccessLimitedDescriptionText}"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource SecondaryTextBrush}" />
+                  </StackPanel>
+                </Border>
                 <Grid Grid.Row="2" ColumnDefinitions="120,*">
-                  <TextBlock Text="{Binding StartTimeText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                  <TextBlock Grid.Column="1" Text="{Binding SelectedProcess.StartTimeText}" TextWrapping="Wrap" />
+                  <atom:TextBlock Text="{Binding PidText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                  <atom:TextBlock Grid.Column="1" Text="{Binding SelectedProcess.Pid}" />
                 </Grid>
                 <Grid Grid.Row="3" ColumnDefinitions="120,*">
-                  <TextBlock Text="{Binding CpuText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                  <TextBlock Grid.Column="1" Text="{Binding SelectedProcess.CpuText}" />
+                  <atom:TextBlock Text="{Binding PublisherText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                  <atom:TextBlock Grid.Column="1" Text="{Binding SelectedProcess.PublisherText}" TextWrapping="Wrap" />
                 </Grid>
                 <Grid Grid.Row="4" ColumnDefinitions="120,*">
-                  <TextBlock Text="{Binding MemoryText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                  <TextBlock Grid.Column="1" Text="{Binding SelectedProcess.MemoryText}" />
+                  <atom:TextBlock Text="{Binding StartTimeText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                  <atom:TextBlock Grid.Column="1" Text="{Binding SelectedProcess.StartTimeText}" TextWrapping="Wrap" />
                 </Grid>
                 <Grid Grid.Row="5" ColumnDefinitions="120,*">
-                  <TextBlock Text="{Binding PathText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                  <TextBlock Grid.Column="1"
+                  <atom:TextBlock Text="{Binding CpuText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                  <atom:TextBlock Grid.Column="1" Text="{Binding SelectedProcess.CpuText}" />
+                </Grid>
+                <Grid Grid.Row="6" ColumnDefinitions="120,*">
+                  <atom:TextBlock Text="{Binding MemoryText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                  <atom:TextBlock Grid.Column="1" Text="{Binding SelectedProcess.MemoryText}" />
+                </Grid>
+                <Grid Grid.Row="7" ColumnDefinitions="120,*">
+                  <atom:TextBlock Text="{Binding PathText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                  <atom:TextBlock Grid.Column="1"
                              Text="{Binding SelectedProcess.ExecutablePath}"
                              TextWrapping="Wrap" />
                 </Grid>
-                <Grid Grid.Row="6" RowDefinitions="Auto,*">
-                  <TextBlock Text="{Binding CommandLineText}"
+                <Grid Grid.Row="8" RowDefinitions="Auto,*">
+                  <atom:TextBlock Text="{Binding CommandLineText}"
                              Foreground="{DynamicResource SecondaryTextBrush}"
                              Margin="0,0,0,6" />
-                  <TextBox Grid.Row="1"
-                           Text="{Binding SelectedProcess.CommandLine}"
-                           IsReadOnly="True"
-                           AcceptsReturn="True"
-                           TextWrapping="Wrap" />
+                  <atom:TextBox Grid.Row="1"
+                                Text="{Binding SelectedProcess.CommandLine}"
+                                IsReadOnly="True"
+                                AcceptsReturn="True"
+                                TextWrapping="Wrap" />
                 </Grid>
               </Grid>
             </Grid>
@@ -387,8 +293,9 @@
 
           <atom:TabItem Header="{Binding HandlesText}">
             <Grid Margin="14" RowDefinitions="Auto,*" RowSpacing="12">
-              <TextBox PlaceholderText="{Binding HandlesSearchPlaceholderText}" />
-              <TextBlock Grid.Row="1"
+              <atom:TextBox PlaceholderText="{Binding HandlesSearchPlaceholderText}"
+                            IsAllowClear="True" />
+              <atom:TextBlock Grid.Row="1"
                          Text="{Binding HandlesUnavailableText}"
                          TextWrapping="Wrap"
                          Foreground="{DynamicResource SecondaryTextBrush}" />
@@ -397,16 +304,16 @@
 
           <atom:TabItem Header="{Binding NetworkText}">
             <Grid Margin="14"
-                  RowDefinitions="Auto,Auto,Auto,*"
+                  RowDefinitions="Auto,Auto,*"
                   RowSpacing="10">
               <Grid ColumnDefinitions="*,Auto"
                     ColumnSpacing="10">
                 <StackPanel Spacing="3"
                             VerticalAlignment="Center">
-                  <TextBlock Classes="sectionTitle"
+                  <atom:TextBlock Classes="sectionTitle"
                              Text="{Binding ProcessNetworkConnectionsText}"
                              Foreground="{Binding ProcessRowPrimaryTextBrush}" />
-                  <TextBlock Classes="muted"
+                  <atom:TextBlock Classes="muted"
                              Text="{Binding SelectedProcessNetworkSummaryText}"
                              FontSize="12"
                              Foreground="{Binding ProcessRowSecondaryTextBrush}"
@@ -415,7 +322,7 @@
                 <Border Grid.Column="1"
                         Classes="metricBadge"
                         MinWidth="92">
-                  <TextBlock Text="{Binding SelectedProcessConnectionTotalText}"
+                  <atom:TextBlock Text="{Binding SelectedProcessConnectionTotalText}"
                              FontWeight="SemiBold"
                              Foreground="{Binding ProcessRowPrimaryTextBrush}"
                              HorizontalAlignment="Center" />
@@ -434,7 +341,7 @@
                             CornerRadius="4"
                             Background="{DynamicResource AccentBrush}"
                             VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="1"
+                    <atom:TextBlock Grid.Column="1"
                                Text="{Binding SelectedProcessTcpConnectionCountText}"
                                Foreground="{Binding ProcessRowPrimaryTextBrush}"
                                FontWeight="SemiBold" />
@@ -449,7 +356,7 @@
                             CornerRadius="4"
                             Background="{DynamicResource SuccessBrush}"
                             VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="1"
+                    <atom:TextBlock Grid.Column="1"
                                Text="{Binding SelectedProcessUdpConnectionCountText}"
                                Foreground="{Binding ProcessRowPrimaryTextBrush}"
                                FontWeight="SemiBold" />
@@ -457,95 +364,123 @@
                 </Border>
               </Grid>
 
-              <Border Grid.Row="2"
-                      Background="{DynamicResource PanelAltBackgroundBrush}"
-                      Padding="10,8"
-                      IsVisible="{Binding HasSelectedProcessNetworkConnections}">
-                <Grid ColumnDefinitions="68,*,*,92"
-                      ColumnSpacing="10">
-                  <TextBlock Classes="columnHeader"
-                             Text="{Binding ProtocolText}"
-                             Foreground="{Binding ProcessRowSecondaryTextBrush}" />
-                  <TextBlock Grid.Column="1"
-                             Classes="columnHeader"
-                             Text="{Binding LocalEndpointText}"
-                             Foreground="{Binding ProcessRowSecondaryTextBrush}" />
-                  <TextBlock Grid.Column="2"
-                             Classes="columnHeader"
-                             Text="{Binding RemoteEndpointText}"
-                             Foreground="{Binding ProcessRowSecondaryTextBrush}" />
-                  <TextBlock Grid.Column="3"
-                             Classes="columnHeader"
-                             Text="{Binding StateText}"
-                             Foreground="{Binding ProcessRowSecondaryTextBrush}" />
-                </Grid>
-              </Border>
-
-              <Grid Grid.Row="3">
-                <TextBlock Text="{Binding NetworkSelectProcessText}"
+              <Grid Grid.Row="2">
+                <atom:TextBlock Text="{Binding NetworkSelectProcessText}"
                            IsVisible="{Binding !HasSelectedProcess}"
                            TextWrapping="Wrap"
                            Foreground="{DynamicResource SecondaryTextBrush}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center" />
 
-                <TextBlock Text="{Binding NetworkNoConnectionsText}"
+                <atom:TextBlock Text="{Binding NetworkNoConnectionsText}"
                            IsVisible="{Binding HasSelectedProcessWithoutNetworkConnections}"
                            TextWrapping="Wrap"
                            Foreground="{DynamicResource SecondaryTextBrush}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center" />
 
-                <ScrollViewer IsVisible="{Binding HasSelectedProcessNetworkConnections}"
-                              HorizontalScrollBarVisibility="Auto"
-                              VerticalScrollBarVisibility="Auto">
-                  <ItemsControl ItemsSource="{Binding SelectedProcessNetworkConnections}">
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate x:DataType="models:ProcessNetworkConnection"
-                                    x:CompileBindings="False">
-                        <Border Padding="10,7"
-                                BorderBrush="{Binding $parent[Window].DataContext.ProcessRowDividerBrush}"
-                                BorderThickness="0,0,0,1">
-                          <Grid ColumnDefinitions="68,*,*,92"
-                                ColumnSpacing="10">
-                            <TextBlock Text="{Binding Protocol}"
-                                       FontWeight="SemiBold"
-                                       Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}"
-                                       VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding LocalEndpointText}"
-                                       TextTrimming="CharacterEllipsis"
-                                       Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}"
-                                       VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="2"
-                                       Text="{Binding RemoteEndpointText}"
-                                       TextTrimming="CharacterEllipsis"
-                                       Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}"
-                                       VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="3"
-                                       Text="{Binding State}"
-                                       TextTrimming="CharacterEllipsis"
-                                       VerticalAlignment="Center"
-                                       Foreground="{Binding $parent[Window].DataContext.ProcessRowSecondaryTextBrush}" />
-                          </Grid>
-                        </Border>
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                </ScrollViewer>
+                <atom:DataGrid ItemsSource="{Binding SelectedProcessNetworkConnections}"
+                               AutoGenerateColumns="False"
+                               CanUserReorderColumns="True"
+                               CanUserResizeColumns="True"
+                               CanUserSortColumns="True"
+                               IsReadOnly="True"
+                               IsFrameBorderVisible="False"
+                               IsVisible="{Binding HasSelectedProcessNetworkConnections}"
+                               PaginationVisibility="None"
+                               RowHeight="32"
+                               ColumnHeaderHeight="32"
+                               SizeType="Small"
+                               GridLinesVisibility="Horizontal"
+                               HorizontalScrollBarVisibility="Auto"
+                               VerticalScrollBarVisibility="Auto"
+                               Background="Transparent">
+                  <atom:DataGrid.Columns>
+                    <atom:DataGridTemplateColumn Header="{Binding ProtocolText}"
+                                                 Width="72"
+                                                 SortMemberPath="Protocol"
+                                                 CanUserSort="True"
+                                                 CanUserResize="True">
+                      <atom:DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="models:ProcessNetworkConnection" x:CompileBindings="False">
+                          <atom:TextBlock Text="{Binding Protocol}"
+                                          FontWeight="SemiBold"
+                                          Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}"
+                                          VerticalAlignment="Center" />
+                        </DataTemplate>
+                      </atom:DataGridTemplateColumn.CellTemplate>
+                    </atom:DataGridTemplateColumn>
+                    <atom:DataGridTemplateColumn Header="{Binding LocalEndpointText}"
+                                                 Width="170"
+                                                 SortMemberPath="LocalEndpointText"
+                                                 CanUserSort="True"
+                                                 CanUserResize="True">
+                      <atom:DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="models:ProcessNetworkConnection" x:CompileBindings="False">
+                          <atom:TextBlock Text="{Binding LocalEndpointText}"
+                                          TextTrimming="CharacterEllipsis"
+                                          Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}"
+                                          VerticalAlignment="Center" />
+                        </DataTemplate>
+                      </atom:DataGridTemplateColumn.CellTemplate>
+                    </atom:DataGridTemplateColumn>
+                    <atom:DataGridTemplateColumn Header="{Binding RemoteEndpointText}"
+                                                 Width="170"
+                                                 SortMemberPath="RemoteEndpointText"
+                                                 CanUserSort="True"
+                                                 CanUserResize="True">
+                      <atom:DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="models:ProcessNetworkConnection" x:CompileBindings="False">
+                          <atom:TextBlock Text="{Binding RemoteEndpointText}"
+                                          TextTrimming="CharacterEllipsis"
+                                          Foreground="{Binding $parent[Window].DataContext.ProcessRowPrimaryTextBrush}"
+                                          VerticalAlignment="Center" />
+                        </DataTemplate>
+                      </atom:DataGridTemplateColumn.CellTemplate>
+                    </atom:DataGridTemplateColumn>
+                    <atom:DataGridTemplateColumn Header="{Binding StateText}"
+                                                 Width="96"
+                                                 SortMemberPath="State"
+                                                 CanUserSort="True"
+                                                 CanUserResize="True">
+                      <atom:DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="models:ProcessNetworkConnection" x:CompileBindings="False">
+                          <atom:TextBlock Text="{Binding State}"
+                                          TextTrimming="CharacterEllipsis"
+                                          VerticalAlignment="Center"
+                                          Foreground="{Binding $parent[Window].DataContext.ProcessRowSecondaryTextBrush}" />
+                        </DataTemplate>
+                      </atom:DataGridTemplateColumn.CellTemplate>
+                    </atom:DataGridTemplateColumn>
+                    <atom:DataGridTemplateColumn Header="{Binding LastSeenText}"
+                                                 Width="126"
+                                                 SortMemberPath="Timestamp"
+                                                 CanUserSort="True"
+                                                 CanUserResize="True">
+                      <atom:DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="models:ProcessNetworkConnection" x:CompileBindings="False">
+                          <atom:TextBlock Text="{Binding TimestampText}"
+                                          TextTrimming="CharacterEllipsis"
+                                          VerticalAlignment="Center"
+                                          Foreground="{Binding $parent[Window].DataContext.ProcessRowSecondaryTextBrush}" />
+                        </DataTemplate>
+                      </atom:DataGridTemplateColumn.CellTemplate>
+                    </atom:DataGridTemplateColumn>
+                  </atom:DataGrid.Columns>
+                </atom:DataGrid>
               </Grid>
             </Grid>
           </atom:TabItem>
 
           <atom:TabItem Header="{Binding ServicesText}">
-            <TextBlock Margin="14"
+            <atom:TextBlock Margin="14"
                        Text="{Binding ServicesUnavailableText}"
                        TextWrapping="Wrap"
                        Foreground="{DynamicResource SecondaryTextBrush}" />
           </atom:TabItem>
 
           <atom:TabItem Header="{Binding StartupText}">
-            <TextBlock Margin="14"
+            <atom:TextBlock Margin="14"
                        Text="{Binding StartupUnavailableText}"
                        TextWrapping="Wrap"
                        Foreground="{DynamicResource SecondaryTextBrush}" />
@@ -554,15 +489,100 @@
       </Border>
     </Grid>
 
-    <Border Grid.Row="3"
+    <Border Grid.Row="2"
             Background="{DynamicResource PanelBackgroundBrush}"
             BorderBrush="{DynamicResource PanelBorderBrush}"
             BorderThickness="0,1,0,0"
             Padding="16,8">
-      <Grid ColumnDefinitions="*,Auto">
-        <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource SecondaryTextBrush}" />
-        <TextBlock Grid.Column="1" Text="{Binding SelectedCountText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+      <Grid ColumnDefinitions="Auto,*,Auto"
+            ColumnSpacing="10">
+        <atom:IconButton Width="26"
+                         MinWidth="26"
+                         MaxWidth="26"
+                         Height="26"
+                         MinHeight="26"
+                         MaxHeight="26"
+                         Padding="0"
+                         IconWidth="16"
+                         IconHeight="16"
+                         Icon="{antdicons:AntDesignIconProvider Kind=SettingOutlined}"
+                         Click="SettingsButton_Click"
+                         AutomationProperties.Name="{Binding SettingsText}"
+                         ToolTip.Tip="{Binding SettingsText}" />
+        <atom:TextBlock Grid.Column="1"
+                   Text="{Binding StatusMessage}"
+                   Foreground="{DynamicResource SecondaryTextBrush}"
+                   VerticalAlignment="Center" />
+        <atom:TextBlock Grid.Column="2"
+                   Text="{Binding SelectedCountText}"
+                   Foreground="{DynamicResource SecondaryTextBrush}"
+                   VerticalAlignment="Center" />
       </Grid>
+    </Border>
+
+    <Border Grid.RowSpan="3"
+            Classes="dialogMask"
+            IsVisible="{Binding IsEndProcessConfirmationVisible}">
+      <Border HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Classes="dialogCard"
+              Width="520"
+              MaxWidth="520"
+              MinHeight="236"
+              Padding="22"
+              CornerRadius="8"
+              Background="{Binding DialogSurfaceBrush}"
+              BorderBrush="{DynamicResource PanelBorderBrush}"
+              BorderThickness="1"
+              BoxShadow="0 22 48 0 #66000000">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto"
+              RowSpacing="18">
+          <Grid ColumnDefinitions="Auto,*"
+                ColumnSpacing="12">
+            <Border Classes="dialogIcon">
+              <atom:TextBlock Text="!"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         FontSize="17"
+                         FontWeight="SemiBold"
+                         Foreground="{DynamicResource WarningBrush}" />
+            </Border>
+            <atom:TextBlock Grid.Column="1"
+                       Text="{Binding EndProcessConfirmationTitleText}"
+                       FontSize="17"
+                       FontWeight="SemiBold"
+                       Foreground="{Binding ProcessRowPrimaryTextBrush}"
+                       VerticalAlignment="Center" />
+          </Grid>
+          <atom:TextBlock Grid.Row="1"
+                     Text="{Binding EndProcessConfirmationMessageText}"
+                     TextWrapping="Wrap"
+                     Foreground="{Binding ProcessRowSecondaryTextBrush}" />
+          <Border Grid.Row="2"
+                  Background="{Binding DialogInsetBrush}"
+                  BorderBrush="{DynamicResource PanelBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="6"
+                  Padding="12,10"
+                  MinHeight="76"
+                  MaxHeight="132">
+            <atom:TextBlock Text="{Binding EndProcessConfirmationProcessListText}"
+                       TextWrapping="Wrap"
+                       Foreground="{Binding ProcessRowPrimaryTextBrush}" />
+          </Border>
+          <StackPanel Grid.Row="3"
+                      Orientation="Horizontal"
+                      HorizontalAlignment="Right"
+                      Spacing="8">
+            <atom:Button Content="{Binding CancelText}"
+                         Command="{Binding CancelPendingProcessTermination}" />
+            <atom:Button Content="{Binding ConfirmText}"
+                         ButtonType="Primary"
+                         IsDanger="True"
+                         Command="{Binding ConfirmPendingProcessTermination}" />
+          </StackPanel>
+        </Grid>
+      </Border>
     </Border>
   </Grid>
 </atom:Window>

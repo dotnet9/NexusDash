@@ -1,0 +1,47 @@
+<atom:Window xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:atom="https://atomui.net"
+             xmlns:prism="http://prismlibrary.com/"
+             xmlns:regions="using:NexusDash.Regions"
+             xmlns:vm="using:NexusDash.ViewModels.Settings"
+             mc:Ignorable="d"
+             d:DesignWidth="760"
+             d:DesignHeight="560"
+             x:Class="NexusDash.SettingsWindow"
+             x:DataType="vm:SettingsWindowViewModel"
+             Title="{Binding SettingsText}"
+             Width="760"
+             Height="560"
+             MinWidth="680"
+             MinHeight="500"
+             WindowStartupLocation="CenterOwner"
+             Icon="/Assets/logo.ico"
+             TitleBarFrameBackground="{DynamicResource PanelBackgroundBrush}"
+             Background="{DynamicResource AppBackgroundBrush}"
+             Foreground="{DynamicResource PrimaryTextBrush}">
+
+  <atom:Window.Logo>
+    <Image Source="/Assets/logo.png" />
+  </atom:Window.Logo>
+
+  <atom:Window.Styles>
+    <Style Selector="Border.settingsSurface">
+      <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+    </Style>
+  </atom:Window.Styles>
+
+  <Border Classes="settingsSurface"
+          Margin="16">
+    <atom:TabControl x:Name="SettingsRegionTabs"
+                     TabStripPlacement="Left"
+                     SizeType="Middle"
+                     TabAndContentGutter="16"
+                     Background="Transparent"
+                     prism:RegionManager.RegionName="{x:Static regions:RegionNames.SettingsRegion}" />
+  </Border>
+</atom:Window>

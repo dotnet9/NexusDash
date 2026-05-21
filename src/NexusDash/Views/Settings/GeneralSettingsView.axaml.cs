@@ -1,11 +1,11 @@
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 
-namespace NexusDash.Views
+namespace NexusDash.Views.Settings
 {
-    public partial class TitleBarLeftAddOn : UserControl
+    public partial class GeneralSettingsView : UserControl
     {
-        public TitleBarLeftAddOn()
+        public GeneralSettingsView()
         {
             AvaloniaXamlLoader.Load(this);
         }

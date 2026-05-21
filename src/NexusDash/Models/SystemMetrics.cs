@@ -51,11 +51,22 @@ namespace NexusDash.Models
         public int ConnectionCount { get; set; }
     }
 
+    public enum ProcessCategory
+    {
+        Application,
+        BackgroundProcess,
+        WindowsProcess
+    }
+
     public class ProcessMetrics
     {
         public int Pid { get; set; }
         public int? ParentPid { get; set; }
         public string Name { get; set; } = "";
+        public string RawName { get; set; } = "";
+        public string? Publisher { get; set; }
+        public ProcessCategory Category { get; set; } = ProcessCategory.BackgroundProcess;
+        public byte[]? IconBytes { get; set; }
         public double CpuPercent { get; set; }
         public ulong WorkingSetBytes { get; set; }
         public double DiskReadBytesPerSecond { get; set; }

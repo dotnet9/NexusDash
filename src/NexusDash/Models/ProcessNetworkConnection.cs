@@ -25,6 +25,8 @@ namespace NexusDash.Models
 
         public string RemoteEndpointText => FormatEndpoint(RemoteAddress, RemotePort);
 
+        public string TimestampText => Timestamp.ToString("T", CultureInfo.CurrentCulture);
+
         private static string FormatEndpoint(string address, int port)
         {
             var normalizedAddress = string.IsNullOrWhiteSpace(address) ? "*" : address;

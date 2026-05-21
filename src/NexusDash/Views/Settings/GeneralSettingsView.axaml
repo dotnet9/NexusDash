@@ -1,0 +1,61 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:atom="https://atomui.net"
+             xmlns:vm="using:NexusDash.ViewModels.Settings"
+             mc:Ignorable="d"
+             d:DesignWidth="540"
+             d:DesignHeight="420"
+             x:Class="NexusDash.Views.Settings.GeneralSettingsView"
+             x:DataType="vm:GeneralSettingsViewModel">
+  <UserControl.Styles>
+    <Style Selector="Border.settingRow">
+      <Setter Property="Background" Value="{DynamicResource PanelAltBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="16,14" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid Margin="4,6,18,18"
+        RowDefinitions="Auto,Auto,*"
+        RowSpacing="12">
+    <Border Classes="settingRow">
+      <Grid ColumnDefinitions="*,Auto"
+            ColumnSpacing="16">
+        <StackPanel Spacing="4">
+          <atom:TextBlock Text="{Binding RealtimeMonitoringLabel}"
+                          FontWeight="SemiBold" />
+          <atom:TextBlock Text="{Binding RealtimeMonitoringValue}"
+                          Foreground="{DynamicResource SecondaryTextBrush}"
+                          TextWrapping="Wrap" />
+        </StackPanel>
+        <atom:ToggleSwitch Grid.Column="1"
+                           IsChecked="True"
+                           IsEnabled="False"
+                           VerticalAlignment="Center" />
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="1"
+            Classes="settingRow">
+      <Grid ColumnDefinitions="*,Auto"
+            ColumnSpacing="16">
+        <StackPanel Spacing="4">
+          <atom:TextBlock Text="{Binding RefreshCadenceLabel}"
+                          FontWeight="SemiBold" />
+          <atom:TextBlock Text="{Binding RefreshCadenceValue}"
+                          Foreground="{DynamicResource SecondaryTextBrush}"
+                          TextWrapping="Wrap" />
+        </StackPanel>
+        <atom:TextBlock Grid.Column="1"
+                        Text="1s"
+                        FontWeight="SemiBold"
+                        Foreground="{DynamicResource AccentBrush}"
+                        VerticalAlignment="Center" />
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>
