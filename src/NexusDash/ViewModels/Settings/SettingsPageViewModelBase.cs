@@ -40,9 +40,18 @@ namespace NexusDash.ViewModels.Settings
 
         protected abstract void RaiseLocalizedProperties();
 
+        protected virtual bool ShouldRefreshFromMainPropertyChanged(string? propertyName)
+        {
+            return string.IsNullOrEmpty(propertyName) ||
+                   propertyName == nameof(MainWindowViewModel.SettingsText);
+        }
+
         private void HandleMainViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            RaiseLocalizedProperties();
+            if (ShouldRefreshFromMainPropertyChanged(e.PropertyName))
+            {
+                RaiseLocalizedProperties();
+            }
         }
     }
 }

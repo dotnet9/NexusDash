@@ -40,7 +40,14 @@
                     VerticalScrollBarVisibility="Auto">
         <codewf:MarkdownViewer Markdown="{Binding Markdown}"
                                TypographyTheme="{x:Static codewf:MarkdownTypographyThemes.Simple}"
-                               TypographySize="{x:Static codewf:MarkdownTypographySizes.Small}" />
+                               TypographySize="{x:Static codewf:MarkdownTypographySizes.Small}"
+                               TextBrush="{DynamicResource PrimaryTextBrush}"
+                               MutedTextBrush="{DynamicResource SecondaryTextBrush}"
+                               BorderLineBrush="{DynamicResource PanelBorderBrush}"
+                               InlineCodeBackgroundBrush="{DynamicResource PanelBackgroundBrush}"
+                               QuoteBackgroundBrush="{DynamicResource PanelBackgroundBrush}"
+                               TableHeaderBackgroundBrush="{DynamicResource PanelBackgroundBrush}"
+                               AccentBrush="{DynamicResource AccentBrush}" />
       </ScrollViewer>
     </Border>
   </Grid>

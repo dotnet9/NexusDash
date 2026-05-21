@@ -31,7 +31,11 @@ namespace NexusDash.ViewModels.Settings
 
         private void HandleMainViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            this.RaisePropertyChanged(nameof(SettingsText));
+            if (string.IsNullOrEmpty(e.PropertyName) ||
+                e.PropertyName == nameof(MainWindowViewModel.SettingsText))
+            {
+                this.RaisePropertyChanged(nameof(SettingsText));
+            }
         }
     }
 }

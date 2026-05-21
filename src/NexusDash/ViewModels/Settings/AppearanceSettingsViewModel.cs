@@ -55,6 +55,17 @@ namespace NexusDash.ViewModels.Settings
             MainViewModel.SelectJapanese();
         }
 
+        protected override bool ShouldRefreshFromMainPropertyChanged(string? propertyName)
+        {
+            return base.ShouldRefreshFromMainPropertyChanged(propertyName) ||
+                   propertyName == nameof(MainWindowViewModel.IsDarkTheme) ||
+                   propertyName == nameof(MainWindowViewModel.IsLightTheme) ||
+                   propertyName == nameof(MainWindowViewModel.IsSimplifiedChinese) ||
+                   propertyName == nameof(MainWindowViewModel.IsTraditionalChinese) ||
+                   propertyName == nameof(MainWindowViewModel.IsEnglish) ||
+                   propertyName == nameof(MainWindowViewModel.IsJapanese);
+        }
+
         protected override void RaiseLocalizedProperties()
         {
             this.RaisePropertyChanged(nameof(Header));

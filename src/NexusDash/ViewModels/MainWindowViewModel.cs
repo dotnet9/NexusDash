@@ -87,7 +87,6 @@ namespace NexusDash.ViewModels
         private IReadOnlyList<double> _diskHistory = [];
         private IReadOnlyList<double> _networkHistory = [];
         private bool _isRefreshPaused;
-        private int _refreshIntervalSeconds = 1;
 
         public MainWindowViewModel()
             : this(EventBus.Default, new ProcessListViewModel(EventBus.Default))
@@ -102,7 +101,6 @@ namespace NexusDash.ViewModels
 
             var preferences = UserPreferencesService.Load();
             _isDarkTheme = preferences.IsDarkTheme;
-            _refreshIntervalSeconds = NormalizeRefreshIntervalSeconds(preferences.RefreshIntervalSeconds);
             Application.Current?.SetDarkThemeMode(_isDarkTheme);
             InitializeLanguageOptions();
             var unavailableText = T(NexusDashL.MetricUnavailable);
@@ -260,18 +258,6 @@ namespace NexusDash.ViewModels
             }
         }
         public bool IsRefreshRunning => !IsRefreshPaused;
-        public int RefreshIntervalSeconds
-        {
-            get => _refreshIntervalSeconds;
-            private set
-            {
-                if (SetField(ref _refreshIntervalSeconds, value, nameof(RefreshIntervalSeconds)))
-                {
-                    this.RaisePropertyChanged(nameof(RefreshIntervalText));
-                }
-            }
-        }
-        public string RefreshIntervalText => $"{RefreshIntervalSeconds}s";
         public IBrush ProcessRowPrimaryTextBrush => IsDarkTheme ? DarkProcessRowPrimaryTextBrush : LightProcessRowPrimaryTextBrush;
         public IBrush ProcessRowSecondaryTextBrush => IsDarkTheme ? DarkProcessRowSecondaryTextBrush : LightProcessRowSecondaryTextBrush;
         public IBrush ProcessRowDividerBrush => IsDarkTheme ? DarkProcessRowDividerBrush : LightProcessRowDividerBrush;
@@ -543,22 +529,6 @@ namespace NexusDash.ViewModels
             StatusMessage = T(NexusDashL.StatusRunning);
         }
 
-        public void SetRefreshIntervalSeconds(int seconds)
-        {
-            var normalizedSeconds = NormalizeRefreshIntervalSeconds(seconds);
-            if (RefreshIntervalSeconds == normalizedSeconds)
-            {
-                return;
-            }
-
-            RefreshIntervalSeconds = normalizedSeconds;
-            UserPreferencesService.Update(preferences => preferences.RefreshIntervalSeconds = normalizedSeconds);
-            StatusMessage = string.Format(
-                CultureInfo.CurrentCulture,
-                T(NexusDashL.StatusRefreshCadenceChanged),
-                RefreshIntervalText);
-        }
-
         public void SelectSimplifiedChinese()
         {
             SetLanguage("zh-CN");
@@ -732,7 +702,7 @@ namespace NexusDash.ViewModels
                         await RefreshAsync(cancellationToken);
                     }
 
-                    await Task.Delay(TimeSpan.FromSeconds(RefreshIntervalSeconds), cancellationToken);
+                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
                 }
                 catch (OperationCanceledException)
                 {
@@ -1458,7 +1428,6 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(LanguageMenuText));
             this.RaisePropertyChanged(nameof(PauseText));
             this.RaisePropertyChanged(nameof(ResumeText));
-            this.RaisePropertyChanged(nameof(RefreshIntervalText));
             this.RaisePropertyChanged(nameof(SearchPlaceholderText));
             this.RaisePropertyChanged(nameof(SearchNoResultsText));
             this.RaisePropertyChanged(nameof(EndProcessText));
@@ -1555,16 +1524,6 @@ namespace NexusDash.ViewModels
             }
 
             return "zh-CN";
-        }
-
-        private static int NormalizeRefreshIntervalSeconds(int seconds)
-        {
-            return seconds switch
-            {
-                2 => 2,
-                5 => 5,
-                _ => 1
-            };
         }
 
         private static string T(string key)

@@ -60,7 +60,6 @@
     </Style>
     <Style Selector="atom|TextBlock.metricHint">
       <Setter Property="FontSize" Value="12" />
-      <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
       <Setter Property="TextTrimming" Value="CharacterEllipsis" />
     </Style>
     <Style Selector="Border.dialogMask">
@@ -123,6 +122,7 @@
           <atom:TextBlock Grid.Row="3"
                           Classes="metricHint"
                           Text="{Binding TopCpuProcessText}"
+                          Foreground="{Binding ProcessRowSecondaryTextBrush}"
                           Margin="0,8,0,0" />
         </Grid>
       </Border>
@@ -150,6 +150,7 @@
           <atom:TextBlock Grid.Row="3"
                           Classes="metricHint"
                           Text="{Binding TopMemoryProcessText}"
+                          Foreground="{Binding ProcessRowSecondaryTextBrush}"
                           Margin="0,6,0,0" />
         </Grid>
       </Border>
@@ -173,6 +174,7 @@
                                       Stroke="{DynamicResource WarningBrush}" />
           <atom:TextBlock Grid.Row="2"
                           Classes="metricHint"
+                          Foreground="{Binding ProcessRowSecondaryTextBrush}"
                           Text="{Binding TopDiskProcessText}" />
         </Grid>
       </Border>
@@ -196,6 +198,7 @@
                                       Stroke="{DynamicResource DangerBrush}" />
           <atom:TextBlock Grid.Row="2"
                           Classes="metricHint"
+                          Foreground="{Binding ProcessRowSecondaryTextBrush}"
                           Text="{Binding TopNetworkProcessText}" />
         </Grid>
       </Border>
