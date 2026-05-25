@@ -32,6 +32,7 @@
       "Resume": "Resume",
       "EndProcess": "End process",
       "EndProcessTree": "End process tree",
+      "EndAssociatedProcesses": "End associated processes",
       "ProcessTree": "Process tree",
       "Treemap": "Treemap resource view",
       "Details": "Details",
@@ -103,8 +104,13 @@
       "Cancel": "Cancel",
       "ConfirmEndProcessTitle": "Confirm process termination",
       "ConfirmEndProcessTreeTitle": "Confirm process tree termination",
+      "ConfirmEndAssociatedProcessesTitle": "Confirm associated process termination",
       "ConfirmEndProcessMessage": "You are about to end {0} processes. Unsaved data may be lost.",
       "ConfirmEndProcessTreeMessage": "You are about to end {0} processes and their child process trees. Related work may be affected and unsaved data may be lost.",
+      "ConfirmEndAssociatedProcessesMessage": "You are about to end {0}/{1} checked associated processes. The association includes the target process, the parent process that launched it, and child process trees. Confirm this will not affect work still in use.",
+      "TerminationRelationSelected": "Target process",
+      "TerminationRelationParent": "Launcher process",
+      "TerminationRelationChild": "Child process",
       "MetricUnavailable": "N/A"
     }
   }

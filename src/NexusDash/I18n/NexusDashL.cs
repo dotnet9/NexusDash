@@ -36,6 +36,7 @@ public static class NexusDashL
     public const string Resume = "NexusDash.NexusDashL.Resume";
     public const string EndProcess = "NexusDash.NexusDashL.EndProcess";
     public const string EndProcessTree = "NexusDash.NexusDashL.EndProcessTree";
+    public const string EndAssociatedProcesses = "NexusDash.NexusDashL.EndAssociatedProcesses";
     public const string ProcessTree = "NexusDash.NexusDashL.ProcessTree";
     public const string Treemap = "NexusDash.NexusDashL.Treemap";
     public const string Details = "NexusDash.NexusDashL.Details";
@@ -107,7 +108,12 @@ public static class NexusDashL
     public const string Cancel = "NexusDash.NexusDashL.Cancel";
     public const string ConfirmEndProcessTitle = "NexusDash.NexusDashL.ConfirmEndProcessTitle";
     public const string ConfirmEndProcessTreeTitle = "NexusDash.NexusDashL.ConfirmEndProcessTreeTitle";
+    public const string ConfirmEndAssociatedProcessesTitle = "NexusDash.NexusDashL.ConfirmEndAssociatedProcessesTitle";
     public const string ConfirmEndProcessMessage = "NexusDash.NexusDashL.ConfirmEndProcessMessage";
     public const string ConfirmEndProcessTreeMessage = "NexusDash.NexusDashL.ConfirmEndProcessTreeMessage";
+    public const string ConfirmEndAssociatedProcessesMessage = "NexusDash.NexusDashL.ConfirmEndAssociatedProcessesMessage";
+    public const string TerminationRelationSelected = "NexusDash.NexusDashL.TerminationRelationSelected";
+    public const string TerminationRelationParent = "NexusDash.NexusDashL.TerminationRelationParent";
+    public const string TerminationRelationChild = "NexusDash.NexusDashL.TerminationRelationChild";
     public const string MetricUnavailable = "NexusDash.NexusDashL.MetricUnavailable";
 }

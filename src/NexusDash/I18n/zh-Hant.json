@@ -32,6 +32,7 @@
       "Resume": "繼續",
       "EndProcess": "結束程序",
       "EndProcessTree": "結束程序樹",
+      "EndAssociatedProcesses": "結束關聯程序",
       "ProcessTree": "程序樹",
       "Treemap": "Treemap 資源視圖",
       "Details": "詳情",
@@ -103,8 +104,13 @@
       "Cancel": "取消",
       "ConfirmEndProcessTitle": "確認結束程序",
       "ConfirmEndProcessTreeTitle": "確認結束程序樹",
+      "ConfirmEndAssociatedProcessesTitle": "確認結束關聯程序",
       "ConfirmEndProcessMessage": "即將結束 {0} 個程序。這個操作可能導致未儲存資料遺失。",
       "ConfirmEndProcessTreeMessage": "即將結束 {0} 個程序及其子程序樹。這個操作可能影響相關工作並導致未儲存資料遺失。",
+      "ConfirmEndAssociatedProcessesMessage": "即將結束已勾選的 {0}/{1} 個關聯程序。關聯範圍包含目標程序、啟動它的父程序和子程序樹，請確認不會影響仍在使用的工作。",
+      "TerminationRelationSelected": "目標程序",
+      "TerminationRelationParent": "啟動它的程序",
+      "TerminationRelationChild": "子程序",
       "MetricUnavailable": "不可用"
     }
   }

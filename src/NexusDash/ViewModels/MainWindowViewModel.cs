@@ -43,11 +43,26 @@ namespace NexusDash.ViewModels
         public const string ProcessColumnNetwork = "network";
         public const string ProcessColumnGpu = "gpu";
 
+        private enum ProcessTerminationRequestKind
+        {
+            Process,
+            ProcessTree,
+            Associated
+        }
+
+        private sealed record ProcessTerminationCandidateInfo(
+            ProcessRowViewModel Row,
+            string RelationText,
+            int RelationPriority,
+            int DisplayOrder,
+            int TerminationOrder);
+
         private readonly SystemMonitorService _systemMonitorService = new();
         private readonly ProcessTelemetryService _processTelemetryService = new();
         private readonly ProcessNetworkConnectionService _processNetworkConnectionService = new();
         private readonly CancellationTokenSource _refreshCancellation = new();
         private readonly IEventBus _processEventBus;
+        private readonly Task _refreshLoopTask;
         private readonly Dictionary<int, ProcessRowViewModel> _rowCache = new();
         private readonly HashSet<int> _expandedPids = new();
         private readonly HashSet<int> _collapsedPids = new();
@@ -56,12 +71,13 @@ namespace NexusDash.ViewModels
         private readonly ProcessRowViewModel _backgroundGroupRow;
         private readonly ProcessRowViewModel _windowsGroupRow;
         private readonly Dictionary<string, ProcessColumnOptionViewModel> _processColumnOptions = new(StringComparer.OrdinalIgnoreCase);
-        private IReadOnlyList<ProcessRowViewModel> _pendingTerminationRows = [];
+        private IReadOnlyList<ProcessTerminationCandidateViewModel> _pendingTerminationCandidates = [];
         private IReadOnlyList<ProcessRowViewModel> _selectedRows = [];
         private bool _isUpdatingLanguageOptions;
         private string _selectedCultureName = "zh-CN";
         private string _searchQuery = "";
         private bool _isDarkTheme = true;
+        private ProcessTerminationRequestKind _pendingTerminationKind;
         private bool _pendingTerminationEntireProcessTree;
         private bool _isEndProcessConfirmationVisible;
         private double _cpuUsage;
@@ -87,6 +103,7 @@ namespace NexusDash.ViewModels
         private IReadOnlyList<double> _diskHistory = [];
         private IReadOnlyList<double> _networkHistory = [];
         private bool _isRefreshPaused;
+        private bool _isDisposed;
 
         public MainWindowViewModel()
             : this(EventBus.Default, new ProcessListViewModel(EventBus.Default))
@@ -123,7 +140,7 @@ namespace NexusDash.ViewModels
             InitializeProcessColumnOptions(preferences);
             StatusMessage = T(NexusDashL.StatusRunning);
             PublishProcessListState();
-            _ = RefreshLoopAsync(_refreshCancellation.Token);
+            _refreshLoopTask = RefreshLoopAsync(_refreshCancellation.Token);
         }
 
         public ProcessListViewModel ProcessList { get; }
@@ -145,6 +162,7 @@ namespace NexusDash.ViewModels
         public string SearchNoResultsText => string.Format(CultureInfo.CurrentCulture, T(NexusDashL.SearchNoResults), SearchQuery.Trim());
         public string EndProcessText => T(NexusDashL.EndProcess);
         public string EndProcessTreeText => T(NexusDashL.EndProcessTree);
+        public string EndAssociatedProcessesText => T(NexusDashL.EndAssociatedProcesses);
         public string ProcessTreeText => T(NexusDashL.ProcessTree);
         public string TreemapText => T(NexusDashL.Treemap);
         public string DetailsText => T(NexusDashL.Details);
@@ -218,21 +236,35 @@ namespace NexusDash.ViewModels
             SelectedProcessUdpConnectionCount);
         public string ConfirmText => T(NexusDashL.Confirm);
         public string CancelText => T(NexusDashL.Cancel);
-        public string EndProcessConfirmationTitleText => T(_pendingTerminationEntireProcessTree
-            ? NexusDashL.ConfirmEndProcessTreeTitle
-            : NexusDashL.ConfirmEndProcessTitle);
-        public string EndProcessConfirmationMessageText => string.Format(
-            CultureInfo.CurrentCulture,
-            T(_pendingTerminationEntireProcessTree
-                ? NexusDashL.ConfirmEndProcessTreeMessage
-                : NexusDashL.ConfirmEndProcessMessage),
-            _pendingTerminationRows.Count);
+        public string EndProcessConfirmationTitleText => T(_pendingTerminationKind switch
+        {
+            ProcessTerminationRequestKind.Associated => NexusDashL.ConfirmEndAssociatedProcessesTitle,
+            ProcessTerminationRequestKind.ProcessTree => NexusDashL.ConfirmEndProcessTreeTitle,
+            _ => NexusDashL.ConfirmEndProcessTitle
+        });
+        public string EndProcessConfirmationMessageText => _pendingTerminationKind == ProcessTerminationRequestKind.Associated
+            ? string.Format(
+                CultureInfo.CurrentCulture,
+                T(NexusDashL.ConfirmEndAssociatedProcessesMessage),
+                PendingTerminationSelectedCount,
+                PendingTerminationTotalCount)
+            : string.Format(
+                CultureInfo.CurrentCulture,
+                T(_pendingTerminationEntireProcessTree
+                    ? NexusDashL.ConfirmEndProcessTreeMessage
+                    : NexusDashL.ConfirmEndProcessMessage),
+                PendingTerminationSelectedCount);
         public string EndProcessConfirmationProcessListText => string.Join(
             Environment.NewLine,
-            _pendingTerminationRows
+            _pendingTerminationCandidates
+                .Where(static candidate => candidate.IsSelected)
                 .Take(6)
-                .Select(row => $"{row.Name} ({row.Pid})")
-                .Concat(_pendingTerminationRows.Count > 6 ? [$"+{_pendingTerminationRows.Count - 6}"] : []));
+                .Select(candidate => $"{candidate.Name} ({candidate.Pid})")
+                .Concat(PendingTerminationSelectedCount > 6 ? [$"+{PendingTerminationSelectedCount - 6}"] : []));
+        public IReadOnlyList<ProcessTerminationCandidateViewModel> PendingTerminationCandidates => _pendingTerminationCandidates;
+        public int PendingTerminationSelectedCount => _pendingTerminationCandidates.Count(static candidate => candidate.IsSelected);
+        public int PendingTerminationTotalCount => _pendingTerminationCandidates.Count;
+        public bool HasSelectedPendingTerminationProcesses => PendingTerminationSelectedCount > 0;
         public bool HasSelectedProcesses => SelectedProcessCount > 0;
         public bool HasSelectedProcess => SelectedProcess is not null;
         public bool IsSearchActive => !string.IsNullOrWhiteSpace(SearchQuery);
@@ -559,20 +591,34 @@ namespace NexusDash.ViewModels
             RequestEndSelectedProcesses(entireProcessTree: true);
         }
 
+        public void EndSelectedAssociatedProcesses()
+        {
+            RequestEndSelectedProcesses(entireProcessTree: false, includeAssociatedProcesses: true);
+        }
+
         public void ConfirmPendingProcessTermination()
         {
-            var rows = _pendingTerminationRows;
+            var rows = _pendingTerminationCandidates
+                .Where(static candidate => candidate.IsSelected)
+                .OrderBy(static candidate => candidate.TerminationOrder)
+                .ThenByDescending(static candidate => candidate.Process.Depth)
+                .ThenBy(static candidate => candidate.Pid)
+                .Select(static candidate => candidate.Process)
+                .ToArray();
             var entireProcessTree = _pendingTerminationEntireProcessTree;
             IsEndProcessConfirmationVisible = false;
-            _pendingTerminationRows = [];
+            _pendingTerminationCandidates = [];
             RaiseTerminationConfirmationProperties();
-            _ = EndSelectedProcessesAsync(rows, entireProcessTree);
+            if (rows.Length > 0)
+            {
+                _ = EndSelectedProcessesAsync(rows, entireProcessTree);
+            }
         }
 
         public void CancelPendingProcessTermination()
         {
             IsEndProcessConfirmationVisible = false;
-            _pendingTerminationRows = [];
+            _pendingTerminationCandidates = [];
             RaiseTerminationConfirmationProperties();
         }
 
@@ -609,7 +655,7 @@ namespace NexusDash.ViewModels
         [EventHandler]
         private void HandleProcessTerminationRequested(ProcessTerminationRequestedCommand command)
         {
-            RequestEndSelectedProcesses(command.EntireProcessTree);
+            RequestEndSelectedProcesses(command.EntireProcessTree, command.IncludeAssociatedProcesses);
         }
 
         [EventHandler]
@@ -630,6 +676,7 @@ namespace NexusDash.ViewModels
                 SearchNoResultsText = SearchNoResultsText,
                 EndProcessText = EndProcessText,
                 EndProcessTreeText = EndProcessTreeText,
+                EndAssociatedProcessesText = EndAssociatedProcessesText,
                 PidText = PidText,
                 ParentPidText = ParentPidText,
                 ProcessNameText = ProcessNameText,
@@ -649,7 +696,7 @@ namespace NexusDash.ViewModels
             }));
         }
 
-        private void RequestEndSelectedProcesses(bool entireProcessTree)
+        private void RequestEndSelectedProcesses(bool entireProcessTree, bool includeAssociatedProcesses = false)
         {
             var rows = _selectedRows
                 .Where(static row => !row.IsGroupHeader)
@@ -662,9 +709,177 @@ namespace NexusDash.ViewModels
                 return;
             }
 
-            _pendingTerminationRows = rows;
-            _pendingTerminationEntireProcessTree = entireProcessTree;
+            var candidates = includeAssociatedProcesses
+                ? CreateAssociatedProcessTerminationCandidates(rows)
+                : CreateProcessTerminationCandidates(rows, relationText: T(NexusDashL.TerminationRelationSelected));
+            if (candidates.Length == 0)
+            {
+                return;
+            }
+
+            _pendingTerminationCandidates = candidates;
+            _pendingTerminationKind = includeAssociatedProcesses
+                ? ProcessTerminationRequestKind.Associated
+                : entireProcessTree
+                    ? ProcessTerminationRequestKind.ProcessTree
+                    : ProcessTerminationRequestKind.Process;
+            _pendingTerminationEntireProcessTree = entireProcessTree && !includeAssociatedProcesses;
             IsEndProcessConfirmationVisible = true;
+            RaiseTerminationConfirmationProperties();
+        }
+
+        private ProcessTerminationCandidateViewModel[] CreateProcessTerminationCandidates(
+            IReadOnlyList<ProcessRowViewModel> rows,
+            string relationText)
+        {
+            return rows
+                .OrderBy(static row => row.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ThenBy(static row => row.Pid)
+                .Select((row, index) => CreateTerminationCandidate(
+                    row,
+                    relationText,
+                    displayOrder: index,
+                    terminationOrder: 1000 + index))
+                .ToArray();
+        }
+
+        private ProcessTerminationCandidateViewModel[] CreateAssociatedProcessTerminationCandidates(
+            IReadOnlyList<ProcessRowViewModel> selectedRows)
+        {
+            var candidates = new Dictionary<int, ProcessTerminationCandidateInfo>();
+
+            foreach (var row in selectedRows)
+            {
+                AddTerminationCandidate(
+                    candidates,
+                    row,
+                    T(NexusDashL.TerminationRelationSelected),
+                    relationPriority: 0,
+                    displayOrder: 1000,
+                    terminationOrder: 1000 - row.Depth);
+
+                if (row.ParentPid is { } parentPid &&
+                    parentPid != row.Pid &&
+                    _rowCache.TryGetValue(parentPid, out var parent) &&
+                    !parent.IsGroupHeader &&
+                    IsPlausibleParentProcess(parent, row))
+                {
+                    AddTerminationCandidate(
+                        candidates,
+                        parent,
+                        T(NexusDashL.TerminationRelationParent),
+                        relationPriority: 1,
+                        displayOrder: 0,
+                        terminationOrder: 2000 - parent.Depth);
+                }
+
+                foreach (var child in GetProcessDescendants(row))
+                {
+                    AddTerminationCandidate(
+                        candidates,
+                        child,
+                        T(NexusDashL.TerminationRelationChild),
+                        relationPriority: 2,
+                        displayOrder: 2000,
+                        terminationOrder: 0 - child.Depth);
+                }
+            }
+
+            return candidates.Values
+                .OrderBy(static candidate => candidate.DisplayOrder)
+                .ThenBy(static candidate => candidate.Row.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ThenBy(static candidate => candidate.Row.Pid)
+                .Select(candidate => CreateTerminationCandidate(
+                    candidate.Row,
+                    candidate.RelationText,
+                    candidate.DisplayOrder,
+                    candidate.TerminationOrder))
+                .ToArray();
+        }
+
+        private static void AddTerminationCandidate(
+            IDictionary<int, ProcessTerminationCandidateInfo> candidates,
+            ProcessRowViewModel row,
+            string relationText,
+            int relationPriority,
+            int displayOrder,
+            int terminationOrder)
+        {
+            if (row.IsGroupHeader)
+            {
+                return;
+            }
+
+            if (!candidates.TryGetValue(row.Pid, out var existing) ||
+                relationPriority < existing.RelationPriority)
+            {
+                candidates[row.Pid] = new ProcessTerminationCandidateInfo(
+                    row,
+                    relationText,
+                    relationPriority,
+                    displayOrder,
+                    terminationOrder);
+            }
+        }
+
+        private ProcessTerminationCandidateViewModel CreateTerminationCandidate(
+            ProcessRowViewModel row,
+            string relationText,
+            int displayOrder,
+            int terminationOrder)
+        {
+            return new ProcessTerminationCandidateViewModel(
+                row,
+                relationText,
+                T(NexusDashL.MetricUnavailable),
+                displayOrder,
+                terminationOrder,
+                HandlePendingTerminationCandidateSelectionChanged);
+        }
+
+        private IEnumerable<ProcessRowViewModel> GetProcessDescendants(ProcessRowViewModel row)
+        {
+            var visitedPids = new HashSet<int> { row.Pid };
+            return GetProcessDescendants(row, visitedPids);
+        }
+
+        private IEnumerable<ProcessRowViewModel> GetProcessDescendants(
+            ProcessRowViewModel row,
+            ISet<int> visitedPids)
+        {
+            foreach (var child in _rowCache.Values
+                         .Where(candidate => candidate.ParentPid == row.Pid && candidate.Pid != row.Pid)
+                         .OrderBy(static candidate => candidate.Name, StringComparer.CurrentCultureIgnoreCase)
+                         .ThenBy(static candidate => candidate.Pid))
+            {
+                if (!IsPlausibleParentProcess(row, child))
+                {
+                    continue;
+                }
+
+                if (!visitedPids.Add(child.Pid))
+                {
+                    continue;
+                }
+
+                yield return child;
+
+                foreach (var descendant in GetProcessDescendants(child, visitedPids))
+                {
+                    yield return descendant;
+                }
+            }
+        }
+
+        private static bool IsPlausibleParentProcess(ProcessRowViewModel parent, ProcessRowViewModel child)
+        {
+            return parent.StartTime is not { } parentStart ||
+                   child.StartTime is not { } childStart ||
+                   parentStart <= childStart;
+        }
+
+        private void HandlePendingTerminationCandidateSelectionChanged(ProcessTerminationCandidateViewModel candidate)
+        {
             RaiseTerminationConfirmationProperties();
         }
 
@@ -693,16 +908,16 @@ namespace NexusDash.ViewModels
 
         private async Task RefreshLoopAsync(CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            while (!_isDisposed && !cancellationToken.IsCancellationRequested)
             {
                 try
                 {
                     if (!IsRefreshPaused)
                     {
-                        await RefreshAsync(cancellationToken);
+                        await RefreshAsync(cancellationToken).ConfigureAwait(false);
                     }
 
-                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -710,8 +925,19 @@ namespace NexusDash.ViewModels
                 }
                 catch (Exception exception)
                 {
-                    await Dispatcher.UIThread.InvokeAsync(() => StatusMessage = exception.Message);
-                    await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+                    if (_isDisposed || cancellationToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        if (!_isDisposed)
+                        {
+                            StatusMessage = exception.Message;
+                        }
+                    });
+                    await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken).ConfigureAwait(false);
                 }
             }
         }
@@ -721,14 +947,20 @@ namespace NexusDash.ViewModels
             var systemTask = _systemMonitorService.GetMetricsAsync();
             var processTask = _processTelemetryService.GetProcessesAsync();
             var networkConnections = GetLatestNetworkConnectionsSnapshot();
-            await Task.WhenAll(systemTask, processTask);
+            await Task.WhenAll(systemTask, processTask).ConfigureAwait(false);
 
-            if (cancellationToken.IsCancellationRequested)
+            if (_isDisposed || cancellationToken.IsCancellationRequested)
             {
                 return;
             }
 
-            await Dispatcher.UIThread.InvokeAsync(() => ApplySnapshot(systemTask.Result, processTask.Result, networkConnections));
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (!_isDisposed && !cancellationToken.IsCancellationRequested)
+                {
+                    ApplySnapshot(systemTask.Result, processTask.Result, networkConnections);
+                }
+            });
         }
 
         private IReadOnlyList<ProcessNetworkConnection> GetLatestNetworkConnectionsSnapshot()
@@ -1260,6 +1492,10 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(EndProcessConfirmationTitleText));
             this.RaisePropertyChanged(nameof(EndProcessConfirmationMessageText));
             this.RaisePropertyChanged(nameof(EndProcessConfirmationProcessListText));
+            this.RaisePropertyChanged(nameof(PendingTerminationCandidates));
+            this.RaisePropertyChanged(nameof(PendingTerminationSelectedCount));
+            this.RaisePropertyChanged(nameof(PendingTerminationTotalCount));
+            this.RaisePropertyChanged(nameof(HasSelectedPendingTerminationProcesses));
         }
 
         private void InitializeProcessColumnOptions(UserPreferences preferences)
@@ -1432,6 +1668,7 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(SearchNoResultsText));
             this.RaisePropertyChanged(nameof(EndProcessText));
             this.RaisePropertyChanged(nameof(EndProcessTreeText));
+            this.RaisePropertyChanged(nameof(EndAssociatedProcessesText));
             this.RaisePropertyChanged(nameof(ProcessTreeText));
             this.RaisePropertyChanged(nameof(TreemapText));
             this.RaisePropertyChanged(nameof(DetailsText));
@@ -1544,11 +1781,30 @@ namespace NexusDash.ViewModels
 
         public void Dispose()
         {
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            _isDisposed = true;
             _refreshCancellation.Cancel();
-            _refreshCancellation.Dispose();
             _processEventBus.Unsubscribe(this);
             ProcessList.Dispose();
             _systemMonitorService.Dispose();
+            _ = DisposeRefreshCancellationWhenIdleAsync();
+        }
+
+        private async Task DisposeRefreshCancellationWhenIdleAsync()
+        {
+            try
+            {
+                await _refreshLoopTask.ConfigureAwait(false);
+            }
+            catch
+            {
+            }
+
+            _refreshCancellation.Dispose();
         }
     }
 }

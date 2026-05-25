@@ -116,6 +116,12 @@ namespace NexusDash.Views
                 return;
             }
 
+            if (!IsCurrentProcessGridItem(process))
+            {
+                e.Handled = true;
+                return;
+            }
+
             if (process.IsGroupHeader)
             {
                 dataGrid.SelectedItems.Clear();
@@ -123,15 +129,42 @@ namespace NexusDash.Views
                 return;
             }
 
-            if (!dataGrid.SelectedItems.Contains(process))
+            if (!TrySelectProcessForContextMenu(dataGrid, process))
             {
-                dataGrid.SelectedItems.Clear();
-                dataGrid.SelectedItems.Add(process);
+                e.Handled = true;
+                return;
             }
 
-            _viewModel.SetSelectedProcesses(dataGrid.SelectedItems.OfType<ProcessRowViewModel>());
+            _viewModel.SetSelectedProcesses(dataGrid.SelectedItems
+                .OfType<ProcessRowViewModel>()
+                .Where(IsCurrentProcessGridItem));
             e.Handled = true;
             ShowProcessMenu(dataGrid);
+        }
+
+        private bool TrySelectProcessForContextMenu(DataGrid dataGrid, ProcessRowViewModel process)
+        {
+            if (dataGrid.SelectedItems.Contains(process))
+            {
+                return true;
+            }
+
+            dataGrid.SelectedItems.Clear();
+            try
+            {
+                dataGrid.SelectedItems.Add(process);
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                _viewModel?.SetSelectedProcesses([]);
+                return false;
+            }
+        }
+
+        private bool IsCurrentProcessGridItem(ProcessRowViewModel process)
+        {
+            return _viewModel?.VisibleProcesses.Contains(process) == true;
         }
 
         private void ShowProcessMenu(DataGrid dataGrid)
@@ -162,6 +195,14 @@ namespace NexusDash.Views
             };
             endTreeItem.Click += (_, _) => _viewModel.EndSelectedProcessTrees();
             menu.Items.Add(endTreeItem);
+
+            var endAssociatedItem = new AtomUI.Desktop.Controls.MenuItem
+            {
+                Header = _viewModel.EndAssociatedProcessesText,
+                IsEnabled = _viewModel.HasSelectedProcesses
+            };
+            endAssociatedItem.Click += (_, _) => _viewModel.EndSelectedAssociatedProcesses();
+            menu.Items.Add(endAssociatedItem);
 
             menu.ShowAt(dataGrid);
         }

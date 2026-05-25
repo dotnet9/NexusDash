@@ -66,9 +66,9 @@
       <Setter Property="Background" Value="#99000000" />
     </Style>
     <Style Selector="Border.dialogCard">
-      <Setter Property="Width" Value="520" />
-      <Setter Property="MaxWidth" Value="520" />
-      <Setter Property="MinHeight" Value="236" />
+      <Setter Property="Width" Value="760" />
+      <Setter Property="MaxWidth" Value="760" />
+      <Setter Property="MinHeight" Value="340" />
       <Setter Property="Padding" Value="22" />
       <Setter Property="CornerRadius" Value="8" />
       <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
@@ -572,9 +572,9 @@
       <Border HorizontalAlignment="Center"
               VerticalAlignment="Center"
               Classes="dialogCard"
-              Width="520"
-              MaxWidth="520"
-              MinHeight="236"
+              Width="760"
+              MaxWidth="760"
+              MinHeight="340"
               Padding="22"
               CornerRadius="8"
               Background="{Binding DialogSurfaceBrush}"
@@ -609,12 +609,53 @@
                   BorderBrush="{DynamicResource PanelBorderBrush}"
                   BorderThickness="1"
                   CornerRadius="6"
-                  Padding="12,10"
-                  MinHeight="76"
-                  MaxHeight="132">
-            <atom:TextBlock Text="{Binding EndProcessConfirmationProcessListText}"
-                       TextWrapping="Wrap"
-                       Foreground="{Binding ProcessRowPrimaryTextBrush}" />
+                  Padding="0"
+                  MinHeight="150"
+                  MaxHeight="300">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto">
+              <ItemsControl ItemsSource="{Binding PendingTerminationCandidates}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:ProcessTerminationCandidateViewModel"
+                                x:CompileBindings="False">
+                    <Border Padding="12,10"
+                            BorderBrush="{DynamicResource PanelBorderBrush}"
+                            BorderThickness="0,0,0,1">
+                      <Grid RowDefinitions="Auto,Auto"
+                            RowSpacing="6">
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="8">
+                          <Border CornerRadius="4"
+                                  Padding="6,2"
+                                  Background="{DynamicResource PanelAltBackgroundBrush}"
+                                  BorderBrush="{DynamicResource PanelBorderBrush}"
+                                  BorderThickness="1">
+                            <atom:TextBlock Text="{Binding RelationText}"
+                                            FontSize="12"
+                                            Foreground="{DynamicResource SecondaryTextBrush}" />
+                          </Border>
+                          <atom:CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                         Width="18"
+                                         Height="18"
+                                         MinWidth="18"
+                                         VerticalAlignment="Center" />
+                          <SelectableTextBlock Text="{Binding Name}"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryTextBrush}" />
+                          <atom:TextBlock Text="{Binding PidText}"
+                                          Foreground="{DynamicResource SecondaryTextBrush}" />
+                        </StackPanel>
+                        <SelectableTextBlock Grid.Row="1"
+                                             Text="{Binding ExecutablePathText}"
+                                             FontSize="12"
+                                             TextWrapping="NoWrap"
+                                             Foreground="{DynamicResource SecondaryTextBrush}" />
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
           </Border>
           <StackPanel Grid.Row="3"
                       Orientation="Horizontal"
@@ -625,6 +666,7 @@
             <atom:Button Content="{Binding ConfirmText}"
                          ButtonType="Primary"
                          IsDanger="True"
+                         IsEnabled="{Binding HasSelectedPendingTerminationProcesses}"
                          Command="{Binding ConfirmPendingProcessTermination}" />
           </StackPanel>
         </Grid>

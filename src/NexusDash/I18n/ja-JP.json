@@ -32,6 +32,7 @@
       "Resume": "再開",
       "EndProcess": "プロセス終了",
       "EndProcessTree": "プロセスツリー終了",
+      "EndAssociatedProcesses": "関連プロセスを終了",
       "ProcessTree": "プロセスツリー",
       "Treemap": "Treemap リソース表示",
       "Details": "詳細",
@@ -103,8 +104,13 @@
       "Cancel": "キャンセル",
       "ConfirmEndProcessTitle": "プロセス終了の確認",
       "ConfirmEndProcessTreeTitle": "プロセスツリー終了の確認",
+      "ConfirmEndAssociatedProcessesTitle": "関連プロセス終了の確認",
       "ConfirmEndProcessMessage": "{0} 個のプロセスを終了しようとしています。保存されていないデータが失われる可能性があります。",
       "ConfirmEndProcessTreeMessage": "{0} 個のプロセスとその子プロセスツリーを終了しようとしています。関連する作業に影響し、保存されていないデータが失われる可能性があります。",
+      "ConfirmEndAssociatedProcessesMessage": "チェックされた {0}/{1} 個の関連プロセスを終了しようとしています。関連範囲には対象プロセス、それを起動した親プロセス、子プロセスツリーが含まれます。使用中の作業に影響しないことを確認してください。",
+      "TerminationRelationSelected": "対象プロセス",
+      "TerminationRelationParent": "起動元プロセス",
+      "TerminationRelationChild": "子プロセス",
       "MetricUnavailable": "N/A"
     }
   }

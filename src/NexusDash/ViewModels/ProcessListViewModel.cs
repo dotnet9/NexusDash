@@ -18,6 +18,7 @@ namespace NexusDash.ViewModels
         private string _searchNoResultsText = "";
         private string _endProcessText = "";
         private string _endProcessTreeText = "";
+        private string _endAssociatedProcessesText = "";
         private string _pidText = "";
         private string _parentPidText = "";
         private string _processNameText = "";
@@ -77,6 +78,12 @@ namespace NexusDash.ViewModels
         {
             get => _endProcessTreeText;
             private set => this.RaiseAndSetIfChanged(ref _endProcessTreeText, value);
+        }
+
+        public string EndAssociatedProcessesText
+        {
+            get => _endAssociatedProcessesText;
+            private set => this.RaiseAndSetIfChanged(ref _endAssociatedProcessesText, value);
         }
 
         public string PidText
@@ -185,6 +192,13 @@ namespace NexusDash.ViewModels
             _eventBus.Publish(new ProcessTerminationRequestedCommand(entireProcessTree: true));
         }
 
+        public void EndSelectedAssociatedProcesses()
+        {
+            _eventBus.Publish(new ProcessTerminationRequestedCommand(
+                entireProcessTree: false,
+                includeAssociatedProcesses: true));
+        }
+
         public void SetSelectedProcesses(IEnumerable<ProcessRowViewModel> selectedRows)
         {
             _eventBus.Publish(new ProcessListSelectionChangedCommand(
@@ -232,6 +246,7 @@ namespace NexusDash.ViewModels
             SearchNoResultsText = state.SearchNoResultsText;
             EndProcessText = state.EndProcessText;
             EndProcessTreeText = state.EndProcessTreeText;
+            EndAssociatedProcessesText = state.EndAssociatedProcessesText;
             PidText = state.PidText;
             ParentPidText = state.ParentPidText;
             ProcessNameText = state.ProcessNameText;
