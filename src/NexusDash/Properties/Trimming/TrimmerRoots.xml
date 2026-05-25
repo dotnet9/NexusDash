@@ -1,0 +1,47 @@
+<linker>
+  <!-- XAML, localization and AtomUI/Prism theme resources use reflection/resource lookup under trimmed publish. -->
+  <assembly fullname="NexusDash" preserve="all" />
+  <assembly fullname="NexusDash.Controls" preserve="all" />
+  <assembly fullname="NexusDash.Controls.Themes" preserve="all" />
+
+  <assembly fullname="AtomUI.Controls" preserve="all" />
+  <assembly fullname="AtomUI.Controls.Shared" preserve="all" />
+  <assembly fullname="AtomUI.Core" preserve="all" />
+  <assembly fullname="AtomUI.Desktop.Controls" preserve="all" />
+  <assembly fullname="AtomUI.Desktop.Controls.DataGrid" preserve="all" />
+  <assembly fullname="AtomUI.Fonts.AlibabaSans" preserve="all" />
+  <assembly fullname="AtomUI.Icons.AntDesign" preserve="all" />
+  <assembly fullname="AtomUI.Native" preserve="all" />
+
+  <assembly fullname="Avalonia" preserve="all" />
+  <assembly fullname="Avalonia.Base" preserve="all" />
+  <assembly fullname="Avalonia.Controls" preserve="all" />
+  <assembly fullname="Avalonia.Desktop" preserve="all" />
+  <assembly fullname="Avalonia.Dialogs" preserve="all" />
+  <assembly fullname="Avalonia.FreeDesktop" preserve="all" />
+  <assembly fullname="Avalonia.HarfBuzz" preserve="all" />
+  <assembly fullname="Avalonia.Markup" preserve="all" />
+  <assembly fullname="Avalonia.Markup.Xaml" preserve="all" />
+  <assembly fullname="Avalonia.Markup.Xaml.Loader" preserve="all" />
+  <assembly fullname="Avalonia.MicroCom" preserve="all" />
+  <assembly fullname="Avalonia.Native" preserve="all" />
+  <assembly fullname="Avalonia.Remote.Protocol" preserve="all" />
+  <assembly fullname="Avalonia.Skia" preserve="all" />
+  <assembly fullname="Avalonia.Win32" preserve="all" />
+  <assembly fullname="Avalonia.X11" preserve="all" />
+
+  <assembly fullname="Lang.Avalonia" preserve="all" />
+  <assembly fullname="Lang.Avalonia.Json" preserve="all" />
+
+  <assembly fullname="CodeWF.EventBus" preserve="all" />
+  <assembly fullname="CodeWF.Markdown.Lite" preserve="all" />
+  <assembly fullname="CodeWF.Markdown.Lite.Themes" preserve="all" />
+
+  <assembly fullname="DryIoc" preserve="all" />
+  <assembly fullname="Prism" preserve="all" />
+  <assembly fullname="Prism.Avalonia" preserve="all" />
+  <assembly fullname="Prism.DryIoc.Avalonia" preserve="all" />
+  <assembly fullname="ReactiveUI" preserve="all" />
+  <assembly fullname="ReactiveUI.Avalonia" preserve="all" />
+  <assembly fullname="Splat" preserve="all" />
+</linker>
