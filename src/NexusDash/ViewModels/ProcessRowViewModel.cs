@@ -223,7 +223,9 @@ namespace NexusDash.ViewModels
             return Pid.ToString(CultureInfo.InvariantCulture).Contains(query, StringComparison.OrdinalIgnoreCase) ||
                    Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                    RawName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                   (Publisher?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false);
+                   (Publisher?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                   (ExecutablePath?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                   (CommandLine?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false);
         }
 
         private void UpdateIcon(byte[]? iconBytes)
