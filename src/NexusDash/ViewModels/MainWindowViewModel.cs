@@ -33,6 +33,10 @@ namespace NexusDash.ViewModels
         public const string ProcessColumnDisk = "disk";
         public const string ProcessColumnNetwork = "network";
         public const string ProcessColumnGpu = "gpu";
+        public const string ProcessFilterHasNetworkConnections = "hasNetworkConnections";
+        public const string ProcessFilterHighCpu = "highCpu";
+        public const string ProcessFilterUserProcesses = "userProcesses";
+        public const string ProcessFilterHideSystemProcesses = "hideSystemProcesses";
 
         private enum ProcessTerminationRequestKind
         {
@@ -72,6 +76,10 @@ namespace NexusDash.ViewModels
         private string _searchQuery = "";
         private string _processSortColumnKey = ProcessColumnName;
         private ListSortDirection _processSortDirection = ListSortDirection.Ascending;
+        private bool _filterHasNetworkConnections;
+        private bool _filterHighCpu;
+        private bool _filterUserProcesses;
+        private bool _filterHideSystemProcesses;
         private bool _isDarkTheme = true;
         private ProcessTerminationRequestKind _pendingTerminationKind;
         private bool _pendingTerminationEntireProcessTree;
@@ -168,7 +176,9 @@ namespace NexusDash.ViewModels
         public string PauseText => T(NexusDashL.Pause);
         public string ResumeText => T(NexusDashL.Resume);
         public string SearchPlaceholderText => T(NexusDashL.SearchPlaceholder);
-        public string SearchNoResultsText => string.Format(CultureInfo.CurrentCulture, T(NexusDashL.SearchNoResults), SearchQuery.Trim());
+        public string SearchNoResultsText => IsSearchActive
+            ? string.Format(CultureInfo.CurrentCulture, T(NexusDashL.SearchNoResults), SearchQuery.Trim())
+            : T(NexusDashL.FilterNoResults);
         public string EndProcessText => T(NexusDashL.EndProcess);
         public string EndProcessTreeText => T(NexusDashL.EndProcessTree);
         public string EndAssociatedProcessesText => T(NexusDashL.EndAssociatedProcesses);
@@ -193,6 +203,10 @@ namespace NexusDash.ViewModels
         public string StartTimeText => T(NexusDashL.StartTime);
         public string AccessLimitedText => T(NexusDashL.AccessLimited);
         public string AccessLimitedDescriptionText => T(NexusDashL.AccessLimitedDescription);
+        public string FilterHasNetworkConnectionsText => T(NexusDashL.FilterHasNetworkConnections);
+        public string FilterHighCpuText => T(NexusDashL.FilterHighCpu);
+        public string FilterUserProcessesText => T(NexusDashL.FilterUserProcesses);
+        public string FilterHideSystemProcessesText => T(NexusDashL.FilterHideSystemProcesses);
         public string NoProcessSelectedText => T(NexusDashL.NoProcessSelected);
         public string HandlesSearchPlaceholderText => T(NexusDashL.HandlesSearchPlaceholder);
         public string HandlesUnavailableText => T(NexusDashL.HandlesUnavailable);
@@ -280,7 +294,11 @@ namespace NexusDash.ViewModels
         public bool HasSelectedProcesses => SelectedProcessCount > 0;
         public bool HasSelectedProcess => SelectedProcess is not null;
         public bool IsSearchActive => !string.IsNullOrWhiteSpace(SearchQuery);
-        public bool HasNoVisibleProcesses => IsSearchActive && VisibleProcessCount == 0;
+        public bool IsProcessFilterActive => FilterHasNetworkConnections ||
+                                             FilterHighCpu ||
+                                             FilterUserProcesses ||
+                                             FilterHideSystemProcesses;
+        public bool HasNoVisibleProcesses => (IsSearchActive || IsProcessFilterActive) && VisibleProcessCount == 0;
         public bool HasSelectedProcessAccessLimit => SelectedProcess?.IsAccessDenied == true;
         public bool HasSelectedProcessNetworkConnections => SelectedProcessNetworkConnections.Count > 0;
         public bool HasSelectedProcessWithoutNetworkConnections => HasSelectedProcess && !HasSelectedProcessNetworkConnections;
@@ -351,6 +369,30 @@ namespace NexusDash.ViewModels
                     PublishSettingsState();
                 }
             }
+        }
+
+        public bool FilterHasNetworkConnections
+        {
+            get => _filterHasNetworkConnections;
+            private set => SetFilterField(ref _filterHasNetworkConnections, value, nameof(FilterHasNetworkConnections));
+        }
+
+        public bool FilterHighCpu
+        {
+            get => _filterHighCpu;
+            private set => SetFilterField(ref _filterHighCpu, value, nameof(FilterHighCpu));
+        }
+
+        public bool FilterUserProcesses
+        {
+            get => _filterUserProcesses;
+            private set => SetFilterField(ref _filterUserProcesses, value, nameof(FilterUserProcesses));
+        }
+
+        public bool FilterHideSystemProcesses
+        {
+            get => _filterHideSystemProcesses;
+            private set => SetFilterField(ref _filterHideSystemProcesses, value, nameof(FilterHideSystemProcesses));
         }
 
         public double CpuUsage
@@ -697,6 +739,29 @@ namespace NexusDash.ViewModels
             PublishProcessListState();
         }
 
+        public void SetProcessFilter(string key, bool isEnabled)
+        {
+            switch (key)
+            {
+                case ProcessFilterHasNetworkConnections:
+                    FilterHasNetworkConnections = isEnabled;
+                    break;
+                case ProcessFilterHighCpu:
+                    FilterHighCpu = isEnabled;
+                    break;
+                case ProcessFilterUserProcesses:
+                    FilterUserProcesses = isEnabled;
+                    break;
+                case ProcessFilterHideSystemProcesses:
+                    FilterHideSystemProcesses = isEnabled;
+                    break;
+                default:
+                    return;
+            }
+
+            RebuildVisibleProcesses();
+        }
+
         public void SetProcessSort(string columnKey)
         {
             var normalizedColumnKey = NormalizeProcessSortColumnKey(columnKey);
@@ -736,6 +801,12 @@ namespace NexusDash.ViewModels
         }
 
         [EventHandler]
+        private void HandleProcessFilterChanged(ProcessFilterChangedCommand command)
+        {
+            SetProcessFilter(command.Key, command.IsEnabled);
+        }
+
+        [EventHandler]
         private void HandleProcessSortChanged(ProcessSortChangedCommand command)
         {
             SetProcessSort(command.ColumnKey);
@@ -751,6 +822,10 @@ namespace NexusDash.ViewModels
                 SelectedProcessPid = SelectedProcess?.Pid,
                 ProcessSortColumnKey = ProcessSortColumnKey,
                 ProcessSortDirection = ProcessSortDirection,
+                FilterHasNetworkConnections = FilterHasNetworkConnections,
+                FilterHighCpu = FilterHighCpu,
+                FilterUserProcesses = FilterUserProcesses,
+                FilterHideSystemProcesses = FilterHideSystemProcesses,
                 ProcessTreeText = ProcessTreeText,
                 ProcessCountText = ProcessCountText,
                 SearchNoResultsText = SearchNoResultsText,
@@ -767,6 +842,10 @@ namespace NexusDash.ViewModels
                 NetworkColumnText = NetworkColumnText,
                 GpuText = GpuText,
                 AccessLimitedText = AccessLimitedText,
+                FilterHasNetworkConnectionsText = FilterHasNetworkConnectionsText,
+                FilterHighCpuText = FilterHighCpuText,
+                FilterUserProcessesText = FilterUserProcessesText,
+                FilterHideSystemProcessesText = FilterHideSystemProcessesText,
                 ColumnVisibilityText = ColumnVisibilityText,
                 RequiredColumnText = RequiredColumnText,
                 HasSelectedProcesses = HasSelectedProcesses,
@@ -1306,13 +1385,14 @@ namespace NexusDash.ViewModels
         {
             var visible = new List<ProcessRowViewModel>();
             var query = SearchQuery.Trim();
+            var showFlatMatches = query.Length > 0 || IsProcessFilterActive;
 
             foreach (var category in GetProcessCategoryOrder())
             {
                 var groupRow = GetGroupRow(category);
                 groupRow.Children.Clear();
 
-                if (query.Length == 0)
+                if (!showFlatMatches)
                 {
                     var roots = GetCategoryRoots(category)
                         .ToArray();
@@ -1337,7 +1417,7 @@ namespace NexusDash.ViewModels
                     var matches = new List<ProcessRowViewModel>();
                     foreach (var root in _rootRows)
                     {
-                        CollectMatchingRows(root, category, query, matches);
+                        CollectFilteredRows(root, category, query, matches);
                     }
 
                     if (matches.Count == 0)
@@ -1377,6 +1457,7 @@ namespace NexusDash.ViewModels
         private void RaiseProcessVisibilityProperties()
         {
             this.RaisePropertyChanged(nameof(IsSearchActive));
+            this.RaisePropertyChanged(nameof(IsProcessFilterActive));
             this.RaisePropertyChanged(nameof(HasNoVisibleProcesses));
             this.RaisePropertyChanged(nameof(SearchNoResultsText));
             this.RaisePropertyChanged(nameof(ProcessCountText));
@@ -1445,6 +1526,38 @@ namespace NexusDash.ViewModels
             {
                 CollectMatchingRows(child, category, query, matches);
             }
+        }
+
+        private void CollectFilteredRows(
+            ProcessRowViewModel row,
+            ProcessCategory category,
+            string query,
+            IList<ProcessRowViewModel> matches)
+        {
+            if (row.Category == category &&
+                row.Matches(query) &&
+                PassesProcessFilters(row))
+            {
+                matches.Add(row);
+            }
+
+            foreach (var child in row.Children)
+            {
+                CollectFilteredRows(child, category, query, matches);
+            }
+        }
+
+        private bool PassesProcessFilters(ProcessRowViewModel row)
+        {
+            if (row.IsGroupHeader)
+            {
+                return false;
+            }
+
+            return (!FilterHasNetworkConnections || row.NetworkConnectionCount > 0) &&
+                   (!FilterHighCpu || row.CpuPercent >= 1.0) &&
+                   (!FilterUserProcesses || row.Category == ProcessCategory.Application) &&
+                   (!FilterHideSystemProcesses || row.Category != ProcessCategory.WindowsProcess);
         }
 
         private static int CountProcessRows(IEnumerable<ProcessRowViewModel> rows, ProcessCategory category)
@@ -2045,6 +2158,10 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(StartTimeText));
             this.RaisePropertyChanged(nameof(AccessLimitedText));
             this.RaisePropertyChanged(nameof(AccessLimitedDescriptionText));
+            this.RaisePropertyChanged(nameof(FilterHasNetworkConnectionsText));
+            this.RaisePropertyChanged(nameof(FilterHighCpuText));
+            this.RaisePropertyChanged(nameof(FilterUserProcessesText));
+            this.RaisePropertyChanged(nameof(FilterHideSystemProcessesText));
             this.RaisePropertyChanged(nameof(NoProcessSelectedText));
             this.RaisePropertyChanged(nameof(HandlesSearchPlaceholderText));
             this.RaisePropertyChanged(nameof(HandlesUnavailableText));
@@ -2140,6 +2257,19 @@ namespace NexusDash.ViewModels
             }
 
             this.RaiseAndSetIfChanged(ref field, value, propertyName);
+            return true;
+        }
+
+        private bool SetFilterField(ref bool field, bool value, string propertyName)
+        {
+            if (!SetField(ref field, value, propertyName))
+            {
+                return false;
+            }
+
+            this.RaisePropertyChanged(nameof(IsProcessFilterActive));
+            this.RaisePropertyChanged(nameof(HasNoVisibleProcesses));
+            this.RaisePropertyChanged(nameof(SearchNoResultsText));
             return true;
         }
 

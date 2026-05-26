@@ -14,11 +14,37 @@
   <Border Classes="panel">
     <Grid RowDefinitions="Auto,*">
       <Grid Grid.Row="0"
-            ColumnDefinitions="*,Auto"
+            ColumnDefinitions="*,Auto,Auto"
             Margin="14,10,14,6">
         <atom:TextBlock Text="{Binding ProcessTreeText}"
                         Classes="sectionTitle" />
-        <atom:TextBlock Grid.Column="1"
+        <StackPanel Grid.Column="1"
+                    Orientation="Horizontal"
+                    Spacing="6"
+                    Margin="12,0"
+                    VerticalAlignment="Center">
+          <Border Classes="processFilterChip">
+            <atom:CheckBox Classes="processFilterCheck"
+                           Content="{Binding FilterHasNetworkConnectionsText}"
+                           IsChecked="{Binding FilterHasNetworkConnections, Mode=TwoWay}" />
+          </Border>
+          <Border Classes="processFilterChip">
+            <atom:CheckBox Classes="processFilterCheck"
+                           Content="{Binding FilterHighCpuText}"
+                           IsChecked="{Binding FilterHighCpu, Mode=TwoWay}" />
+          </Border>
+          <Border Classes="processFilterChip">
+            <atom:CheckBox Classes="processFilterCheck"
+                           Content="{Binding FilterUserProcessesText}"
+                           IsChecked="{Binding FilterUserProcesses, Mode=TwoWay}" />
+          </Border>
+          <Border Classes="processFilterChip">
+            <atom:CheckBox Classes="processFilterCheck"
+                           Content="{Binding FilterHideSystemProcessesText}"
+                           IsChecked="{Binding FilterHideSystemProcesses, Mode=TwoWay}" />
+          </Border>
+        </StackPanel>
+        <atom:TextBlock Grid.Column="2"
                         Text="{Binding ProcessCountText}"
                         Foreground="{DynamicResource SecondaryTextBrush}"
                         VerticalAlignment="Center" />

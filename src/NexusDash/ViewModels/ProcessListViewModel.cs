@@ -29,11 +29,20 @@ namespace NexusDash.ViewModels
         private string _networkColumnText = "";
         private string _gpuText = "";
         private string _accessLimitedText = "";
+        private string _filterHasNetworkConnectionsText = "";
+        private string _filterHighCpuText = "";
+        private string _filterUserProcessesText = "";
+        private string _filterHideSystemProcessesText = "";
         private string _columnVisibilityText = "";
         private string _requiredColumnText = "";
         private string _processSortColumnKey = MainWindowViewModel.ProcessColumnName;
         private ListSortDirection _processSortDirection = ListSortDirection.Ascending;
         private IReadOnlyDictionary<string, double> _processColumnWidths = new Dictionary<string, double>();
+        private bool _isApplyingState;
+        private bool _filterHasNetworkConnections;
+        private bool _filterHighCpu;
+        private bool _filterUserProcesses;
+        private bool _filterHideSystemProcesses;
         private bool _hasSelectedProcesses;
         private bool _hasNoVisibleProcesses;
 
@@ -142,6 +151,30 @@ namespace NexusDash.ViewModels
             private set => this.RaiseAndSetIfChanged(ref _accessLimitedText, value);
         }
 
+        public string FilterHasNetworkConnectionsText
+        {
+            get => _filterHasNetworkConnectionsText;
+            private set => this.RaiseAndSetIfChanged(ref _filterHasNetworkConnectionsText, value);
+        }
+
+        public string FilterHighCpuText
+        {
+            get => _filterHighCpuText;
+            private set => this.RaiseAndSetIfChanged(ref _filterHighCpuText, value);
+        }
+
+        public string FilterUserProcessesText
+        {
+            get => _filterUserProcessesText;
+            private set => this.RaiseAndSetIfChanged(ref _filterUserProcessesText, value);
+        }
+
+        public string FilterHideSystemProcessesText
+        {
+            get => _filterHideSystemProcessesText;
+            private set => this.RaiseAndSetIfChanged(ref _filterHideSystemProcessesText, value);
+        }
+
         public string ColumnVisibilityText
         {
             get => _columnVisibilityText;
@@ -170,6 +203,30 @@ namespace NexusDash.ViewModels
         {
             get => _processColumnWidths;
             private set => this.RaiseAndSetIfChanged(ref _processColumnWidths, value);
+        }
+
+        public bool FilterHasNetworkConnections
+        {
+            get => _filterHasNetworkConnections;
+            set => SetFilter(ref _filterHasNetworkConnections, value, nameof(FilterHasNetworkConnections), MainWindowViewModel.ProcessFilterHasNetworkConnections);
+        }
+
+        public bool FilterHighCpu
+        {
+            get => _filterHighCpu;
+            set => SetFilter(ref _filterHighCpu, value, nameof(FilterHighCpu), MainWindowViewModel.ProcessFilterHighCpu);
+        }
+
+        public bool FilterUserProcesses
+        {
+            get => _filterUserProcesses;
+            set => SetFilter(ref _filterUserProcesses, value, nameof(FilterUserProcesses), MainWindowViewModel.ProcessFilterUserProcesses);
+        }
+
+        public bool FilterHideSystemProcesses
+        {
+            get => _filterHideSystemProcesses;
+            set => SetFilter(ref _filterHideSystemProcesses, value, nameof(FilterHideSystemProcesses), MainWindowViewModel.ProcessFilterHideSystemProcesses);
         }
 
         public bool HasSelectedProcesses
@@ -249,14 +306,26 @@ namespace NexusDash.ViewModels
         private void ApplyState(ProcessListStateChangedCommand command)
         {
             var state = command.State;
-            _selectedProcessPid = state.SelectedProcessPid;
-            ProcessSortColumnKey = state.ProcessSortColumnKey;
-            ProcessSortDirection = state.ProcessSortDirection;
-            ProcessColumnWidths = new Dictionary<string, double>(
-                state.ProcessColumnWidths,
-                StringComparer.OrdinalIgnoreCase);
-            SyncCollection(VisibleProcesses, state.VisibleProcesses);
-            SyncCollection(ProcessColumns, state.ProcessColumns);
+            _isApplyingState = true;
+            try
+            {
+                _selectedProcessPid = state.SelectedProcessPid;
+                ProcessSortColumnKey = state.ProcessSortColumnKey;
+                ProcessSortDirection = state.ProcessSortDirection;
+                ProcessColumnWidths = new Dictionary<string, double>(
+                    state.ProcessColumnWidths,
+                    StringComparer.OrdinalIgnoreCase);
+                FilterHasNetworkConnections = state.FilterHasNetworkConnections;
+                FilterHighCpu = state.FilterHighCpu;
+                FilterUserProcesses = state.FilterUserProcesses;
+                FilterHideSystemProcesses = state.FilterHideSystemProcesses;
+                SyncCollection(VisibleProcesses, state.VisibleProcesses);
+                SyncCollection(ProcessColumns, state.ProcessColumns);
+            }
+            finally
+            {
+                _isApplyingState = false;
+            }
 
             ProcessTreeText = state.ProcessTreeText;
             ProcessCountText = state.ProcessCountText;
@@ -274,10 +343,30 @@ namespace NexusDash.ViewModels
             NetworkColumnText = state.NetworkColumnText;
             GpuText = state.GpuText;
             AccessLimitedText = state.AccessLimitedText;
+            FilterHasNetworkConnectionsText = state.FilterHasNetworkConnectionsText;
+            FilterHighCpuText = state.FilterHighCpuText;
+            FilterUserProcessesText = state.FilterUserProcessesText;
+            FilterHideSystemProcessesText = state.FilterHideSystemProcessesText;
             ColumnVisibilityText = state.ColumnVisibilityText;
             RequiredColumnText = state.RequiredColumnText;
             HasSelectedProcesses = state.HasSelectedProcesses;
             HasNoVisibleProcesses = state.HasNoVisibleProcesses;
+        }
+
+        private void SetFilter(ref bool field, bool value, string propertyName, string filterKey)
+        {
+            if (field == value)
+            {
+                return;
+            }
+
+            this.RaiseAndSetIfChanged(ref field, value, propertyName);
+            if (_isApplyingState)
+            {
+                return;
+            }
+
+            _eventBus.Publish(new ProcessFilterChangedCommand(filterKey, value));
         }
 
         private static void SyncCollection<T>(ObservableCollection<T> target, IReadOnlyList<T> source)

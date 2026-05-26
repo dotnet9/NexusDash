@@ -156,6 +156,21 @@
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
+  <Style Selector="Border.processFilterChip">
+    <Setter Property="MinHeight" Value="24" />
+    <Setter Property="Padding" Value="7,2" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Background" Value="{DynamicResource PanelAltBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="atom|CheckBox.processFilterCheck">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="MinHeight" Value="18" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
   <Style Selector="atom|RadioButton.settingOption">
     <Setter Property="MinHeight" Value="26" />
     <Setter Property="FontSize" Value="11" />

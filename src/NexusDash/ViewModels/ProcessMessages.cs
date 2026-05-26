@@ -13,6 +13,10 @@ namespace NexusDash.ViewModels
         public int? SelectedProcessPid { get; init; }
         public string ProcessSortColumnKey { get; init; } = "name";
         public ListSortDirection ProcessSortDirection { get; init; } = ListSortDirection.Ascending;
+        public bool FilterHasNetworkConnections { get; init; }
+        public bool FilterHighCpu { get; init; }
+        public bool FilterUserProcesses { get; init; }
+        public bool FilterHideSystemProcesses { get; init; }
         public string ProcessTreeText { get; init; } = "";
         public string ProcessCountText { get; init; } = "";
         public string SearchNoResultsText { get; init; } = "";
@@ -29,6 +33,10 @@ namespace NexusDash.ViewModels
         public string NetworkColumnText { get; init; } = "";
         public string GpuText { get; init; } = "";
         public string AccessLimitedText { get; init; } = "";
+        public string FilterHasNetworkConnectionsText { get; init; } = "";
+        public string FilterHighCpuText { get; init; } = "";
+        public string FilterUserProcessesText { get; init; } = "";
+        public string FilterHideSystemProcessesText { get; init; } = "";
         public string ColumnVisibilityText { get; init; } = "";
         public string RequiredColumnText { get; init; } = "";
         public bool HasSelectedProcesses { get; init; }
@@ -63,6 +71,12 @@ namespace NexusDash.ViewModels
     {
         public string Key { get; } = key;
         public double Width { get; } = width;
+    }
+
+    public sealed class ProcessFilterChangedCommand(string key, bool isEnabled) : Command
+    {
+        public string Key { get; } = key;
+        public bool IsEnabled { get; } = isEnabled;
     }
 
     public sealed class ProcessSortChangedCommand(string columnKey) : Command

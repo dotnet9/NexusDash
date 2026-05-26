@@ -23,6 +23,7 @@ public static class NexusDashL
     public const string SearchPlaceholder = "NexusDash.NexusDashL.SearchPlaceholder";
     public const string SearchResultCount = "NexusDash.NexusDashL.SearchResultCount";
     public const string SearchNoResults = "NexusDash.NexusDashL.SearchNoResults";
+    public const string FilterNoResults = "NexusDash.NexusDashL.FilterNoResults";
     public const string TopCpuProcess = "NexusDash.NexusDashL.TopCpuProcess";
     public const string TopMemoryProcess = "NexusDash.NexusDashL.TopMemoryProcess";
     public const string TopDiskProcess = "NexusDash.NexusDashL.TopDiskProcess";
@@ -58,6 +59,10 @@ public static class NexusDashL
     public const string StartTime = "NexusDash.NexusDashL.StartTime";
     public const string AccessLimited = "NexusDash.NexusDashL.AccessLimited";
     public const string AccessLimitedDescription = "NexusDash.NexusDashL.AccessLimitedDescription";
+    public const string FilterHasNetworkConnections = "NexusDash.NexusDashL.FilterHasNetworkConnections";
+    public const string FilterHighCpu = "NexusDash.NexusDashL.FilterHighCpu";
+    public const string FilterUserProcesses = "NexusDash.NexusDashL.FilterUserProcesses";
+    public const string FilterHideSystemProcesses = "NexusDash.NexusDashL.FilterHideSystemProcesses";
     public const string NoProcessSelected = "NexusDash.NexusDashL.NoProcessSelected";
     public const string HandlesSearchPlaceholder = "NexusDash.NexusDashL.HandlesSearchPlaceholder";
     public const string HandlesUnavailable = "NexusDash.NexusDashL.HandlesUnavailable";
