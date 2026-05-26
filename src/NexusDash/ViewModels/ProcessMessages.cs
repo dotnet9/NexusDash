@@ -8,6 +8,8 @@ namespace NexusDash.ViewModels
     {
         public IReadOnlyList<ProcessRowViewModel> VisibleProcesses { get; init; } = [];
         public IReadOnlyList<ProcessColumnOptionViewModel> ProcessColumns { get; init; } = [];
+        public IReadOnlyDictionary<string, double> ProcessColumnWidths { get; init; } =
+            new Dictionary<string, double>();
         public int? SelectedProcessPid { get; init; }
         public string ProcessSortColumnKey { get; init; } = "name";
         public ListSortDirection ProcessSortDirection { get; init; } = ListSortDirection.Ascending;
@@ -55,6 +57,12 @@ namespace NexusDash.ViewModels
     {
         public string Key { get; } = key;
         public bool IsVisible { get; } = isVisible;
+    }
+
+    public sealed class ProcessColumnWidthChangedCommand(string key, double width) : Command
+    {
+        public string Key { get; } = key;
+        public double Width { get; } = width;
     }
 
     public sealed class ProcessSortChangedCommand(string columnKey) : Command

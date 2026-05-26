@@ -63,6 +63,7 @@ namespace NexusDash.ViewModels
         private readonly ProcessRowViewModel _applicationGroupRow;
         private readonly ProcessRowViewModel _backgroundGroupRow;
         private readonly ProcessRowViewModel _windowsGroupRow;
+        private readonly Dictionary<string, double> _processColumnWidths = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, ProcessColumnOptionViewModel> _processColumnOptions = new(StringComparer.OrdinalIgnoreCase);
         private IReadOnlyList<ProcessTerminationCandidateViewModel> _pendingTerminationCandidates = [];
         private IReadOnlyList<ProcessRowViewModel> _selectedRows = [];
@@ -121,6 +122,7 @@ namespace NexusDash.ViewModels
 
             var preferences = _userPreferencesService.Load();
             _isDarkTheme = preferences.IsDarkTheme;
+            InitializeProcessColumnWidths(preferences);
             ApplyApplicationTheme(_isDarkTheme);
             InitializeLanguageOptions();
             var unavailableText = T(NexusDashL.MetricUnavailable);
@@ -667,6 +669,31 @@ namespace NexusDash.ViewModels
             }
         }
 
+        public void SetProcessColumnWidth(string key, double width)
+        {
+            if (!TryNormalizeProcessColumnKey(key, out var normalizedKey) ||
+                width < 32 ||
+                !double.IsFinite(width))
+            {
+                return;
+            }
+
+            width = Math.Round(width, 2);
+            if (_processColumnWidths.TryGetValue(normalizedKey, out var savedWidth) &&
+                Math.Abs(savedWidth - width) < 0.5)
+            {
+                return;
+            }
+
+            _processColumnWidths[normalizedKey] = width;
+            _userPreferencesService.Update(preferences =>
+            {
+                preferences.ProcessColumnWidths ??= new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+                preferences.ProcessColumnWidths[normalizedKey] = width;
+            });
+            PublishProcessListState();
+        }
+
         public void SetProcessSort(string columnKey)
         {
             var normalizedColumnKey = NormalizeProcessSortColumnKey(columnKey);
@@ -700,6 +727,12 @@ namespace NexusDash.ViewModels
         }
 
         [EventHandler]
+        private void HandleProcessColumnWidthChanged(ProcessColumnWidthChangedCommand command)
+        {
+            SetProcessColumnWidth(command.Key, command.Width);
+        }
+
+        [EventHandler]
         private void HandleProcessSortChanged(ProcessSortChangedCommand command)
         {
             SetProcessSort(command.ColumnKey);
@@ -711,6 +744,7 @@ namespace NexusDash.ViewModels
             {
                 VisibleProcesses = VisibleProcesses.ToArray(),
                 ProcessColumns = ProcessColumns.ToArray(),
+                ProcessColumnWidths = new Dictionary<string, double>(_processColumnWidths, StringComparer.OrdinalIgnoreCase),
                 SelectedProcessPid = SelectedProcess?.Pid,
                 ProcessSortColumnKey = ProcessSortColumnKey,
                 ProcessSortDirection = ProcessSortDirection,
@@ -1441,7 +1475,14 @@ namespace NexusDash.ViewModels
 
         private static string NormalizeProcessSortColumnKey(string? columnKey)
         {
-            return columnKey switch
+            return TryNormalizeProcessColumnKey(columnKey, out var normalizedKey)
+                ? normalizedKey
+                : ProcessColumnName;
+        }
+
+        private static bool TryNormalizeProcessColumnKey(string? columnKey, out string normalizedKey)
+        {
+            normalizedKey = columnKey switch
             {
                 ProcessColumnPid => ProcessColumnPid,
                 ProcessColumnParentPid => ProcessColumnParentPid,
@@ -1452,8 +1493,10 @@ namespace NexusDash.ViewModels
                 ProcessColumnDisk => ProcessColumnDisk,
                 ProcessColumnNetwork => ProcessColumnNetwork,
                 ProcessColumnGpu => ProcessColumnGpu,
-                _ => ProcessColumnName
+                _ => ""
             };
+
+            return normalizedKey.Length > 0;
         }
 
         private static ListSortDirection GetDefaultSortDirection(string columnKey)
@@ -1799,6 +1842,25 @@ namespace NexusDash.ViewModels
             AddProcessColumnOption(ProcessColumnDisk, DiskText, isRequired: false, visibility);
             AddProcessColumnOption(ProcessColumnNetwork, NetworkColumnText, isRequired: false, visibility);
             AddProcessColumnOption(ProcessColumnGpu, GpuText, isRequired: false, visibility);
+        }
+
+        private void InitializeProcessColumnWidths(UserPreferences preferences)
+        {
+            _processColumnWidths.Clear();
+            if (preferences.ProcessColumnWidths is null)
+            {
+                return;
+            }
+
+            foreach (var (key, width) in preferences.ProcessColumnWidths)
+            {
+                if (TryNormalizeProcessColumnKey(key, out var normalizedKey) &&
+                    width >= 32 &&
+                    double.IsFinite(width))
+                {
+                    _processColumnWidths[normalizedKey] = Math.Round(width, 2);
+                }
+            }
         }
 
         private void AddProcessColumnOption(

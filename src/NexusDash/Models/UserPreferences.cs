@@ -9,5 +9,6 @@ namespace NexusDash.Models
         public double WindowWidth { get; set; } = 1440;
         public double WindowHeight { get; set; } = 760;
         public Dictionary<string, bool> ProcessColumnVisibility { get; set; } = new();
+        public Dictionary<string, double> ProcessColumnWidths { get; set; } = new();
     }
 }

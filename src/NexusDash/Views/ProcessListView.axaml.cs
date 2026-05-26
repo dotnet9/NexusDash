@@ -16,6 +16,7 @@ namespace NexusDash.Views
     public partial class ProcessListView : UserControl
     {
         private ProcessListViewModel? _viewModel;
+        private bool _isApplyingColumnWidths;
 
         public ProcessListView()
         {
@@ -38,6 +39,10 @@ namespace NexusDash.Views
                 RoutingStrategies.Tunnel,
                 handledEventsToo: true);
             processGrid.Sorting += ProcessGrid_Sorting;
+            foreach (var column in processGrid.Columns)
+            {
+                column.PropertyChanged += HandleProcessGridColumnPropertyChanged;
+            }
         }
 
         private void AttachViewModel(ProcessListViewModel? viewModel)
@@ -71,6 +76,7 @@ namespace NexusDash.Views
 
             ApplyColumnVisibility();
             ApplyColumnHeaders();
+            ApplyColumnWidths();
         }
 
         private void ProcessGrid_SelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -281,6 +287,34 @@ namespace NexusDash.Views
             processGrid.Columns[8].IsVisible = _viewModel.IsProcessColumnVisible(MainWindowViewModel.ProcessColumnGpu);
         }
 
+        private void ApplyColumnWidths()
+        {
+            var processGrid = GetProcessGrid();
+            if (_viewModel is null || processGrid is null || _viewModel.ProcessColumnWidths.Count == 0)
+            {
+                return;
+            }
+
+            _isApplyingColumnWidths = true;
+            try
+            {
+                foreach (var column in processGrid.Columns)
+                {
+                    if (column.Tag is string columnKey &&
+                        _viewModel.ProcessColumnWidths.TryGetValue(columnKey, out var width) &&
+                        width >= 32 &&
+                        double.IsFinite(width))
+                    {
+                        column.Width = new DataGridLength(width);
+                    }
+                }
+            }
+            finally
+            {
+                _isApplyingColumnWidths = false;
+            }
+        }
+
         private void ApplyColumnHeaders()
         {
             var processGrid = GetProcessGrid();
@@ -342,6 +376,36 @@ namespace NexusDash.Views
             {
                 ApplyColumnHeaders();
             }
+
+            if (e.PropertyName == nameof(ProcessListViewModel.ProcessColumnWidths))
+            {
+                ApplyColumnWidths();
+            }
+        }
+
+        private void HandleProcessGridColumnPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        {
+            if (_viewModel is null ||
+                _isApplyingColumnWidths ||
+                e.Property != DataGridColumn.WidthProperty ||
+                sender is not DataGridColumn column ||
+                column.Tag is not string columnKey)
+            {
+                return;
+            }
+
+            var width = GetPersistableColumnWidth(column);
+            if (width >= 32 && double.IsFinite(width))
+            {
+                _viewModel.SetProcessColumnWidth(columnKey, width);
+            }
+        }
+
+        private static double GetPersistableColumnWidth(DataGridColumn column)
+        {
+            return column.Width.IsAbsolute && column.Width.Value > 0
+                ? column.Width.Value
+                : column.ActualWidth;
         }
 
         private void HandleProcessColumnsChanged(object? sender, NotifyCollectionChangedEventArgs e)

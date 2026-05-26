@@ -33,6 +33,7 @@ namespace NexusDash.ViewModels
         private string _requiredColumnText = "";
         private string _processSortColumnKey = MainWindowViewModel.ProcessColumnName;
         private ListSortDirection _processSortDirection = ListSortDirection.Ascending;
+        private IReadOnlyDictionary<string, double> _processColumnWidths = new Dictionary<string, double>();
         private bool _hasSelectedProcesses;
         private bool _hasNoVisibleProcesses;
 
@@ -165,6 +166,12 @@ namespace NexusDash.ViewModels
             private set => this.RaiseAndSetIfChanged(ref _processSortDirection, value);
         }
 
+        public IReadOnlyDictionary<string, double> ProcessColumnWidths
+        {
+            get => _processColumnWidths;
+            private set => this.RaiseAndSetIfChanged(ref _processColumnWidths, value);
+        }
+
         public bool HasSelectedProcesses
         {
             get => _hasSelectedProcesses;
@@ -217,6 +224,11 @@ namespace NexusDash.ViewModels
             _eventBus.Publish(new ProcessColumnVisibilityChangedCommand(key, isVisible));
         }
 
+        public void SetProcessColumnWidth(string key, double width)
+        {
+            _eventBus.Publish(new ProcessColumnWidthChangedCommand(key, width));
+        }
+
         public void SetProcessSort(string columnKey)
         {
             _eventBus.Publish(new ProcessSortChangedCommand(columnKey));
@@ -240,6 +252,9 @@ namespace NexusDash.ViewModels
             _selectedProcessPid = state.SelectedProcessPid;
             ProcessSortColumnKey = state.ProcessSortColumnKey;
             ProcessSortDirection = state.ProcessSortDirection;
+            ProcessColumnWidths = new Dictionary<string, double>(
+                state.ProcessColumnWidths,
+                StringComparer.OrdinalIgnoreCase);
             SyncCollection(VisibleProcesses, state.VisibleProcesses);
             SyncCollection(ProcessColumns, state.ProcessColumns);
 
