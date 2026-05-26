@@ -211,6 +211,9 @@ namespace NexusDash.ViewModels
         public string StateText => T(NexusDashL.State);
         public string LastSeenText => T(NexusDashL.LastSeen);
         public string OwnerProcessText => T(NexusDashL.OwnerProcess);
+        public string CopyLocalEndpointText => T(NexusDashL.CopyLocalEndpoint);
+        public string CopyRemoteEndpointText => T(NexusDashL.CopyRemoteEndpoint);
+        public string CopyConnectionInfoText => T(NexusDashL.CopyConnectionInfo);
         public string ColumnVisibilityText => T(NexusDashL.ColumnVisibility);
         public string RequiredColumnText => T(NexusDashL.RequiredColumn);
         public string ProcessCountText => IsSearchActive
@@ -2060,6 +2063,9 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(StateText));
             this.RaisePropertyChanged(nameof(LastSeenText));
             this.RaisePropertyChanged(nameof(OwnerProcessText));
+            this.RaisePropertyChanged(nameof(CopyLocalEndpointText));
+            this.RaisePropertyChanged(nameof(CopyRemoteEndpointText));
+            this.RaisePropertyChanged(nameof(CopyConnectionInfoText));
             this.RaisePropertyChanged(nameof(ColumnVisibilityText));
             this.RaisePropertyChanged(nameof(RequiredColumnText));
             this.RaisePropertyChanged(nameof(ProcessCountText));

@@ -306,7 +306,8 @@
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center" />
 
-                <atom:DataGrid ItemsSource="{Binding SelectedProcessNetworkConnections}"
+                <atom:DataGrid x:Name="NetworkConnectionsGrid"
+                               ItemsSource="{Binding SelectedProcessNetworkConnections}"
                                Classes="compactDataGrid"
                                AutoGenerateColumns="False"
                                CanUserReorderColumns="True"
@@ -319,6 +320,7 @@
                                GridLinesVisibility="Horizontal"
                                HorizontalScrollBarVisibility="Auto"
                                VerticalScrollBarVisibility="Auto"
+                               PointerPressed="NetworkConnectionsGrid_PointerPressed"
                                Background="Transparent">
                   <atom:DataGrid.Columns>
                     <atom:DataGridTemplateColumn Header="{Binding ProtocolText}"

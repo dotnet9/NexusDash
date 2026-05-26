@@ -80,6 +80,9 @@ public static class NexusDashL
     public const string State = "NexusDash.NexusDashL.State";
     public const string LastSeen = "NexusDash.NexusDashL.LastSeen";
     public const string OwnerProcess = "NexusDash.NexusDashL.OwnerProcess";
+    public const string CopyLocalEndpoint = "NexusDash.NexusDashL.CopyLocalEndpoint";
+    public const string CopyRemoteEndpoint = "NexusDash.NexusDashL.CopyRemoteEndpoint";
+    public const string CopyConnectionInfo = "NexusDash.NexusDashL.CopyConnectionInfo";
     public const string ColumnVisibility = "NexusDash.NexusDashL.ColumnVisibility";
     public const string RequiredColumn = "NexusDash.NexusDashL.RequiredColumn";
     public const string SettingsAppearance = "NexusDash.NexusDashL.SettingsAppearance";
