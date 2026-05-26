@@ -1,22 +1,30 @@
 using Lang.Avalonia;
-using NexusDash.ViewModels;
+using CodeWF.EventBus;
+using NexusDash.Services;
 using ReactiveUI;
 using System;
-using System.ComponentModel;
 
 namespace NexusDash.ViewModels.Settings
 {
     public abstract class SettingsPageViewModelBase : ReactiveObject, IDisposable
     {
+        private readonly IEventBus _eventBus;
         private bool _isDisposed;
+        private bool _isDarkTheme = true;
+        private string _cultureName = "zh-CN";
 
-        protected SettingsPageViewModelBase(MainWindowViewModel mainViewModel)
+        protected SettingsPageViewModelBase(IEventBus eventBus, IUserPreferencesService userPreferencesService)
         {
-            MainViewModel = mainViewModel;
-            MainViewModel.PropertyChanged += HandleMainViewModelPropertyChanged;
+            _eventBus = eventBus;
+            var preferences = userPreferencesService.Load();
+            _isDarkTheme = preferences.IsDarkTheme;
+            _cultureName = preferences.CultureName;
+            _eventBus.Subscribe(this);
         }
 
-        protected MainWindowViewModel MainViewModel { get; }
+        protected IEventBus EventBus => _eventBus;
+        protected bool IsDarkThemeState => _isDarkTheme;
+        protected string CultureNameState => _cultureName;
 
         public abstract string Header { get; }
 
@@ -29,7 +37,7 @@ namespace NexusDash.ViewModels.Settings
                 return;
             }
 
-            MainViewModel.PropertyChanged -= HandleMainViewModelPropertyChanged;
+            _eventBus.Unsubscribe(this);
             _isDisposed = true;
         }
 
@@ -40,18 +48,12 @@ namespace NexusDash.ViewModels.Settings
 
         protected abstract void RaiseLocalizedProperties();
 
-        protected virtual bool ShouldRefreshFromMainPropertyChanged(string? propertyName)
+        [EventHandler]
+        private void ApplySettingsState(SettingsStateChangedCommand command)
         {
-            return string.IsNullOrEmpty(propertyName) ||
-                   propertyName == nameof(MainWindowViewModel.SettingsText);
-        }
-
-        private void HandleMainViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (ShouldRefreshFromMainPropertyChanged(e.PropertyName))
-            {
-                RaiseLocalizedProperties();
-            }
+            _isDarkTheme = command.IsDarkTheme;
+            _cultureName = command.CultureName;
+            RaiseLocalizedProperties();
         }
     }
 }

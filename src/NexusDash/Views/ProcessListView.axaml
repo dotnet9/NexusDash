@@ -11,40 +11,22 @@
              d:DesignHeight="420"
              x:Class="NexusDash.Views.ProcessListView"
              x:DataType="vm:ProcessListViewModel">
-  <UserControl.Styles>
-    <Style Selector="Border.panel">
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="8" />
-      <Setter Property="BoxShadow" Value="0 8 22 0 #14000000" />
-    </Style>
-    <Style Selector="antdicons|AppstoreOutlined.processCategoryIcon,
-                     antdicons|CloudServerOutlined.processCategoryIcon,
-                     antdicons|WindowsOutlined.processCategoryIcon">
-      <Setter Property="Width" Value="16" />
-      <Setter Property="Height" Value="16" />
-      <Setter Property="StrokeBrush" Value="{DynamicResource SecondaryTextBrush}" />
-    </Style>
-  </UserControl.Styles>
-
-  <Border Classes="panel"
-          Background="{DynamicResource PanelBackgroundBrush}"
-          BorderBrush="{DynamicResource PanelBorderBrush}"
-          BorderThickness="1"
-          CornerRadius="8">
+  <Border Classes="panel">
     <Grid RowDefinitions="Auto,*">
       <Grid Grid.Row="0"
             ColumnDefinitions="*,Auto"
-            Margin="14,12,14,8">
+            Margin="14,10,14,6">
         <atom:TextBlock Text="{Binding ProcessTreeText}"
-                        FontSize="16"
-                        FontWeight="SemiBold" />
+                        Classes="sectionTitle" />
         <atom:TextBlock Grid.Column="1"
                         Text="{Binding ProcessCountText}"
-                        Foreground="{DynamicResource SecondaryTextBrush}" />
+                        Foreground="{DynamicResource SecondaryTextBrush}"
+                        VerticalAlignment="Center" />
       </Grid>
 
       <Grid Grid.Row="1">
         <atom:DataGrid x:Name="ProcessGrid"
+                       Classes="compactDataGrid"
                        ItemsSource="{Binding VisibleProcesses}"
                        AutoGenerateColumns="False"
                        CanUserReorderColumns="True"
@@ -57,67 +39,64 @@
                        SelectionMode="Extended"
                        SelectTriggerType="Cell"
                        SelectionChanged="ProcessGrid_SelectionChanged"
-                       RowHeight="34"
-                       ColumnHeaderHeight="34"
-                       SizeType="Small"
                        GridLinesVisibility="Horizontal"
                        HorizontalScrollBarVisibility="Auto"
                        VerticalScrollBarVisibility="Auto"
                        Background="Transparent">
           <atom:DataGrid.Columns>
             <atom:DataGridTemplateColumn Header="{Binding PidText}"
-                                         Width="82"
+                                         Width="74"
                                          CanUserSort="False"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
                   <atom:TextBlock Text="{Binding PidCellText}"
-                                  Foreground="{Binding $parent[UserControl].DataContext.ProcessRowPrimaryTextBrush}"
+                                  Foreground="{DynamicResource PrimaryTextBrush}"
                                   VerticalAlignment="Center" />
                 </DataTemplate>
               </atom:DataGridTemplateColumn.CellTemplate>
             </atom:DataGridTemplateColumn>
 
             <atom:DataGridTemplateColumn Header="{Binding ParentPidText}"
-                                         Width="92"
+                                         Width="84"
                                          CanUserSort="False"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
                   <atom:TextBlock Text="{Binding ParentPidText}"
-                                  Foreground="{Binding $parent[UserControl].DataContext.ProcessRowSecondaryTextBrush}"
+                                  Foreground="{DynamicResource SecondaryTextBrush}"
                                   VerticalAlignment="Center" />
                 </DataTemplate>
               </atom:DataGridTemplateColumn.CellTemplate>
             </atom:DataGridTemplateColumn>
 
             <atom:DataGridTemplateColumn Header="{Binding ProcessNameText}"
-                                         Width="2*"
-                                         MinWidth="220"
+                                         Width="2.2*"
+                                         MinWidth="310"
                                          CanUserSort="False"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
-                  <Grid ColumnDefinitions="Auto,24,24,*,Auto"
+                  <Grid ColumnDefinitions="Auto,20,20,*,Auto"
                         Margin="{Binding DisplayDepth, Converter={x:Static converters:DepthToMarginConverter.Instance}}">
                     <atom:Button Grid.Column="1"
-                                 Width="22"
-                                 Height="22"
+                                 Width="18"
+                                 Height="18"
                                  Padding="0"
                                  ButtonType="Text"
                                  Content="{Binding ExpanderGlyph}"
                                  Command="{Binding ToggleExpanded}"
                                  IsVisible="{Binding HasChildren}" />
                     <Grid Grid.Column="2"
-                          Width="20"
-                          Height="20"
+                          Width="18"
+                          Height="18"
                           VerticalAlignment="Center">
                       <Image Source="{Binding Icon}"
-                             Width="18"
-                             Height="18"
+                             Width="16"
+                             Height="16"
                              Stretch="Uniform"
                              IsVisible="{Binding HasIcon}" />
                       <antdicons:AppstoreOutlined Classes="processCategoryIcon"
@@ -137,95 +116,93 @@
                                     Text="{Binding Name}"
                                     VerticalAlignment="Center"
                                     FontWeight="{Binding NameFontWeight}"
-                                    Foreground="{Binding $parent[UserControl].DataContext.ProcessRowPrimaryTextBrush}"
+                                    Foreground="{DynamicResource PrimaryTextBrush}"
                                     TextTrimming="CharacterEllipsis" />
                     <atom:TextBlock Grid.Column="4"
                                     Text="{Binding $parent[UserControl].DataContext.AccessLimitedText}"
                                     IsVisible="{Binding IsAccessDenied}"
                                     Margin="8,0,0,0"
-                                    FontSize="11"
-                                    VerticalAlignment="Center"
-                                    Foreground="{DynamicResource WarningBrush}" />
+                                    Classes="processAccessBadge" />
                   </Grid>
                 </DataTemplate>
               </atom:DataGridTemplateColumn.CellTemplate>
             </atom:DataGridTemplateColumn>
 
             <atom:DataGridTemplateColumn Header="{Binding PublisherText}"
-                                         Width="160"
+                                         Width="138"
                                          CanUserSort="False"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
                   <atom:TextBlock Text="{Binding PublisherText}"
-                                  Foreground="{Binding $parent[UserControl].DataContext.ProcessRowSecondaryTextBrush}"
+                                  Foreground="{DynamicResource SecondaryTextBrush}"
                                   TextTrimming="CharacterEllipsis" />
                 </DataTemplate>
               </atom:DataGridTemplateColumn.CellTemplate>
             </atom:DataGridTemplateColumn>
 
             <atom:DataGridTemplateColumn Header="{Binding CpuText}"
-                                         Width="82"
+                                         Width="68"
                                          CanUserSort="False"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
                   <atom:TextBlock Text="{Binding CpuText}"
-                                  Foreground="{Binding $parent[UserControl].DataContext.ProcessRowPrimaryTextBrush}" />
+                                  Foreground="{DynamicResource PrimaryTextBrush}" />
                 </DataTemplate>
               </atom:DataGridTemplateColumn.CellTemplate>
             </atom:DataGridTemplateColumn>
 
             <atom:DataGridTemplateColumn Header="{Binding MemoryText}"
-                                         Width="112"
+                                         Width="98"
                                          CanUserSort="False"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
                   <atom:TextBlock Text="{Binding MemoryText}"
-                                  Foreground="{Binding $parent[UserControl].DataContext.ProcessRowPrimaryTextBrush}" />
+                                  Foreground="{DynamicResource PrimaryTextBrush}" />
                 </DataTemplate>
               </atom:DataGridTemplateColumn.CellTemplate>
             </atom:DataGridTemplateColumn>
 
             <atom:DataGridTemplateColumn Header="{Binding DiskText}"
-                                         Width="112"
+                                         Width="108"
                                          CanUserSort="False"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
                   <atom:TextBlock Text="{Binding DiskText}"
-                                  Foreground="{Binding $parent[UserControl].DataContext.ProcessRowPrimaryTextBrush}" />
+                                  Foreground="{DynamicResource PrimaryTextBrush}" />
                 </DataTemplate>
               </atom:DataGridTemplateColumn.CellTemplate>
             </atom:DataGridTemplateColumn>
 
             <atom:DataGridTemplateColumn Header="{Binding NetworkColumnText}"
-                                         Width="102"
+                                         Width="98"
                                          CanUserSort="False"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
                   <atom:TextBlock Text="{Binding NetworkText}"
-                                  Foreground="{Binding $parent[UserControl].DataContext.ProcessRowPrimaryTextBrush}" />
+                                  Foreground="{DynamicResource PrimaryTextBrush}" />
                 </DataTemplate>
               </atom:DataGridTemplateColumn.CellTemplate>
             </atom:DataGridTemplateColumn>
 
             <atom:DataGridTemplateColumn Header="{Binding GpuText}"
-                                         Width="82"
+                                         Width="64"
                                          CanUserSort="False"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
                   <atom:TextBlock Text="{Binding GpuText}"
-                                  Foreground="{Binding $parent[UserControl].DataContext.ProcessRowSecondaryTextBrush}" />
+                                  Foreground="{DynamicResource SecondaryTextBrush}" />
                 </DataTemplate>
               </atom:DataGridTemplateColumn.CellTemplate>
             </atom:DataGridTemplateColumn>

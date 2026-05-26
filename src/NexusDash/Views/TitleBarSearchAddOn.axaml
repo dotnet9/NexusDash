@@ -7,22 +7,16 @@
              x:DataType="vm:MainWindowViewModel"
              Height="38">
 
-  <Design.DataContext>
-    <vm:MainWindowViewModel />
-  </Design.DataContext>
-
   <Grid HorizontalAlignment="Stretch"
         VerticalAlignment="Center"
-        Margin="16,0,120,0">
-    <atom:LineEdit Width="560"
-                   Height="30"
+        Margin="12,0,128,0">
+    <atom:LineEdit Classes="titleBarSearch"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
                    PlaceholderText="{Binding SearchPlaceholderText}"
                    InnerLeftContent="{antdicons:AntDesignIconProvider SearchOutlined}"
                    Text="{Binding SearchQuery, Mode=TwoWay}"
                    IsAllowClear="True"
-                   StyleVariant="Filled"
-                   FontSize="12" />
+                   StyleVariant="Filled" />
   </Grid>
 </UserControl>

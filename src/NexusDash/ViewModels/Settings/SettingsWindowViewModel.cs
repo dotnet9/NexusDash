@@ -1,22 +1,23 @@
-using NexusDash.ViewModels;
+using CodeWF.EventBus;
+using NexusDash;
 using ReactiveUI;
 using System;
-using System.ComponentModel;
+using Lang.Avalonia;
 
 namespace NexusDash.ViewModels.Settings
 {
     public sealed class SettingsWindowViewModel : ReactiveObject, IDisposable
     {
-        private readonly MainWindowViewModel _mainViewModel;
+        private readonly IEventBus _eventBus;
         private bool _isDisposed;
 
-        public SettingsWindowViewModel(MainWindowViewModel mainViewModel)
+        public SettingsWindowViewModel(IEventBus eventBus)
         {
-            _mainViewModel = mainViewModel;
-            _mainViewModel.PropertyChanged += HandleMainViewModelPropertyChanged;
+            _eventBus = eventBus;
+            _eventBus.Subscribe(this);
         }
 
-        public string SettingsText => _mainViewModel.SettingsText;
+        public string SettingsText => I18nManager.Instance.GetResource(NexusDashL.Settings) ?? NexusDashL.Settings;
 
         public void Dispose()
         {
@@ -25,17 +26,14 @@ namespace NexusDash.ViewModels.Settings
                 return;
             }
 
-            _mainViewModel.PropertyChanged -= HandleMainViewModelPropertyChanged;
+            _eventBus.Unsubscribe(this);
             _isDisposed = true;
         }
 
-        private void HandleMainViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        [EventHandler]
+        private void ApplySettingsState(SettingsStateChangedCommand command)
         {
-            if (string.IsNullOrEmpty(e.PropertyName) ||
-                e.PropertyName == nameof(MainWindowViewModel.SettingsText))
-            {
-                this.RaisePropertyChanged(nameof(SettingsText));
-            }
+            this.RaisePropertyChanged(nameof(SettingsText));
         }
     }
 }

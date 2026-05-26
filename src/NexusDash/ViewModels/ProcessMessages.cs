@@ -1,4 +1,3 @@
-using Avalonia.Media;
 using CodeWF.EventBus;
 using System.Collections.Generic;
 
@@ -29,8 +28,6 @@ namespace NexusDash.ViewModels
         public string RequiredColumnText { get; init; } = "";
         public bool HasSelectedProcesses { get; init; }
         public bool HasNoVisibleProcesses { get; init; }
-        public IBrush? ProcessRowPrimaryTextBrush { get; init; }
-        public IBrush? ProcessRowSecondaryTextBrush { get; init; }
     }
 
     public sealed class ProcessListStateChangedCommand(ProcessListState state) : Command

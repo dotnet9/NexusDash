@@ -1,5 +1,6 @@
 using NexusDash;
-using NexusDash.ViewModels;
+using CodeWF.EventBus;
+using NexusDash.Services;
 using ReactiveUI;
 using System;
 using System.Globalization;
@@ -9,7 +10,10 @@ using System.Reflection;
 
 namespace NexusDash.ViewModels.Settings
 {
-    public sealed class AboutSettingsViewModel(MainWindowViewModel mainViewModel) : SettingsPageViewModelBase(mainViewModel)
+    public sealed class AboutSettingsViewModel(
+        IEventBus eventBus,
+        IUserPreferencesService userPreferencesService)
+        : SettingsPageViewModelBase(eventBus, userPreferencesService)
     {
         private static readonly Assembly AppAssembly = typeof(AboutSettingsViewModel).Assembly;
 

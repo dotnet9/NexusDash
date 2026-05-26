@@ -6,6 +6,15 @@ namespace NexusDash.Controls
 {
     public partial class CpuCoreControl : UserControl
     {
+        private const double ElevatedUsageThreshold = 50;
+        private const double WarningUsageThreshold = 80;
+        private const double WarningOverlayOpacity = 0.3;
+
+        private static readonly IBrush NormalCoreBrush = new SolidColorBrush(Color.Parse("#007acc"));
+        private static readonly IBrush NormalInnerRingBrush = new SolidColorBrush(Color.Parse("#4ec9b0"));
+        private static readonly IBrush ElevatedBrush = new SolidColorBrush(Color.Parse("#d7ba7d"));
+        private static readonly IBrush WarningBrush = new SolidColorBrush(Color.Parse("#f14c4c"));
+
         public static readonly StyledProperty<double> CpuUsageProperty =
             AvaloniaProperty.Register<CpuCoreControl, double>(nameof(CpuUsage));
 
@@ -16,13 +25,13 @@ namespace NexusDash.Controls
             AvaloniaProperty.Register<CpuCoreControl, double>(nameof(InnerRingSize), 140.0);
 
         public static readonly StyledProperty<IBrush> CoreColorProperty =
-            AvaloniaProperty.Register<CpuCoreControl, IBrush>(nameof(CoreColor), new SolidColorBrush(Color.Parse("#007acc")));
+            AvaloniaProperty.Register<CpuCoreControl, IBrush>(nameof(CoreColor), NormalCoreBrush);
 
         public static readonly StyledProperty<IBrush> GlowColorProperty =
-            AvaloniaProperty.Register<CpuCoreControl, IBrush>(nameof(GlowColor), new SolidColorBrush(Color.Parse("#007acc")));
+            AvaloniaProperty.Register<CpuCoreControl, IBrush>(nameof(GlowColor), NormalCoreBrush);
 
         public static readonly StyledProperty<IBrush> InnerRingColorProperty =
-            AvaloniaProperty.Register<CpuCoreControl, IBrush>(nameof(InnerRingColor), new SolidColorBrush(Color.Parse("#4ec9b0")));
+            AvaloniaProperty.Register<CpuCoreControl, IBrush>(nameof(InnerRingColor), NormalInnerRingBrush);
 
         public static readonly StyledProperty<IBrush> TextColorProperty =
             AvaloniaProperty.Register<CpuCoreControl, IBrush>(nameof(TextColor), Brushes.White);
@@ -104,29 +113,29 @@ namespace NexusDash.Controls
 
         private void UpdateVisualState()
         {
-            if (CpuUsage < 50)
+            if (CpuUsage < ElevatedUsageThreshold)
             {
-                CoreColor = new SolidColorBrush(Color.Parse("#007acc"));
-                GlowColor = new SolidColorBrush(Color.Parse("#007acc"));
-                InnerRingColor = new SolidColorBrush(Color.Parse("#4ec9b0"));
+                CoreColor = NormalCoreBrush;
+                GlowColor = NormalCoreBrush;
+                InnerRingColor = NormalInnerRingBrush;
                 IsWarning = false;
                 WarningOpacity = 0;
             }
-            else if (CpuUsage < 80)
+            else if (CpuUsage < WarningUsageThreshold)
             {
-                CoreColor = new SolidColorBrush(Color.Parse("#d7ba7d"));
-                GlowColor = new SolidColorBrush(Color.Parse("#d7ba7d"));
-                InnerRingColor = new SolidColorBrush(Color.Parse("#d7ba7d"));
+                CoreColor = ElevatedBrush;
+                GlowColor = ElevatedBrush;
+                InnerRingColor = ElevatedBrush;
                 IsWarning = false;
                 WarningOpacity = 0;
             }
             else
             {
-                CoreColor = new SolidColorBrush(Color.Parse("#f14c4c"));
-                GlowColor = new SolidColorBrush(Color.Parse("#f14c4c"));
-                InnerRingColor = new SolidColorBrush(Color.Parse("#f14c4c"));
+                CoreColor = WarningBrush;
+                GlowColor = WarningBrush;
+                InnerRingColor = WarningBrush;
                 IsWarning = true;
-                WarningOpacity = 0.3;
+                WarningOpacity = WarningOverlayOpacity;
             }
         }
     }

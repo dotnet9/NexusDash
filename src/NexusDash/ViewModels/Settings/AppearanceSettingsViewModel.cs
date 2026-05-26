@@ -1,11 +1,14 @@
 using NexusDash;
-using NexusDash.ViewModels;
+using CodeWF.EventBus;
+using NexusDash.Services;
 using ReactiveUI;
-using System.Collections.ObjectModel;
 
 namespace NexusDash.ViewModels.Settings
 {
-    public sealed class AppearanceSettingsViewModel(MainWindowViewModel mainViewModel) : SettingsPageViewModelBase(mainViewModel)
+    public sealed class AppearanceSettingsViewModel(
+        IEventBus eventBus,
+        IUserPreferencesService userPreferencesService)
+        : SettingsPageViewModelBase(eventBus, userPreferencesService)
     {
         public override string Header => T(NexusDashL.SettingsAppearance);
         public override int Order => 10;
@@ -17,53 +20,41 @@ namespace NexusDash.ViewModels.Settings
         public string TraditionalChineseText => T(NexusDashL.TraditionalChinese);
         public string EnglishText => T(NexusDashL.English);
         public string JapaneseText => T(NexusDashL.Japanese);
-        public ObservableCollection<LanguageOption> Languages => MainViewModel.Languages;
-        public bool IsDarkTheme => MainViewModel.IsDarkTheme;
-        public bool IsLightTheme => MainViewModel.IsLightTheme;
-        public bool IsSimplifiedChinese => MainViewModel.IsSimplifiedChinese;
-        public bool IsTraditionalChinese => MainViewModel.IsTraditionalChinese;
-        public bool IsEnglish => MainViewModel.IsEnglish;
-        public bool IsJapanese => MainViewModel.IsJapanese;
+        public bool IsDarkTheme => IsDarkThemeState;
+        public bool IsLightTheme => !IsDarkThemeState;
+        public bool IsSimplifiedChinese => CultureNameState == "zh-CN";
+        public bool IsTraditionalChinese => CultureNameState == "zh-Hant";
+        public bool IsEnglish => CultureNameState == "en-US";
+        public bool IsJapanese => CultureNameState == "ja-JP";
 
         public void SetDarkTheme()
         {
-            MainViewModel.SetDarkTheme();
+            EventBus.Publish(new ThemeChangeRequestedCommand(isDarkTheme: true));
         }
 
         public void SetLightTheme()
         {
-            MainViewModel.SetLightTheme();
+            EventBus.Publish(new ThemeChangeRequestedCommand(isDarkTheme: false));
         }
 
         public void SelectSimplifiedChinese()
         {
-            MainViewModel.SelectSimplifiedChinese();
+            EventBus.Publish(new LanguageChangeRequestedCommand("zh-CN"));
         }
 
         public void SelectTraditionalChinese()
         {
-            MainViewModel.SelectTraditionalChinese();
+            EventBus.Publish(new LanguageChangeRequestedCommand("zh-Hant"));
         }
 
         public void SelectEnglish()
         {
-            MainViewModel.SelectEnglish();
+            EventBus.Publish(new LanguageChangeRequestedCommand("en-US"));
         }
 
         public void SelectJapanese()
         {
-            MainViewModel.SelectJapanese();
-        }
-
-        protected override bool ShouldRefreshFromMainPropertyChanged(string? propertyName)
-        {
-            return base.ShouldRefreshFromMainPropertyChanged(propertyName) ||
-                   propertyName == nameof(MainWindowViewModel.IsDarkTheme) ||
-                   propertyName == nameof(MainWindowViewModel.IsLightTheme) ||
-                   propertyName == nameof(MainWindowViewModel.IsSimplifiedChinese) ||
-                   propertyName == nameof(MainWindowViewModel.IsTraditionalChinese) ||
-                   propertyName == nameof(MainWindowViewModel.IsEnglish) ||
-                   propertyName == nameof(MainWindowViewModel.IsJapanese);
+            EventBus.Publish(new LanguageChangeRequestedCommand("ja-JP"));
         }
 
         protected override void RaiseLocalizedProperties()

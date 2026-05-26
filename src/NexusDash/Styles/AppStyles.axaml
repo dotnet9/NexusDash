@@ -1,0 +1,195 @@
+<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:atom="https://atomui.net"
+    xmlns:antdicons="https://atomui.net/icons/antdesign">
+  <Styles.Resources>
+    <x:Double x:Key="NexusDashAppFontSize">12</x:Double>
+    <x:Double x:Key="NexusDashDataGridCellFontSize">11</x:Double>
+    <x:Double x:Key="NexusDashDataGridHeaderFontSize">12</x:Double>
+    <x:Double x:Key="NexusDashDataGridRowHeight">30</x:Double>
+    <x:Double x:Key="NexusDashDataGridHeaderHeight">32</x:Double>
+  </Styles.Resources>
+
+  <Style Selector="atom|Window">
+    <Setter Property="FontSize" Value="{DynamicResource NexusDashAppFontSize}" />
+  </Style>
+
+  <Style Selector="atom|TextBlock,
+                   TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+  </Style>
+
+  <Style Selector="atom|Window.mainShell">
+    <Setter Property="Width" Value="1440" />
+    <Setter Property="Height" Value="760" />
+    <Setter Property="MinWidth" Value="1180" />
+    <Setter Property="MinHeight" Value="620" />
+  </Style>
+
+  <Style Selector="atom|Window.settingsShell">
+    <Setter Property="Width" Value="600" />
+    <Setter Property="Height" Value="427" />
+    <Setter Property="MinWidth" Value="560" />
+    <Setter Property="MinHeight" Value="400" />
+  </Style>
+
+  <Style Selector="atom|LineEdit.titleBarSearch">
+    <Setter Property="Width" Value="520" />
+    <Setter Property="Height" Value="30" />
+    <Setter Property="FontSize" Value="11" />
+  </Style>
+
+  <Style Selector="atom|DataGrid.compactDataGrid">
+    <Setter Property="FontSize" Value="{DynamicResource NexusDashDataGridCellFontSize}" />
+    <Setter Property="RowHeight" Value="{DynamicResource NexusDashDataGridRowHeight}" />
+    <Setter Property="ColumnHeaderHeight" Value="{DynamicResource NexusDashDataGridHeaderHeight}" />
+    <Setter Property="SizeType" Value="Small" />
+  </Style>
+
+  <Style Selector="atom|DataGrid.compactDataGrid atom|TextBlock,
+                   atom|DataGrid.compactDataGrid TextBlock">
+    <Setter Property="FontSize" Value="{DynamicResource NexusDashDataGridCellFontSize}" />
+    <Setter Property="FontWeight" Value="Regular" />
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+  </Style>
+
+  <Style Selector="atom|DataGrid.compactDataGrid atom|DataGridColumnHeader">
+    <Setter Property="FontSize" Value="{DynamicResource NexusDashDataGridHeaderFontSize}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+  </Style>
+
+  <Style Selector="atom|DataGrid.compactDataGrid atom|DataGridColumnHeader atom|TextBlock,
+                   atom|DataGrid.compactDataGrid atom|DataGridColumnHeader TextBlock">
+    <Setter Property="FontSize" Value="{DynamicResource NexusDashDataGridHeaderFontSize}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+  </Style>
+
+  <Style Selector="Border.panel">
+    <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="BoxShadow" Value="0 6 18 0 #12000000" />
+  </Style>
+
+  <Style Selector="Border.metricPanel">
+    <Setter Property="MinHeight" Value="116" />
+    <Setter Property="Padding" Value="12" />
+  </Style>
+
+  <Style Selector="Border.metricBadge">
+    <Setter Property="Background" Value="{DynamicResource PanelAltBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="10,8" />
+  </Style>
+
+  <Style Selector="Border.dialogMask">
+    <Setter Property="Background" Value="{DynamicResource DialogMaskBrush}" />
+  </Style>
+
+  <Style Selector="Border.dialogCard">
+    <Setter Property="Width" Value="760" />
+    <Setter Property="MaxWidth" Value="760" />
+    <Setter Property="MinHeight" Value="340" />
+    <Setter Property="Padding" Value="22" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BoxShadow" Value="0 22 48 0 #66000000" />
+  </Style>
+
+  <Style Selector="Border.dialogIcon">
+    <Setter Property="Width" Value="32" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="Background" Value="{DynamicResource PanelAltBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource WarningBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="atom|TextBlock.metricLabel">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+  </Style>
+
+  <Style Selector="atom|TextBlock.metricValue">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+  </Style>
+
+  <Style Selector="atom|TextBlock.sectionTitle,
+                   TextBlock.sectionTitle">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+  </Style>
+
+  <Style Selector="atom|TextBlock.columnHeader">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+  </Style>
+
+  <Style Selector="atom|TextBlock.muted,
+                   TextBlock.muted">
+    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+  </Style>
+
+  <Style Selector="atom|TextBlock.metricHint">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+  </Style>
+
+  <Style Selector="atom|TextBlock.processAccessBadge">
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="atom|RadioButton.settingOption">
+    <Setter Property="MinHeight" Value="26" />
+    <Setter Property="FontSize" Value="11" />
+  </Style>
+
+  <Style Selector="atom|IconButton.statusBarButton">
+    <Setter Property="Width" Value="26" />
+    <Setter Property="MinWidth" Value="26" />
+    <Setter Property="MaxWidth" Value="26" />
+    <Setter Property="Height" Value="26" />
+    <Setter Property="MinHeight" Value="26" />
+    <Setter Property="MaxHeight" Value="26" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="IconWidth" Value="16" />
+    <Setter Property="IconHeight" Value="16" />
+  </Style>
+
+  <Style Selector="TextBlock.aboutLabel">
+    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+    <Setter Property="Margin" Value="0,0,18,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="SelectableTextBlock.aboutValue">
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="antdicons|AppstoreOutlined.processCategoryIcon,
+                   antdicons|CloudServerOutlined.processCategoryIcon,
+                   antdicons|WindowsOutlined.processCategoryIcon">
+    <Setter Property="Width" Value="16" />
+    <Setter Property="Height" Value="16" />
+    <Setter Property="StrokeBrush" Value="{DynamicResource SecondaryTextBrush}" />
+  </Style>
+</Styles>

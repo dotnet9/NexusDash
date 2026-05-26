@@ -1,7 +1,6 @@
 using NexusDash.Models;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
@@ -13,6 +12,12 @@ namespace NexusDash.Services
     public sealed class SystemMonitorService : IDisposable
     {
         private readonly Dictionary<string, NetworkSample> _networkSamples = new(StringComparer.Ordinal);
+        private readonly IProcessCommandRunner _processCommandRunner;
+
+        public SystemMonitorService(IProcessCommandRunner processCommandRunner)
+        {
+            _processCommandRunner = processCommandRunner;
+        }
 
         public Task<SystemMetrics> GetMetricsAsync()
         {
@@ -34,7 +39,7 @@ namespace NexusDash.Services
             return metrics;
         }
 
-        private static void PopulateMemory(SystemMetrics metrics)
+        private void PopulateMemory(SystemMetrics metrics)
         {
             if (OperatingSystem.IsWindows() && TryGetWindowsMemory(out var total, out var available))
             {
@@ -212,20 +217,20 @@ namespace NexusDash.Services
             return parts.Length >= 2 && ulong.TryParse(parts[1], out var kb) ? kb * 1024 : 0;
         }
 
-        private static bool TryGetMacMemory(out ulong totalBytes, out ulong availableBytes)
+        private bool TryGetMacMemory(out ulong totalBytes, out ulong availableBytes)
         {
             totalBytes = 0;
             availableBytes = 0;
 
             try
             {
-                var totalText = RunProcessAndReadOutput("sysctl", "-n hw.memsize").Trim();
+                var totalText = _processCommandRunner.ReadOutput("sysctl", "-n hw.memsize").Trim();
                 if (!ulong.TryParse(totalText, out totalBytes) || totalBytes == 0)
                 {
                     return false;
                 }
 
-                var vmStat = RunProcessAndReadOutput("vm_stat", "");
+                var vmStat = _processCommandRunner.ReadOutput("vm_stat", "");
                 ulong pageSize = 4096;
                 ulong freePages = 0;
 
@@ -258,27 +263,6 @@ namespace NexusDash.Services
             {
                 return false;
             }
-        }
-
-        internal static string RunProcessAndReadOutput(string fileName, string arguments)
-        {
-            using var process = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = fileName,
-                    Arguments = arguments,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
-            };
-
-            process.Start();
-            var output = process.StandardOutput.ReadToEnd();
-            process.WaitForExit(1500);
-            return output;
         }
 
         public void Dispose()

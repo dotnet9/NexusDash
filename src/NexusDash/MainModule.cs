@@ -4,7 +4,6 @@ using NexusDash.Views.Settings;
 using NexusDash.Regions;
 using Prism.Ioc;
 using Prism.Modularity;
-using Prism.Mvvm;
 using Prism.Regions;
 
 namespace NexusDash
@@ -25,10 +24,6 @@ namespace NexusDash
             containerRegistry.Register<AppearanceSettingsView>();
             containerRegistry.Register<ChangelogSettingsView>();
             containerRegistry.Register<AboutSettingsView>();
-            ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
-            ViewModelLocationProvider.Register<AppearanceSettingsView, AppearanceSettingsViewModel>();
-            ViewModelLocationProvider.Register<ChangelogSettingsView, ChangelogSettingsViewModel>();
-            ViewModelLocationProvider.Register<AboutSettingsView, AboutSettingsViewModel>();
         }
     }
 }

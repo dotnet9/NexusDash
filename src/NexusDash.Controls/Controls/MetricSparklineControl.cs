@@ -9,6 +9,9 @@ namespace NexusDash.Controls
 {
     public sealed class MetricSparklineControl : Control
     {
+        private const double MinimumRenderableSize = 1;
+        private static readonly Pen FramePen = new(new SolidColorBrush(Color.FromArgb(45, 120, 136, 156)), 1);
+
         public static readonly StyledProperty<IReadOnlyList<double>?> ValuesProperty =
             AvaloniaProperty.Register<MetricSparklineControl, IReadOnlyList<double>?>(nameof(Values));
 
@@ -46,12 +49,12 @@ namespace NexusDash.Controls
             base.Render(context);
 
             var bounds = new Rect(Bounds.Size);
-            if (bounds.Width <= 1 || bounds.Height <= 1)
+            if (bounds.Width <= MinimumRenderableSize || bounds.Height <= MinimumRenderableSize)
             {
                 return;
             }
 
-            context.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromArgb(45, 120, 136, 156)), 1), bounds);
+            context.DrawRectangle(null, FramePen, bounds);
 
             var values = Values?.Where(static v => !double.IsNaN(v) && !double.IsInfinity(v)).ToArray();
             if (values is null || values.Length < 2 || Stroke is null)

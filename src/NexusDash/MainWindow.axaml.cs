@@ -8,44 +8,40 @@ using Avalonia.Markup.Xaml;
 using Avalonia.VisualTree;
 using NexusDash.Services;
 using NexusDash.Views;
-using NexusDash.ViewModels;
-using NexusDash.ViewModels.Settings;
-using Prism.Regions;
 using System;
+using System.Linq;
 
 namespace NexusDash
 {
     public partial class MainWindow : AtomUI.Desktop.Controls.Window
     {
         private const double CompactTitleBarHeight = 40;
+        private const string TitleBarTitleBindingPath = "DataContext.AppNameText";
+        private static readonly (double Width, double Height)[] SupersededDefaultWindowSizes =
+        [
+            (1280, 820),
+            (1440, 820),
+            (1440, 900)
+        ];
 
         private TitleBarSearchAddOn? _titleBarSearchAddOn;
         private IDisposable? _titleBarTitleBinding;
-        private SettingsWindow? _settingsWindow;
-        private MainWindowViewModel? _viewModel;
-        private ProcessListView? _processListView;
-        private readonly IRegionManager? _regionManager;
+        private IUserPreferencesService? _userPreferencesService;
 
         public MainWindow()
-            : this(new MainWindowViewModel(), null)
         {
+            // Avalonia 运行时资源加载器需要公开无参构造；真实应用入口由 Prism 注入下方构造器。
+            InitializeComponent();
         }
 
-        public MainWindow(MainWindowViewModel viewModel, IRegionManager? regionManager)
+        public MainWindow(IUserPreferencesService userPreferencesService)
         {
-            _regionManager = regionManager;
+            _userPreferencesService = userPreferencesService;
             InitializeComponent();
-            _processListView = this.FindControl<ProcessListView>("ProcessListPane");
-            _viewModel = viewModel;
-            DataContext = _viewModel;
-            ApplyChildDataContexts();
             ApplyWindowPreferences();
             AddHandler(PointerPressedEvent, HandleTitleBarDragPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
-            DataContextChanged += (_, _) =>
-            {
-                ApplyTitleBarDataContext();
-                ApplyChildDataContexts();
-            };
+            DataContextChanged += (_, _) => ApplyTitleBarDataContext();
+            ApplyTitleBarDataContext();
         }
 
         private void InitializeComponent()
@@ -57,8 +53,11 @@ namespace NexusDash
         {
             SaveWindowPreferences();
             _titleBarTitleBinding?.Dispose();
-            _settingsWindow?.Close();
-            _viewModel?.Dispose();
+            if (DataContext is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+
             base.OnClosing(e);
         }
 
@@ -83,7 +82,7 @@ namespace NexusDash
             _titleBarTitleBinding?.Dispose();
             _titleBarTitleBinding = titleBar.Bind(
                 WindowTitleBar.TitleProperty,
-                new Binding($"{nameof(DataContext)}.{nameof(MainWindowViewModel.AppNameText)}")
+                new Binding(TitleBarTitleBindingPath)
                 {
                     Source = this
                 });
@@ -99,17 +98,20 @@ namespace NexusDash
             }
         }
 
-        private void ApplyChildDataContexts()
-        {
-            if (_processListView is not null)
-            {
-                _processListView.DataContext = _viewModel?.ProcessList;
-            }
-        }
-
         private void ApplyWindowPreferences()
         {
-            var preferences = UserPreferencesService.Load();
+            if (_userPreferencesService is null)
+            {
+                return;
+            }
+
+            var preferences = _userPreferencesService.Load();
+            // 旧版本会把默认尺寸写进偏好；这些值不是用户主动调整，允许跟随新版窗口基准。
+            if (IsSupersededDefaultWindowSize(preferences.WindowWidth, preferences.WindowHeight))
+            {
+                return;
+            }
+
             if (preferences.WindowWidth >= MinWidth)
             {
                 Width = preferences.WindowWidth;
@@ -123,37 +125,23 @@ namespace NexusDash
 
         private void SaveWindowPreferences()
         {
-            if (WindowState != WindowState.Normal)
+            if (WindowState != WindowState.Normal || _userPreferencesService is null)
             {
                 return;
             }
 
-            UserPreferencesService.Update(preferences =>
+            _userPreferencesService.Update(preferences =>
             {
                 preferences.WindowWidth = Math.Max(Width, MinWidth);
                 preferences.WindowHeight = Math.Max(Height, MinHeight);
             });
         }
 
-        private void SettingsButton_Click(object? sender, RoutedEventArgs e)
+        private static bool IsSupersededDefaultWindowSize(double width, double height)
         {
-            if (_viewModel is null)
-            {
-                return;
-            }
-
-            if (_settingsWindow is not null)
-            {
-                _settingsWindow.Activate();
-                return;
-            }
-
-            _settingsWindow = new SettingsWindow(_regionManager?.CreateRegionManager() ?? _regionManager)
-            {
-                DataContext = new SettingsWindowViewModel(_viewModel)
-            };
-            _settingsWindow.Closed += (_, _) => _settingsWindow = null;
-            _settingsWindow.Show(this);
+            return SupersededDefaultWindowSizes.Any(size =>
+                size.Width.Equals(width) &&
+                size.Height.Equals(height));
         }
 
         private void HandleTitleBarDragPressed(object? sender, PointerPressedEventArgs e)

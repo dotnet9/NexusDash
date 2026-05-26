@@ -15,94 +15,81 @@
                 HorizontalScrollBarVisibility="Disabled"
                 VerticalScrollBarVisibility="Auto">
     <StackPanel Spacing="14">
-      <Grid ColumnDefinitions="56,*"
+      <Grid ColumnDefinitions="42,*"
             ColumnSpacing="14">
-        <Border Width="52"
-                Height="52"
-                CornerRadius="8"
-                Background="{DynamicResource PanelAltBackgroundBrush}"
-                BorderBrush="{DynamicResource PanelBorderBrush}"
-                BorderThickness="1">
-          <Image Source="/Assets/logo.png"
-                 Width="34"
-                 Height="34"
-                 Stretch="Uniform"
-                 HorizontalAlignment="Center"
-                 VerticalAlignment="Center" />
-        </Border>
+        <Image Source="/Assets/logo.png"
+               Width="34"
+               Height="34"
+               Stretch="Uniform"
+               HorizontalAlignment="Left"
+               VerticalAlignment="Center" />
         <StackPanel Grid.Column="1"
                     Spacing="3"
                     VerticalAlignment="Center">
           <TextBlock Text="{Binding AppName}"
-                     FontSize="22"
+                     FontSize="18"
                      FontWeight="SemiBold" />
           <TextBlock Text="{Binding Description}"
-                     Foreground="#667085"
+                     Foreground="{DynamicResource SecondaryTextBrush}"
                      TextWrapping="Wrap" />
         </StackPanel>
       </Grid>
 
-      <Border Background="{DynamicResource PanelAltBackgroundBrush}"
-              BorderBrush="{DynamicResource PanelBorderBrush}"
-              BorderThickness="1"
-              CornerRadius="8"
-              Padding="16,14">
-        <Grid ColumnDefinitions="120,*"
-              RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
-              RowSpacing="10">
-          <TextBlock Text="{Binding VersionLabel}"
-                     Classes="aboutLabel" />
-          <SelectableTextBlock Grid.Column="1"
-                               Text="{Binding Version}"
-                               Classes="aboutValue" />
+      <Grid ColumnDefinitions="110,*"
+            RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+            RowSpacing="9">
+        <TextBlock Text="{Binding VersionLabel}"
+                   Classes="aboutLabel" />
+        <SelectableTextBlock Grid.Column="1"
+                             Text="{Binding Version}"
+                             Classes="aboutValue" />
 
-          <TextBlock Grid.Row="1"
-                     Text="{Binding CompileTimeLabel}"
-                     Classes="aboutLabel" />
-          <SelectableTextBlock Grid.Row="1"
-                               Grid.Column="1"
-                               Text="{Binding CompileTime}"
-                               Classes="aboutValue" />
+        <TextBlock Grid.Row="1"
+                   Text="{Binding CompileTimeLabel}"
+                   Classes="aboutLabel" />
+        <SelectableTextBlock Grid.Row="1"
+                             Grid.Column="1"
+                             Text="{Binding CompileTime}"
+                             Classes="aboutValue" />
 
-          <TextBlock Grid.Row="2"
-                     Text="{Binding AuthorLabel}"
-                     Classes="aboutLabel" />
-          <SelectableTextBlock Grid.Row="2"
-                               Grid.Column="1"
-                               Text="{Binding Author}"
-                               Classes="aboutValue" />
+        <TextBlock Grid.Row="2"
+                   Text="{Binding AuthorLabel}"
+                   Classes="aboutLabel" />
+        <SelectableTextBlock Grid.Row="2"
+                             Grid.Column="1"
+                             Text="{Binding Author}"
+                             Classes="aboutValue" />
 
-          <TextBlock Grid.Row="3"
-                     Text="{Binding RepositoryLabel}"
-                     Classes="aboutLabel" />
-          <atom:HyperLinkButton Grid.Row="3"
-                                Grid.Column="1"
-                                NavigateUri="{Binding RepositoryUri}"
-                                Padding="0"
-                                HorizontalAlignment="Left"
-                                HorizontalContentAlignment="Left"
-                                VerticalAlignment="Center">
-            <TextBlock Text="{Binding RepositoryUrl}"
-                       TextWrapping="Wrap" />
-          </atom:HyperLinkButton>
+        <TextBlock Grid.Row="3"
+                   Text="{Binding RepositoryLabel}"
+                   Classes="aboutLabel" />
+        <atom:HyperLinkButton Grid.Row="3"
+                              Grid.Column="1"
+                              NavigateUri="{Binding RepositoryUri}"
+                              Padding="0"
+                              HorizontalAlignment="Left"
+                              HorizontalContentAlignment="Left"
+                              VerticalAlignment="Center">
+          <TextBlock Text="{Binding RepositoryUrl}"
+                     TextWrapping="Wrap" />
+        </atom:HyperLinkButton>
 
-          <TextBlock Grid.Row="4"
-                     Text="{Binding LicenseLabel}"
-                     Classes="aboutLabel" />
-          <SelectableTextBlock Grid.Row="4"
-                               Grid.Column="1"
-                               Text="{Binding License}"
-                               Classes="aboutValue" />
+        <TextBlock Grid.Row="4"
+                   Text="{Binding LicenseLabel}"
+                   Classes="aboutLabel" />
+        <SelectableTextBlock Grid.Row="4"
+                             Grid.Column="1"
+                             Text="{Binding License}"
+                             Classes="aboutValue" />
 
-          <TextBlock Grid.Row="5"
-                     Text="{Binding CopyrightLabel}"
-                     Classes="aboutLabel" />
-          <SelectableTextBlock Grid.Row="5"
-                               Grid.Column="1"
-                               Text="{Binding Copyright}"
-                               Classes="aboutValue" />
-        </Grid>
-      </Border>
+        <TextBlock Grid.Row="5"
+                   Text="{Binding CopyrightLabel}"
+                   Classes="aboutLabel" />
+        <SelectableTextBlock Grid.Row="5"
+                             Grid.Column="1"
+                             Text="{Binding Copyright}"
+                             Classes="aboutValue" />
+      </Grid>
     </StackPanel>
   </ScrollViewer>
 </UserControl>

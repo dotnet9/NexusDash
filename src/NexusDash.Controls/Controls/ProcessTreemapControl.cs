@@ -11,6 +11,30 @@ namespace NexusDash.Controls
 {
     public sealed class ProcessTreemapControl : Control
     {
+        private const int MaxRenderedItems = 32;
+        private const double OuterPadding = 6;
+        private const double TileGap = 2;
+        private const double TileCornerRadius = 3;
+        private const double LabelMinWidth = 72;
+        private const double LabelMinHeight = 34;
+        private const double LabelFontSize = 11;
+        private const int MaxLabelLength = 42;
+        private const int TrimmedLabelLength = 39;
+
+        private static readonly SolidColorBrush EmptyBackgroundBrush = new(Color.FromArgb(25, 127, 146, 173));
+        private static readonly Pen TileBorderPen = new(new SolidColorBrush(Color.FromArgb(130, 255, 255, 255)), 1);
+        private static readonly Color[] TilePalette =
+        [
+            Color.Parse("#2f8cff"),
+            Color.Parse("#3bb273"),
+            Color.Parse("#d99a2b"),
+            Color.Parse("#7b61ff"),
+            Color.Parse("#e25555"),
+            Color.Parse("#16a3a3"),
+            Color.Parse("#c76dd8"),
+            Color.Parse("#607d8b")
+        ];
+
         public static readonly StyledProperty<IReadOnlyList<TreemapItem>?> ItemsProperty =
             AvaloniaProperty.Register<ProcessTreemapControl, IReadOnlyList<TreemapItem>?>(nameof(Items));
 
@@ -30,12 +54,12 @@ namespace NexusDash.Controls
             base.Render(context);
 
             var bounds = new Rect(Bounds.Size);
-            context.DrawRectangle(new SolidColorBrush(Color.FromArgb(25, 127, 146, 173)), null, bounds);
+            context.DrawRectangle(EmptyBackgroundBrush, null, bounds);
 
             var items = Items?
                 .Where(static item => item.Weight > 0)
                 .OrderByDescending(static item => item.Weight)
-                .Take(32)
+                .Take(MaxRenderedItems)
                 .ToArray();
 
             if (items is null || items.Length == 0)
@@ -49,7 +73,7 @@ namespace NexusDash.Controls
                 return;
             }
 
-            RenderSlice(context, bounds.Deflate(6), items, total, vertical: bounds.Width > bounds.Height, level: 0);
+            RenderSlice(context, bounds.Deflate(OuterPadding), items, total, vertical: bounds.Width > bounds.Height, level: 0);
         }
 
         private static void RenderSlice(
@@ -86,7 +110,7 @@ namespace NexusDash.Controls
                     offset += height;
                 }
 
-                rect = rect.Deflate(2);
+                rect = rect.Deflate(TileGap);
                 if (rect.Width <= 1 || rect.Height <= 1)
                 {
                     continue;
@@ -95,17 +119,17 @@ namespace NexusDash.Controls
                 var color = PickColor(level + i);
                 context.DrawRectangle(
                     new SolidColorBrush(color),
-                    new Pen(new SolidColorBrush(Color.FromArgb(130, 255, 255, 255)), 1),
+                    TileBorderPen,
                     rect,
-                    3,
-                    3);
+                    TileCornerRadius,
+                    TileCornerRadius);
 
-                if (rect.Width > 72 && rect.Height > 34)
+                if (rect.Width > LabelMinWidth && rect.Height > LabelMinHeight)
                 {
                     var text = $"{item.Label}  {item.ValueText}";
-                    if (text.Length > 42)
+                    if (text.Length > MaxLabelLength)
                     {
-                        text = text[..39] + "...";
+                        text = text[..TrimmedLabelLength] + "...";
                     }
 
                     var formattedText = new FormattedText(
@@ -113,7 +137,7 @@ namespace NexusDash.Controls
                         CultureInfo.CurrentUICulture,
                         FlowDirection.LeftToRight,
                         Typeface.Default,
-                        11,
+                        LabelFontSize,
                         Brushes.White)
                     {
                         MaxTextWidth = Math.Max(rect.Width - 10, 0),
@@ -126,18 +150,7 @@ namespace NexusDash.Controls
 
         private static Color PickColor(int index)
         {
-            var palette = new[]
-            {
-                Color.Parse("#2f8cff"),
-                Color.Parse("#3bb273"),
-                Color.Parse("#d99a2b"),
-                Color.Parse("#7b61ff"),
-                Color.Parse("#e25555"),
-                Color.Parse("#16a3a3"),
-                Color.Parse("#c76dd8"),
-                Color.Parse("#607d8b")
-            };
-            return palette[index % palette.Length];
+            return TilePalette[index % TilePalette.Length];
         }
     }
 }

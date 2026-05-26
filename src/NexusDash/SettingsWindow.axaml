@@ -7,15 +7,13 @@
              xmlns:regions="using:NexusDash.Regions"
              xmlns:vm="using:NexusDash.ViewModels.Settings"
              mc:Ignorable="d"
-             d:DesignWidth="760"
-             d:DesignHeight="560"
+             d:DesignWidth="600"
+             d:DesignHeight="427"
              x:Class="NexusDash.SettingsWindow"
              x:DataType="vm:SettingsWindowViewModel"
+             prism:ViewModelLocator.AutoWireViewModel="True"
+             Classes="settingsShell"
              Title="{Binding SettingsText}"
-             Width="760"
-             Height="560"
-             MinWidth="680"
-             MinHeight="500"
              WindowStartupLocation="CenterOwner"
              Icon="/Assets/logo.ico"
              TitleBarFrameBackground="{DynamicResource PanelBackgroundBrush}"
@@ -26,38 +24,11 @@
     <Image Source="/Assets/logo.png" />
   </atom:Window.Logo>
 
-  <atom:Window.Styles>
-    <Style Selector="Border.settingsSurface">
-      <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
-      <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="8" />
-    </Style>
-    <Style Selector="TextBlock.aboutLabel">
-      <Setter Property="Foreground" Value="#667085" />
-      <Setter Property="Margin" Value="0,0,18,0" />
-      <Setter Property="VerticalAlignment" Value="Center" />
-    </Style>
-    <Style Selector="SelectableTextBlock.aboutValue">
-      <Setter Property="Foreground" Value="#1F2328" />
-      <Setter Property="TextWrapping" Value="Wrap" />
-      <Setter Property="VerticalAlignment" Value="Center" />
-    </Style>
-    <Style Selector="atom|Window.dark TextBlock.aboutLabel">
-      <Setter Property="Foreground" Value="#9BA7B4" />
-    </Style>
-    <Style Selector="atom|Window.dark SelectableTextBlock.aboutValue">
-      <Setter Property="Foreground" Value="#E6EDF3" />
-    </Style>
-  </atom:Window.Styles>
-
-  <Border Classes="settingsSurface"
-          Margin="16">
-    <atom:TabControl x:Name="SettingsRegionTabs"
-                     TabStripPlacement="Left"
-                     SizeType="Middle"
-                     TabAndContentGutter="16"
-                     Background="Transparent"
-                     prism:RegionManager.RegionName="{x:Static regions:RegionNames.SettingsRegion}" />
-  </Border>
+  <atom:TabControl x:Name="SettingsRegionTabs"
+                   Margin="14"
+                   TabStripPlacement="Left"
+                   SizeType="Middle"
+                   TabAndContentGutter="16"
+                   Background="Transparent"
+                   prism:RegionManager.RegionName="{x:Static regions:RegionNames.SettingsRegion}" />
 </atom:Window>

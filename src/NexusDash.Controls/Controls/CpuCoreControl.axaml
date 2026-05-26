@@ -52,7 +52,7 @@
                  Margin="0,2,0,0" />
     </StackPanel>
 
-    <Border Background="#f14c4c"
+    <Border Background="{Binding ElementName=Root, Path=CoreColor}"
             Opacity="{Binding ElementName=Root, Path=WarningOpacity}"
             CornerRadius="100"
             Width="{Binding ElementName=Root, Path=CoreSize}"

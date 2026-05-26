@@ -22,10 +22,10 @@ namespace NexusDash.Regions
                 var tabItem = new AtomTabItem
                 {
                     Content = view,
-                    DataContext = view,
                     Tag = order
                 };
 
+                // 页签只承载设置页视图，标题从子视图的 ViewModel 读取，避免把 View 当作 DataContext 传播。
                 tabItem.Bind(
                     HeaderedContentControl.HeaderProperty,
                     new Binding($"{nameof(Control.DataContext)}.{nameof(SettingsPageViewModelBase.Header)}")

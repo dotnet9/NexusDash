@@ -8,8 +8,9 @@ using Lang.Avalonia;
 using NexusDash.Controls.Models;
 using NexusDash.Models;
 using NexusDash.Services;
+using NexusDash.ViewModels.Settings;
+using Prism.Commands;
 using ReactiveUI;
-using Avalonia.Media;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -22,17 +23,6 @@ namespace NexusDash.ViewModels
 {
     public sealed class MainWindowViewModel : ReactiveObject, IDisposable
     {
-        private static readonly IBrush DarkProcessRowPrimaryTextBrush = new SolidColorBrush(Color.Parse("#f4f7fb"));
-        private static readonly IBrush DarkProcessRowSecondaryTextBrush = new SolidColorBrush(Color.Parse("#9aa6b5"));
-        private static readonly IBrush DarkProcessRowDividerBrush = new SolidColorBrush(Color.Parse("#27303c"));
-        private static readonly IBrush LightProcessRowPrimaryTextBrush = new SolidColorBrush(Color.Parse("#18202c"));
-        private static readonly IBrush LightProcessRowSecondaryTextBrush = new SolidColorBrush(Color.Parse("#5d6878"));
-        private static readonly IBrush LightProcessRowDividerBrush = new SolidColorBrush(Color.Parse("#e4e9f2"));
-        private static readonly IBrush DarkDialogSurfaceBrush = new SolidColorBrush(Color.Parse("#1b2028"));
-        private static readonly IBrush DarkDialogInsetBrush = new SolidColorBrush(Color.Parse("#242b36"));
-        private static readonly IBrush LightDialogSurfaceBrush = new SolidColorBrush(Color.Parse("#ffffff"));
-        private static readonly IBrush LightDialogInsetBrush = new SolidColorBrush(Color.Parse("#f2f5fa"));
-
         public const string ProcessColumnPid = "pid";
         public const string ProcessColumnParentPid = "parentPid";
         public const string ProcessColumnName = "name";
@@ -57,11 +47,13 @@ namespace NexusDash.ViewModels
             int DisplayOrder,
             int TerminationOrder);
 
-        private readonly SystemMonitorService _systemMonitorService = new();
-        private readonly ProcessTelemetryService _processTelemetryService = new();
-        private readonly ProcessNetworkConnectionService _processNetworkConnectionService = new();
+        private readonly SystemMonitorService _systemMonitorService;
+        private readonly ProcessTelemetryService _processTelemetryService;
+        private readonly ProcessNetworkConnectionService _processNetworkConnectionService;
+        private readonly IUserPreferencesService _userPreferencesService;
+        private readonly IThemeResourceService _themeResourceService;
         private readonly CancellationTokenSource _refreshCancellation = new();
-        private readonly IEventBus _processEventBus;
+        private readonly IEventBus _eventBus;
         private readonly Task _refreshLoopTask;
         private readonly Dictionary<int, ProcessRowViewModel> _rowCache = new();
         private readonly HashSet<int> _expandedPids = new();
@@ -105,20 +97,28 @@ namespace NexusDash.ViewModels
         private bool _isRefreshPaused;
         private bool _isDisposed;
 
-        public MainWindowViewModel()
-            : this(EventBus.Default, new ProcessListViewModel(EventBus.Default))
+        public MainWindowViewModel(
+            IEventBus eventBus,
+            ProcessListViewModel processList,
+            SystemMonitorService systemMonitorService,
+            ProcessTelemetryService processTelemetryService,
+            ProcessNetworkConnectionService processNetworkConnectionService,
+            IUserPreferencesService userPreferencesService,
+            IThemeResourceService themeResourceService)
         {
-        }
-
-        public MainWindowViewModel(IEventBus processEventBus, ProcessListViewModel processList)
-        {
-            _processEventBus = processEventBus;
+            _eventBus = eventBus;
+            _systemMonitorService = systemMonitorService;
+            _processTelemetryService = processTelemetryService;
+            _processNetworkConnectionService = processNetworkConnectionService;
+            _userPreferencesService = userPreferencesService;
+            _themeResourceService = themeResourceService;
             ProcessList = processList;
-            _processEventBus.Subscribe(this);
+            OpenSettingsWindow = new DelegateCommand(PublishOpenSettingsWindow);
+            _eventBus.Subscribe(this);
 
-            var preferences = UserPreferencesService.Load();
+            var preferences = _userPreferencesService.Load();
             _isDarkTheme = preferences.IsDarkTheme;
-            Application.Current?.SetDarkThemeMode(_isDarkTheme);
+            ApplyApplicationTheme(_isDarkTheme);
             InitializeLanguageOptions();
             var unavailableText = T(NexusDashL.MetricUnavailable);
             _applicationGroupRow = ProcessRowViewModel.CreateGroupHeader(
@@ -140,6 +140,7 @@ namespace NexusDash.ViewModels
             InitializeProcessColumnOptions(preferences);
             StatusMessage = T(NexusDashL.StatusRunning);
             PublishProcessListState();
+            PublishSettingsState();
             _refreshLoopTask = RefreshLoopAsync(_refreshCancellation.Token);
         }
 
@@ -147,6 +148,7 @@ namespace NexusDash.ViewModels
         public ObservableCollection<ProcessRowViewModel> VisibleProcesses { get; } = new();
         public ObservableCollection<ProcessColumnOptionViewModel> ProcessColumns { get; } = new();
         public ObservableCollection<LanguageOption> Languages { get; } = new();
+        public DelegateCommand OpenSettingsWindow { get; }
 
         public string WindowTitle => $"{T(NexusDashL.AppName)} - {T(NexusDashL.AppSubtitle)}";
         public string AppNameText => T(NexusDashL.AppName);
@@ -290,11 +292,6 @@ namespace NexusDash.ViewModels
             }
         }
         public bool IsRefreshRunning => !IsRefreshPaused;
-        public IBrush ProcessRowPrimaryTextBrush => IsDarkTheme ? DarkProcessRowPrimaryTextBrush : LightProcessRowPrimaryTextBrush;
-        public IBrush ProcessRowSecondaryTextBrush => IsDarkTheme ? DarkProcessRowSecondaryTextBrush : LightProcessRowSecondaryTextBrush;
-        public IBrush ProcessRowDividerBrush => IsDarkTheme ? DarkProcessRowDividerBrush : LightProcessRowDividerBrush;
-        public IBrush DialogSurfaceBrush => IsDarkTheme ? DarkDialogSurfaceBrush : LightDialogSurfaceBrush;
-        public IBrush DialogInsetBrush => IsDarkTheme ? DarkDialogInsetBrush : LightDialogInsetBrush;
         public bool IsSimplifiedChinese => string.Equals(_selectedCultureName, "zh-CN", StringComparison.OrdinalIgnoreCase);
         public bool IsTraditionalChinese => string.Equals(_selectedCultureName, "zh-Hant", StringComparison.OrdinalIgnoreCase);
         public bool IsEnglish => string.Equals(_selectedCultureName, "en-US", StringComparison.OrdinalIgnoreCase);
@@ -337,15 +334,11 @@ namespace NexusDash.ViewModels
             {
                 if (SetField(ref _isDarkTheme, value, nameof(IsDarkTheme)))
                 {
-                    Application.Current?.SetDarkThemeMode(value);
-                    UserPreferencesService.Update(preferences => preferences.IsDarkTheme = value);
+                    ApplyApplicationTheme(value);
+                    _userPreferencesService.Update(preferences => preferences.IsDarkTheme = value);
                     this.RaisePropertyChanged(nameof(IsLightTheme));
-                    this.RaisePropertyChanged(nameof(ProcessRowPrimaryTextBrush));
-                    this.RaisePropertyChanged(nameof(ProcessRowSecondaryTextBrush));
-                    this.RaisePropertyChanged(nameof(ProcessRowDividerBrush));
-                    this.RaisePropertyChanged(nameof(DialogSurfaceBrush));
-                    this.RaisePropertyChanged(nameof(DialogInsetBrush));
                     PublishProcessListState();
+                    PublishSettingsState();
                 }
             }
         }
@@ -533,6 +526,11 @@ namespace NexusDash.ViewModels
             StatusMessage = string.Format(CultureInfo.CurrentCulture, T(NexusDashL.StatusThemeChanged), T(NexusDashL.DarkTheme));
         }
 
+        private void PublishOpenSettingsWindow()
+        {
+            _eventBus.Publish(new OpenSettingsWindowCommand());
+        }
+
         public void SetLightTheme()
         {
             IsDarkTheme = false;
@@ -579,6 +577,24 @@ namespace NexusDash.ViewModels
         public void SelectJapanese()
         {
             SetLanguage("ja-JP");
+        }
+
+        [EventHandler]
+        private void ApplyThemeChange(ThemeChangeRequestedCommand command)
+        {
+            if (command.IsDarkTheme)
+            {
+                SetDarkTheme();
+                return;
+            }
+
+            SetLightTheme();
+        }
+
+        [EventHandler]
+        private void ApplyLanguageChange(LanguageChangeRequestedCommand command)
+        {
+            SetLanguage(command.CultureName);
         }
 
         public void EndSelectedProcesses()
@@ -666,7 +682,7 @@ namespace NexusDash.ViewModels
 
         private void PublishProcessListState()
         {
-            _processEventBus.Publish(new ProcessListStateChangedCommand(new ProcessListState
+            _eventBus.Publish(new ProcessListStateChangedCommand(new ProcessListState
             {
                 VisibleProcesses = VisibleProcesses.ToArray(),
                 ProcessColumns = ProcessColumns.ToArray(),
@@ -690,10 +706,13 @@ namespace NexusDash.ViewModels
                 ColumnVisibilityText = ColumnVisibilityText,
                 RequiredColumnText = RequiredColumnText,
                 HasSelectedProcesses = HasSelectedProcesses,
-                HasNoVisibleProcesses = HasNoVisibleProcesses,
-                ProcessRowPrimaryTextBrush = ProcessRowPrimaryTextBrush,
-                ProcessRowSecondaryTextBrush = ProcessRowSecondaryTextBrush
+                HasNoVisibleProcesses = HasNoVisibleProcesses
             }));
+        }
+
+        private void PublishSettingsState()
+        {
+            _eventBus.Publish(new SettingsStateChangedCommand(IsDarkTheme, _selectedCultureName));
         }
 
         private void RequestEndSelectedProcesses(bool entireProcessTree, bool includeAssociatedProcesses = false)
@@ -1467,7 +1486,7 @@ namespace NexusDash.ViewModels
                 {
                     foreach (var pid in pids)
                     {
-                        ProcessTelemetryService.EndProcess(pid, entireProcessTree);
+                        _processTelemetryService.EndProcess(pid, entireProcessTree);
                     }
                 });
 
@@ -1536,7 +1555,7 @@ namespace NexusDash.ViewModels
                 return;
             }
 
-            UserPreferencesService.Update(preferences =>
+            _userPreferencesService.Update(preferences =>
             {
                 preferences.ProcessColumnVisibility ??= new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
                 preferences.ProcessColumnVisibility[option.Key] = option.IsVisible;
@@ -1592,7 +1611,7 @@ namespace NexusDash.ViewModels
             CultureInfo.CurrentCulture = culture;
             CultureInfo.CurrentUICulture = culture;
             I18nManager.Instance.Culture = culture;
-            UserPreferencesService.Update(preferences => preferences.CultureName = culture.Name);
+            _userPreferencesService.Update(preferences => preferences.CultureName = culture.Name);
             Application.Current?.SetLanguageVariant(
                 culture.TwoLetterISOLanguageName.Equals("zh", StringComparison.OrdinalIgnoreCase)
                     ? LanguageVariant.zh_CN
@@ -1600,6 +1619,7 @@ namespace NexusDash.ViewModels
 
             RefreshLanguageOptions();
             RefreshLocalizedProperties();
+            PublishSettingsState();
 
             foreach (var row in _rowCache.Values)
             {
@@ -1768,6 +1788,12 @@ namespace NexusDash.ViewModels
             return I18nManager.Instance.GetResource(key) ?? key;
         }
 
+        private void ApplyApplicationTheme(bool isDarkTheme)
+        {
+            _themeResourceService.Apply(isDarkTheme);
+            Application.Current?.SetDarkThemeMode(isDarkTheme);
+        }
+
         private bool SetField<T>(ref T field, T value, string propertyName)
         {
             if (EqualityComparer<T>.Default.Equals(field, value))
@@ -1788,7 +1814,7 @@ namespace NexusDash.ViewModels
 
             _isDisposed = true;
             _refreshCancellation.Cancel();
-            _processEventBus.Unsubscribe(this);
+            _eventBus.Unsubscribe(this);
             ProcessList.Dispose();
             _systemMonitorService.Dispose();
             _ = DisposeRefreshCancellationWhenIdleAsync();

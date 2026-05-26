@@ -4,10 +4,10 @@
                          xmlns:prism="http://prismlibrary.com/"
                          xmlns:themes="using:NexusDash.Controls.Themes"
                          x:Class="NexusDash.App"
-                         Name="NexusDash"
-                         RequestedThemeVariant="Dark">
+                         Name="NexusDash">
   <prism:PrismApplication.Styles>
     <themes:NexusDashControlsThemes />
+    <StyleInclude Source="Styles/AppStyles.axaml" />
     <markdownThemes:MarkdownThemes />
   </prism:PrismApplication.Styles>
 </prism:PrismApplication>

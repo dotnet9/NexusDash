@@ -1,4 +1,3 @@
-using Avalonia.Media;
 using CodeWF.EventBus;
 using ReactiveUI;
 using System;
@@ -33,13 +32,6 @@ namespace NexusDash.ViewModels
         private string _requiredColumnText = "";
         private bool _hasSelectedProcesses;
         private bool _hasNoVisibleProcesses;
-        private IBrush? _processRowPrimaryTextBrush;
-        private IBrush? _processRowSecondaryTextBrush;
-
-        public ProcessListViewModel()
-            : this(EventBus.Default)
-        {
-        }
 
         public ProcessListViewModel(IEventBus eventBus)
         {
@@ -170,18 +162,6 @@ namespace NexusDash.ViewModels
             private set => this.RaiseAndSetIfChanged(ref _hasNoVisibleProcesses, value);
         }
 
-        public IBrush? ProcessRowPrimaryTextBrush
-        {
-            get => _processRowPrimaryTextBrush;
-            private set => this.RaiseAndSetIfChanged(ref _processRowPrimaryTextBrush, value);
-        }
-
-        public IBrush? ProcessRowSecondaryTextBrush
-        {
-            get => _processRowSecondaryTextBrush;
-            private set => this.RaiseAndSetIfChanged(ref _processRowSecondaryTextBrush, value);
-        }
-
         public void EndSelectedProcesses()
         {
             _eventBus.Publish(new ProcessTerminationRequestedCommand(entireProcessTree: false));
@@ -261,8 +241,6 @@ namespace NexusDash.ViewModels
             RequiredColumnText = state.RequiredColumnText;
             HasSelectedProcesses = state.HasSelectedProcesses;
             HasNoVisibleProcesses = state.HasNoVisibleProcesses;
-            ProcessRowPrimaryTextBrush = state.ProcessRowPrimaryTextBrush;
-            ProcessRowSecondaryTextBrush = state.ProcessRowSecondaryTextBrush;
         }
 
         private static void SyncCollection<T>(ObservableCollection<T> target, IReadOnlyList<T> source)

@@ -1,5 +1,6 @@
 using NexusDash;
-using NexusDash.ViewModels;
+using CodeWF.EventBus;
+using NexusDash.Services;
 using ReactiveUI;
 using System;
 using System.Globalization;
@@ -15,8 +16,10 @@ namespace NexusDash.ViewModels.Settings
 
         private string _markdown = "";
 
-        public ChangelogSettingsViewModel(MainWindowViewModel mainViewModel)
-            : base(mainViewModel)
+        public ChangelogSettingsViewModel(
+            IEventBus eventBus,
+            IUserPreferencesService userPreferencesService)
+            : base(eventBus, userPreferencesService)
         {
             if (CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase))
             {

@@ -13,13 +13,19 @@ namespace NexusDash.Services
     public sealed class ProcessNetworkConnectionService
     {
         private static readonly Regex WhitespaceRegex = new(@"\s+", RegexOptions.Compiled);
+        private readonly IProcessCommandRunner _processCommandRunner;
+
+        public ProcessNetworkConnectionService(IProcessCommandRunner processCommandRunner)
+        {
+            _processCommandRunner = processCommandRunner;
+        }
 
         public Task<IReadOnlyList<ProcessNetworkConnection>> GetConnectionsAsync()
         {
             return Task.Run<IReadOnlyList<ProcessNetworkConnection>>(GetConnections);
         }
 
-        private static IReadOnlyList<ProcessNetworkConnection> GetConnections()
+        private IReadOnlyList<ProcessNetworkConnection> GetConnections()
         {
             if (OperatingSystem.IsWindows())
             {
@@ -39,7 +45,7 @@ namespace NexusDash.Services
             return [];
         }
 
-        private static IReadOnlyList<ProcessNetworkConnection> ReadWindowsNetstat()
+        private IReadOnlyList<ProcessNetworkConnection> ReadWindowsNetstat()
         {
             var result = new List<ProcessNetworkConnection>();
             var output = RunCommand("netstat", "-ano");
@@ -248,7 +254,7 @@ namespace NexusDash.Services
             }
         }
 
-        private static IReadOnlyList<ProcessNetworkConnection> ReadMacOsLsof()
+        private IReadOnlyList<ProcessNetworkConnection> ReadMacOsLsof()
         {
             var result = new List<ProcessNetworkConnection>();
             var output = RunCommand("lsof", "-nP -iTCP -iUDP");
@@ -446,11 +452,11 @@ namespace NexusDash.Services
             return value[(start + 2)..^1];
         }
 
-        private static string RunCommand(string fileName, string arguments)
+        private string RunCommand(string fileName, string arguments)
         {
             try
             {
-                return SystemMonitorService.RunProcessAndReadOutput(fileName, arguments);
+                return _processCommandRunner.ReadOutput(fileName, arguments);
             }
             catch
             {

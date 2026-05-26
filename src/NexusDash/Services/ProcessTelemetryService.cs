@@ -21,6 +21,12 @@ namespace NexusDash.Services
         private readonly Dictionary<string, string?> _publisherCache = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, string?> _descriptionCache = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, byte[]?> _iconCache = new(StringComparer.OrdinalIgnoreCase);
+        private readonly IProcessCommandRunner _processCommandRunner;
+
+        public ProcessTelemetryService(IProcessCommandRunner processCommandRunner)
+        {
+            _processCommandRunner = processCommandRunner;
+        }
 
         public Task<IReadOnlyList<ProcessMetrics>> GetProcessesAsync()
         {
@@ -30,7 +36,7 @@ namespace NexusDash.Services
         private IReadOnlyList<ProcessMetrics> GetProcesses()
         {
             var now = DateTime.UtcNow;
-            var metadata = PlatformProcessMetadataReader.ReadAll();
+            var metadata = new PlatformProcessMetadataReader(_processCommandRunner).ReadAll();
             var currentPids = new HashSet<int>();
             var result = new List<ProcessMetrics>();
 
@@ -115,7 +121,7 @@ namespace NexusDash.Services
                 .ToList();
         }
 
-        public static int EndProcess(int pid, bool entireProcessTree)
+        public int EndProcess(int pid, bool entireProcessTree)
         {
             using var process = Process.GetProcessById(pid);
             process.Kill(entireProcessTree);
@@ -474,9 +480,16 @@ namespace NexusDash.Services
             public ulong? WriteTransferBytes { get; init; }
         }
 
-        private static class PlatformProcessMetadataReader
+        private sealed class PlatformProcessMetadataReader
         {
-            public static IReadOnlyDictionary<int, PlatformProcessMetadata> ReadAll()
+            private readonly IProcessCommandRunner _processCommandRunner;
+
+            public PlatformProcessMetadataReader(IProcessCommandRunner processCommandRunner)
+            {
+                _processCommandRunner = processCommandRunner;
+            }
+
+            public IReadOnlyDictionary<int, PlatformProcessMetadata> ReadAll()
             {
                 if (OperatingSystem.IsWindows())
                 {
@@ -679,13 +692,13 @@ namespace NexusDash.Services
                 return null;
             }
 
-            private static IReadOnlyDictionary<int, PlatformProcessMetadata> ReadMacOs()
+            private IReadOnlyDictionary<int, PlatformProcessMetadata> ReadMacOs()
             {
                 var result = new Dictionary<int, PlatformProcessMetadata>();
 
                 try
                 {
-                    var output = SystemMonitorService.RunProcessAndReadOutput("ps", "-axo pid=,ppid=,command=");
+                    var output = _processCommandRunner.ReadOutput("ps", "-axo pid=,ppid=,command=");
                     foreach (var line in output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
                     {
                         var trimmed = line.Trim();

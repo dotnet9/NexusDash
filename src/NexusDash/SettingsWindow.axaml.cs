@@ -15,15 +15,20 @@ namespace NexusDash
     {
         private const string DarkClass = "dark";
 
-        private readonly IRegionManager? _regionManager;
+        private IRegionManager? _regionManager;
         private AtomTabControl? _settingsRegionTabs;
 
         public SettingsWindow()
-            : this(null)
         {
+            InitializeWindow(null);
         }
 
-        public SettingsWindow(IRegionManager? regionManager)
+        public SettingsWindow(IRegionManager regionManager)
+        {
+            InitializeWindow(regionManager);
+        }
+
+        private void InitializeWindow(IRegionManager? regionManager)
         {
             _regionManager = regionManager;
             if (_regionManager is not null)
