@@ -228,6 +228,11 @@ namespace NexusDash.ViewModels
         public string CopyLocalEndpointText => T(NexusDashL.CopyLocalEndpoint);
         public string CopyRemoteEndpointText => T(NexusDashL.CopyRemoteEndpoint);
         public string CopyConnectionInfoText => T(NexusDashL.CopyConnectionInfo);
+        public string ExportSnapshotText => T(NexusDashL.ExportSnapshot);
+        public string ExportJsonText => T(NexusDashL.ExportJson);
+        public string ExportCsvText => T(NexusDashL.ExportCsv);
+        public string StatusSnapshotExportedText => T(NexusDashL.StatusSnapshotExported);
+        public string StatusSnapshotExportFailedText => T(NexusDashL.StatusSnapshotExportFailed);
         public string ColumnVisibilityText => T(NexusDashL.ColumnVisibility);
         public string RequiredColumnText => T(NexusDashL.RequiredColumn);
         public string ProcessCountText => IsSearchActive
@@ -2183,6 +2188,11 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(CopyLocalEndpointText));
             this.RaisePropertyChanged(nameof(CopyRemoteEndpointText));
             this.RaisePropertyChanged(nameof(CopyConnectionInfoText));
+            this.RaisePropertyChanged(nameof(ExportSnapshotText));
+            this.RaisePropertyChanged(nameof(ExportJsonText));
+            this.RaisePropertyChanged(nameof(ExportCsvText));
+            this.RaisePropertyChanged(nameof(StatusSnapshotExportedText));
+            this.RaisePropertyChanged(nameof(StatusSnapshotExportFailedText));
             this.RaisePropertyChanged(nameof(ColumnVisibilityText));
             this.RaisePropertyChanged(nameof(RequiredColumnText));
             this.RaisePropertyChanged(nameof(ProcessCountText));

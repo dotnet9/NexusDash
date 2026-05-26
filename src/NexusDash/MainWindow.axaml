@@ -421,7 +421,7 @@
             BorderBrush="{DynamicResource PanelBorderBrush}"
             BorderThickness="0,1,0,0"
             Padding="18,7">
-      <Grid ColumnDefinitions="Auto,Auto,*,Auto"
+      <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto"
             ColumnSpacing="10">
         <atom:IconButton Classes="statusBarButton"
                          Icon="{antdicons:AntDesignIconProvider Kind=SettingOutlined}"
@@ -442,12 +442,17 @@
                          AutomationProperties.Name="{Binding ResumeText}"
                          ToolTip.Tip="{Binding ResumeText}"
                          IsVisible="{Binding IsRefreshPaused}" />
-        <atom:TextBlock Grid.Column="2"
+        <atom:Button Grid.Column="2"
+                     Classes="statusBarExportButton"
+                     Content="{Binding ExportSnapshotText}"
+                     Click="ExportSnapshotButton_Click"
+                     ToolTip.Tip="{Binding ExportSnapshotText}" />
+        <atom:TextBlock Grid.Column="3"
                    Text="{Binding StatusMessage}"
                    Foreground="{DynamicResource SecondaryTextBrush}"
                    TextTrimming="CharacterEllipsis"
                    VerticalAlignment="Center" />
-        <atom:TextBlock Grid.Column="3"
+        <atom:TextBlock Grid.Column="4"
                    Text="{Binding SelectedCountText}"
                    Foreground="{DynamicResource SecondaryTextBrush}"
                    VerticalAlignment="Center" />

@@ -188,6 +188,13 @@
     <Setter Property="IconHeight" Value="16" />
   </Style>
 
+  <Style Selector="atom|Button.statusBarExportButton">
+    <Setter Property="Height" Value="26" />
+    <Setter Property="MinHeight" Value="26" />
+    <Setter Property="Padding" Value="10,0" />
+    <Setter Property="FontSize" Value="11" />
+  </Style>
+
   <Style Selector="TextBlock.aboutLabel">
     <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
     <Setter Property="Margin" Value="0,0,18,0" />

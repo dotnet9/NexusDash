@@ -88,6 +88,9 @@ public static class NexusDashL
     public const string CopyLocalEndpoint = "NexusDash.NexusDashL.CopyLocalEndpoint";
     public const string CopyRemoteEndpoint = "NexusDash.NexusDashL.CopyRemoteEndpoint";
     public const string CopyConnectionInfo = "NexusDash.NexusDashL.CopyConnectionInfo";
+    public const string ExportSnapshot = "NexusDash.NexusDashL.ExportSnapshot";
+    public const string ExportJson = "NexusDash.NexusDashL.ExportJson";
+    public const string ExportCsv = "NexusDash.NexusDashL.ExportCsv";
     public const string ColumnVisibility = "NexusDash.NexusDashL.ColumnVisibility";
     public const string RequiredColumn = "NexusDash.NexusDashL.RequiredColumn";
     public const string SettingsAppearance = "NexusDash.NexusDashL.SettingsAppearance";
@@ -112,6 +115,8 @@ public static class NexusDashL
     public const string StatusThemeChanged = "NexusDash.NexusDashL.StatusThemeChanged";
     public const string StatusColumnShown = "NexusDash.NexusDashL.StatusColumnShown";
     public const string StatusColumnHidden = "NexusDash.NexusDashL.StatusColumnHidden";
+    public const string StatusSnapshotExported = "NexusDash.NexusDashL.StatusSnapshotExported";
+    public const string StatusSnapshotExportFailed = "NexusDash.NexusDashL.StatusSnapshotExportFailed";
     public const string Confirm = "NexusDash.NexusDashL.Confirm";
     public const string Cancel = "NexusDash.NexusDashL.Cancel";
     public const string ConfirmEndProcessTitle = "NexusDash.NexusDashL.ConfirmEndProcessTitle";

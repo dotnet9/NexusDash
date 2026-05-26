@@ -6,13 +6,19 @@ using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
 using NexusDash.Models;
 using NexusDash.Services;
 using NexusDash.ViewModels;
 using NexusDash.Views;
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace NexusDash
@@ -21,6 +27,43 @@ namespace NexusDash
     {
         private const double CompactTitleBarHeight = 40;
         private const string TitleBarTitleBindingPath = "DataContext.AppNameText";
+        private static readonly JsonSerializerOptions SnapshotJsonOptions = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true
+        };
+
+        private enum SnapshotExportFormat
+        {
+            Json,
+            Csv
+        }
+
+        private sealed record ProcessSnapshot(
+            DateTimeOffset CapturedAt,
+            int TotalProcessCount,
+            int ExportedProcessCount,
+            IReadOnlyList<ProcessSnapshotRow> Processes);
+
+        private sealed record ProcessSnapshotRow(
+            int Pid,
+            int? ParentPid,
+            string Name,
+            string RawName,
+            string? Publisher,
+            string Category,
+            double CpuPercent,
+            ulong WorkingSetBytes,
+            double DiskBytesPerSecond,
+            int TcpConnectionCount,
+            int UdpConnectionCount,
+            int NetworkConnectionCount,
+            double? GpuPercent,
+            string? ExecutablePath,
+            string? CommandLine,
+            DateTime? StartTime,
+            bool IsAccessDenied);
+
         private static readonly (double Width, double Height)[] SupersededDefaultWindowSizes =
         [
             (1280, 820),
@@ -197,6 +240,190 @@ namespace NexusDash
             }
 
             return true;
+        }
+
+        private void ExportSnapshotButton_Click(object? sender, RoutedEventArgs e)
+        {
+            if (sender is not Control control)
+            {
+                return;
+            }
+
+            var viewModel = DataContext as MainWindowViewModel;
+            var menu = new AtomUI.Desktop.Controls.MenuFlyout
+            {
+                Placement = PlacementMode.Top,
+                IsMotionEnabled = true
+            };
+
+            AddExportMenuItem(menu, viewModel?.ExportJsonText ?? "Export JSON", SnapshotExportFormat.Json);
+            AddExportMenuItem(menu, viewModel?.ExportCsvText ?? "Export CSV", SnapshotExportFormat.Csv);
+            menu.ShowAt(control);
+        }
+
+        private void AddExportMenuItem(
+            AtomUI.Desktop.Controls.MenuFlyout menu,
+            string header,
+            SnapshotExportFormat format)
+        {
+            var item = new AtomUI.Desktop.Controls.MenuItem
+            {
+                Header = header
+            };
+            item.Click += async (_, _) => await ExportProcessSnapshotAsync(format);
+            menu.Items.Add(item);
+        }
+
+        private async Task ExportProcessSnapshotAsync(SnapshotExportFormat format)
+        {
+            if (DataContext is not MainWindowViewModel viewModel)
+            {
+                return;
+            }
+
+            try
+            {
+                var rows = viewModel.VisibleProcesses
+                    .Where(row => row.IsProcessRow)
+                    .Select(CreateSnapshotRow)
+                    .ToArray();
+                var extension = format == SnapshotExportFormat.Json ? "json" : "csv";
+                var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+                {
+                    Title = viewModel.ExportSnapshotText,
+                    SuggestedFileName = $"nexusdash-processes-{DateTime.Now:yyyyMMdd-HHmmss}.{extension}",
+                    FileTypeChoices = new[]
+                    {
+                        CreateSnapshotFileType(format)
+                    }
+                });
+
+                if (file is null)
+                {
+                    return;
+                }
+
+                await using var stream = await file.OpenWriteAsync();
+                if (stream.CanSeek)
+                {
+                    stream.SetLength(0);
+                }
+
+                await using var writer = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                await writer.WriteAsync(format == SnapshotExportFormat.Json
+                    ? CreateSnapshotJson(viewModel, rows)
+                    : CreateSnapshotCsv(rows));
+
+                viewModel.StatusMessage = string.Format(
+                    CultureInfo.CurrentCulture,
+                    viewModel.StatusSnapshotExportedText,
+                    rows.Length);
+            }
+            catch (Exception exception)
+            {
+                viewModel.StatusMessage = string.Format(
+                    CultureInfo.CurrentCulture,
+                    viewModel.StatusSnapshotExportFailedText,
+                    exception.Message);
+            }
+        }
+
+        private static FilePickerFileType CreateSnapshotFileType(SnapshotExportFormat format)
+        {
+            return format == SnapshotExportFormat.Json
+                ? new FilePickerFileType("JSON")
+                {
+                    Patterns = new[] { "*.json" },
+                    MimeTypes = new[] { "application/json" }
+                }
+                : new FilePickerFileType("CSV")
+                {
+                    Patterns = new[] { "*.csv" },
+                    MimeTypes = new[] { "text/csv" }
+                };
+        }
+
+        private static string CreateSnapshotJson(MainWindowViewModel viewModel, IReadOnlyList<ProcessSnapshotRow> rows)
+        {
+            var snapshot = new ProcessSnapshot(
+                DateTimeOffset.Now,
+                viewModel.ProcessTotalCount,
+                rows.Count,
+                rows);
+            return JsonSerializer.Serialize(snapshot, SnapshotJsonOptions);
+        }
+
+        private static string CreateSnapshotCsv(IReadOnlyList<ProcessSnapshotRow> rows)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine("pid,parentPid,name,rawName,publisher,category,cpuPercent,workingSetBytes,diskBytesPerSecond,tcpConnectionCount,udpConnectionCount,networkConnectionCount,gpuPercent,executablePath,commandLine,startTime,isAccessDenied");
+            foreach (var row in rows)
+            {
+                AppendCsvField(builder, row.Pid);
+                AppendCsvField(builder, row.ParentPid);
+                AppendCsvField(builder, row.Name);
+                AppendCsvField(builder, row.RawName);
+                AppendCsvField(builder, row.Publisher);
+                AppendCsvField(builder, row.Category);
+                AppendCsvField(builder, row.CpuPercent);
+                AppendCsvField(builder, row.WorkingSetBytes);
+                AppendCsvField(builder, row.DiskBytesPerSecond);
+                AppendCsvField(builder, row.TcpConnectionCount);
+                AppendCsvField(builder, row.UdpConnectionCount);
+                AppendCsvField(builder, row.NetworkConnectionCount);
+                AppendCsvField(builder, row.GpuPercent);
+                AppendCsvField(builder, row.ExecutablePath);
+                AppendCsvField(builder, row.CommandLine);
+                AppendCsvField(builder, row.StartTime?.ToString("O", CultureInfo.InvariantCulture));
+                AppendCsvField(builder, row.IsAccessDenied, isLast: true);
+            }
+
+            return builder.ToString();
+        }
+
+        private static ProcessSnapshotRow CreateSnapshotRow(ProcessRowViewModel row)
+        {
+            return new ProcessSnapshotRow(
+                row.Pid,
+                row.ParentPid,
+                row.Name,
+                row.RawName,
+                row.Publisher,
+                row.Category.ToString(),
+                row.CpuPercent,
+                row.WorkingSetBytes,
+                row.DiskBytesPerSecond,
+                row.TcpConnectionCount,
+                row.UdpConnectionCount,
+                row.NetworkConnectionCount,
+                row.GpuPercent,
+                row.ExecutablePath,
+                row.CommandLine,
+                row.StartTime,
+                row.IsAccessDenied);
+        }
+
+        private static void AppendCsvField(StringBuilder builder, object? value, bool isLast = false)
+        {
+            var text = value switch
+            {
+                null => "",
+                IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
+                _ => value.ToString() ?? ""
+            };
+
+            if (text.Contains('"') || text.Contains(',') || text.Contains('\n') || text.Contains('\r'))
+            {
+                builder.Append('"');
+                builder.Append(text.Replace("\"", "\"\""));
+                builder.Append('"');
+            }
+            else
+            {
+                builder.Append(text);
+            }
+
+            builder.Append(isLast ? Environment.NewLine : ',');
         }
 
         private void NetworkConnectionsGrid_PointerPressed(object? sender, PointerPressedEventArgs e)
