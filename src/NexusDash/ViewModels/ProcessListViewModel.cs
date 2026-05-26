@@ -3,6 +3,7 @@ using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 
 namespace NexusDash.ViewModels
@@ -30,6 +31,8 @@ namespace NexusDash.ViewModels
         private string _accessLimitedText = "";
         private string _columnVisibilityText = "";
         private string _requiredColumnText = "";
+        private string _processSortColumnKey = MainWindowViewModel.ProcessColumnName;
+        private ListSortDirection _processSortDirection = ListSortDirection.Ascending;
         private bool _hasSelectedProcesses;
         private bool _hasNoVisibleProcesses;
 
@@ -150,6 +153,18 @@ namespace NexusDash.ViewModels
             private set => this.RaiseAndSetIfChanged(ref _requiredColumnText, value);
         }
 
+        public string ProcessSortColumnKey
+        {
+            get => _processSortColumnKey;
+            private set => this.RaiseAndSetIfChanged(ref _processSortColumnKey, value);
+        }
+
+        public ListSortDirection ProcessSortDirection
+        {
+            get => _processSortDirection;
+            private set => this.RaiseAndSetIfChanged(ref _processSortDirection, value);
+        }
+
         public bool HasSelectedProcesses
         {
             get => _hasSelectedProcesses;
@@ -202,6 +217,11 @@ namespace NexusDash.ViewModels
             _eventBus.Publish(new ProcessColumnVisibilityChangedCommand(key, isVisible));
         }
 
+        public void SetProcessSort(string columnKey)
+        {
+            _eventBus.Publish(new ProcessSortChangedCommand(columnKey));
+        }
+
         public void Dispose()
         {
             if (_isDisposed)
@@ -218,6 +238,8 @@ namespace NexusDash.ViewModels
         {
             var state = command.State;
             _selectedProcessPid = state.SelectedProcessPid;
+            ProcessSortColumnKey = state.ProcessSortColumnKey;
+            ProcessSortDirection = state.ProcessSortDirection;
             SyncCollection(VisibleProcesses, state.VisibleProcesses);
             SyncCollection(ProcessColumns, state.ProcessColumns);
 

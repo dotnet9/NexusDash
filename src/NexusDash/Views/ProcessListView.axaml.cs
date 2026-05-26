@@ -37,6 +37,7 @@ namespace NexusDash.Views
                 ProcessGrid_PointerPressed,
                 RoutingStrategies.Tunnel,
                 handledEventsToo: true);
+            processGrid.Sorting += ProcessGrid_Sorting;
         }
 
         private void AttachViewModel(ProcessListViewModel? viewModel)
@@ -48,6 +49,7 @@ namespace NexusDash.Views
 
             if (_viewModel is not null)
             {
+                _viewModel.PropertyChanged -= HandleViewModelPropertyChanged;
                 _viewModel.ProcessColumns.CollectionChanged -= HandleProcessColumnsChanged;
                 foreach (var option in _viewModel.ProcessColumns)
                 {
@@ -59,6 +61,7 @@ namespace NexusDash.Views
 
             if (_viewModel is not null)
             {
+                _viewModel.PropertyChanged += HandleViewModelPropertyChanged;
                 _viewModel.ProcessColumns.CollectionChanged += HandleProcessColumnsChanged;
                 foreach (var option in _viewModel.ProcessColumns)
                 {
@@ -67,6 +70,7 @@ namespace NexusDash.Views
             }
 
             ApplyColumnVisibility();
+            ApplyColumnHeaders();
         }
 
         private void ProcessGrid_SelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -247,6 +251,17 @@ namespace NexusDash.Views
             menu.ShowAt(dataGrid);
         }
 
+        private void ProcessGrid_Sorting(object? sender, DataGridColumnEventArgs e)
+        {
+            if (_viewModel is null || e.Column.Tag is not string columnKey)
+            {
+                return;
+            }
+
+            e.Handled = true;
+            _viewModel.SetProcessSort(columnKey);
+        }
+
         private void ApplyColumnVisibility()
         {
             var processGrid = GetProcessGrid();
@@ -266,6 +281,38 @@ namespace NexusDash.Views
             processGrid.Columns[8].IsVisible = _viewModel.IsProcessColumnVisible(MainWindowViewModel.ProcessColumnGpu);
         }
 
+        private void ApplyColumnHeaders()
+        {
+            var processGrid = GetProcessGrid();
+            if (_viewModel is null || processGrid is null || processGrid.Columns.Count < 9)
+            {
+                return;
+            }
+
+            SetColumnHeader(processGrid.Columns[0], MainWindowViewModel.ProcessColumnPid, _viewModel.PidText);
+            SetColumnHeader(processGrid.Columns[1], MainWindowViewModel.ProcessColumnParentPid, _viewModel.ParentPidText);
+            SetColumnHeader(processGrid.Columns[2], MainWindowViewModel.ProcessColumnName, _viewModel.ProcessNameText);
+            SetColumnHeader(processGrid.Columns[3], MainWindowViewModel.ProcessColumnPublisher, _viewModel.PublisherText);
+            SetColumnHeader(processGrid.Columns[4], MainWindowViewModel.ProcessColumnCpu, _viewModel.CpuText);
+            SetColumnHeader(processGrid.Columns[5], MainWindowViewModel.ProcessColumnMemory, _viewModel.MemoryText);
+            SetColumnHeader(processGrid.Columns[6], MainWindowViewModel.ProcessColumnDisk, _viewModel.DiskText);
+            SetColumnHeader(processGrid.Columns[7], MainWindowViewModel.ProcessColumnNetwork, _viewModel.NetworkColumnText);
+            SetColumnHeader(processGrid.Columns[8], MainWindowViewModel.ProcessColumnGpu, _viewModel.GpuText);
+        }
+
+        private void SetColumnHeader(DataGridColumn column, string columnKey, string header)
+        {
+            if (_viewModel is null ||
+                !string.Equals(_viewModel.ProcessSortColumnKey, columnKey, StringComparison.OrdinalIgnoreCase))
+            {
+                column.Header = header;
+                return;
+            }
+
+            var directionGlyph = _viewModel.ProcessSortDirection == ListSortDirection.Ascending ? " ↑" : " ↓";
+            column.Header = string.Concat(header, directionGlyph);
+        }
+
         private DataGrid? GetProcessGrid()
         {
             return ProcessGrid ?? this.FindControl<DataGrid>("ProcessGrid");
@@ -276,6 +323,24 @@ namespace NexusDash.Views
             if (e.PropertyName == nameof(ProcessColumnOptionViewModel.IsVisible))
             {
                 ApplyColumnVisibility();
+            }
+        }
+
+        private void HandleViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is nameof(ProcessListViewModel.ProcessSortColumnKey) or
+                nameof(ProcessListViewModel.ProcessSortDirection) or
+                nameof(ProcessListViewModel.PidText) or
+                nameof(ProcessListViewModel.ParentPidText) or
+                nameof(ProcessListViewModel.ProcessNameText) or
+                nameof(ProcessListViewModel.PublisherText) or
+                nameof(ProcessListViewModel.CpuText) or
+                nameof(ProcessListViewModel.MemoryText) or
+                nameof(ProcessListViewModel.DiskText) or
+                nameof(ProcessListViewModel.NetworkColumnText) or
+                nameof(ProcessListViewModel.GpuText))
+            {
+                ApplyColumnHeaders();
             }
         }
 

@@ -31,7 +31,7 @@
                        AutoGenerateColumns="False"
                        CanUserReorderColumns="True"
                        CanUserResizeColumns="True"
-                       CanUserSortColumns="False"
+                       CanUserSortColumns="True"
                        LeftFrozenColumnCount="3"
                        IsReadOnly="True"
                        IsFrameBorderVisible="False"
@@ -46,7 +46,8 @@
           <atom:DataGrid.Columns>
             <atom:DataGridTemplateColumn Header="{Binding PidText}"
                                          Width="74"
-                                         CanUserSort="False"
+                                         CanUserSort="True"
+                                         Tag="pid"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
@@ -60,7 +61,8 @@
 
             <atom:DataGridTemplateColumn Header="{Binding ParentPidText}"
                                          Width="84"
-                                         CanUserSort="False"
+                                         CanUserSort="True"
+                                         Tag="parentPid"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
@@ -75,7 +77,8 @@
             <atom:DataGridTemplateColumn Header="{Binding ProcessNameText}"
                                          Width="2.2*"
                                          MinWidth="310"
-                                         CanUserSort="False"
+                                         CanUserSort="True"
+                                         Tag="name"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
@@ -130,7 +133,8 @@
 
             <atom:DataGridTemplateColumn Header="{Binding PublisherText}"
                                          Width="138"
-                                         CanUserSort="False"
+                                         CanUserSort="True"
+                                         Tag="publisher"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
@@ -144,7 +148,8 @@
 
             <atom:DataGridTemplateColumn Header="{Binding CpuText}"
                                          Width="68"
-                                         CanUserSort="False"
+                                         CanUserSort="True"
+                                         Tag="cpu"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
@@ -157,7 +162,8 @@
 
             <atom:DataGridTemplateColumn Header="{Binding MemoryText}"
                                          Width="98"
-                                         CanUserSort="False"
+                                         CanUserSort="True"
+                                         Tag="memory"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
@@ -170,7 +176,8 @@
 
             <atom:DataGridTemplateColumn Header="{Binding DiskText}"
                                          Width="108"
-                                         CanUserSort="False"
+                                         CanUserSort="True"
+                                         Tag="disk"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
@@ -183,7 +190,8 @@
 
             <atom:DataGridTemplateColumn Header="{Binding NetworkColumnText}"
                                          Width="98"
-                                         CanUserSort="False"
+                                         CanUserSort="True"
+                                         Tag="network"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
@@ -196,7 +204,8 @@
 
             <atom:DataGridTemplateColumn Header="{Binding GpuText}"
                                          Width="64"
-                                         CanUserSort="False"
+                                         CanUserSort="True"
+                                         Tag="gpu"
                                          CanUserResize="True">
               <atom:DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"

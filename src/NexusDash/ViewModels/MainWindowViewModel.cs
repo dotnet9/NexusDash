@@ -14,6 +14,7 @@ using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -68,6 +69,8 @@ namespace NexusDash.ViewModels
         private bool _isUpdatingLanguageOptions;
         private string _selectedCultureName = "zh-CN";
         private string _searchQuery = "";
+        private string _processSortColumnKey = ProcessColumnName;
+        private ListSortDirection _processSortDirection = ListSortDirection.Ascending;
         private bool _isDarkTheme = true;
         private ProcessTerminationRequestKind _pendingTerminationKind;
         private bool _pendingTerminationEntireProcessTree;
@@ -149,6 +152,8 @@ namespace NexusDash.ViewModels
         public ObservableCollection<ProcessColumnOptionViewModel> ProcessColumns { get; } = new();
         public ObservableCollection<LanguageOption> Languages { get; } = new();
         public DelegateCommand OpenSettingsWindow { get; }
+        public string ProcessSortColumnKey => _processSortColumnKey;
+        public ListSortDirection ProcessSortDirection => _processSortDirection;
 
         public string WindowTitle => $"{T(NexusDashL.AppName)} - {T(NexusDashL.AppSubtitle)}";
         public string AppNameText => T(NexusDashL.AppName);
@@ -662,6 +667,20 @@ namespace NexusDash.ViewModels
             }
         }
 
+        public void SetProcessSort(string columnKey)
+        {
+            var normalizedColumnKey = NormalizeProcessSortColumnKey(columnKey);
+            var direction = string.Equals(_processSortColumnKey, normalizedColumnKey, StringComparison.OrdinalIgnoreCase)
+                ? ToggleSortDirection(_processSortDirection)
+                : GetDefaultSortDirection(normalizedColumnKey);
+
+            _processSortColumnKey = normalizedColumnKey;
+            _processSortDirection = direction;
+            this.RaisePropertyChanged(nameof(ProcessSortColumnKey));
+            this.RaisePropertyChanged(nameof(ProcessSortDirection));
+            RebuildVisibleProcesses();
+        }
+
         [EventHandler]
         private void HandleProcessListSelectionChanged(ProcessListSelectionChangedCommand command)
         {
@@ -680,6 +699,12 @@ namespace NexusDash.ViewModels
             SetProcessColumnVisibility(command.Key, command.IsVisible);
         }
 
+        [EventHandler]
+        private void HandleProcessSortChanged(ProcessSortChangedCommand command)
+        {
+            SetProcessSort(command.ColumnKey);
+        }
+
         private void PublishProcessListState()
         {
             _eventBus.Publish(new ProcessListStateChangedCommand(new ProcessListState
@@ -687,6 +712,8 @@ namespace NexusDash.ViewModels
                 VisibleProcesses = VisibleProcesses.ToArray(),
                 ProcessColumns = ProcessColumns.ToArray(),
                 SelectedProcessPid = SelectedProcess?.Pid,
+                ProcessSortColumnKey = ProcessSortColumnKey,
+                ProcessSortDirection = ProcessSortDirection,
                 ProcessTreeText = ProcessTreeText,
                 ProcessCountText = ProcessCountText,
                 SearchNoResultsText = SearchNoResultsText,
@@ -1203,10 +1230,7 @@ namespace NexusDash.ViewModels
 
         private void SortAndAssignDepth(IList<ProcessRowViewModel> rows, int depth)
         {
-            var sorted = rows
-                .OrderBy(static row => row.Name, StringComparer.CurrentCultureIgnoreCase)
-                .ThenBy(static row => row.Pid)
-                .ToArray();
+            var sorted = SortProcessRows(rows).ToArray();
 
             rows.Clear();
             foreach (var row in sorted)
@@ -1263,7 +1287,6 @@ namespace NexusDash.ViewModels
 
                     foreach (var root in roots)
                     {
-                        root.Parent = groupRow;
                         groupRow.Children.Add(root);
                     }
 
@@ -1285,9 +1308,8 @@ namespace NexusDash.ViewModels
                         continue;
                     }
 
-                    foreach (var match in matches)
+                    foreach (var match in SortProcessRows(matches))
                     {
-                        match.Parent = groupRow;
                         groupRow.Children.Add(match);
                     }
 
@@ -1406,12 +1428,260 @@ namespace NexusDash.ViewModels
 
         private IEnumerable<ProcessRowViewModel> GetCategoryRoots(ProcessCategory category)
         {
-            return _rowCache.Values
+            return SortProcessRows(_rowCache.Values
                 .Where(row => !row.IsGroupHeader &&
                               row.Category == category &&
-                              (row.Parent is null || row.Parent.Category != category))
-                .OrderBy(static row => row.Name, StringComparer.CurrentCultureIgnoreCase)
-                .ThenBy(static row => row.Pid);
+                              (row.Parent is null || row.Parent.Category != category)));
+        }
+
+        private IEnumerable<ProcessRowViewModel> SortProcessRows(IEnumerable<ProcessRowViewModel> rows)
+        {
+            return rows.OrderBy(row => row, new ProcessRowComparer(_processSortColumnKey, _processSortDirection));
+        }
+
+        private static string NormalizeProcessSortColumnKey(string? columnKey)
+        {
+            return columnKey switch
+            {
+                ProcessColumnPid => ProcessColumnPid,
+                ProcessColumnParentPid => ProcessColumnParentPid,
+                ProcessColumnName => ProcessColumnName,
+                ProcessColumnPublisher => ProcessColumnPublisher,
+                ProcessColumnCpu => ProcessColumnCpu,
+                ProcessColumnMemory => ProcessColumnMemory,
+                ProcessColumnDisk => ProcessColumnDisk,
+                ProcessColumnNetwork => ProcessColumnNetwork,
+                ProcessColumnGpu => ProcessColumnGpu,
+                _ => ProcessColumnName
+            };
+        }
+
+        private static ListSortDirection GetDefaultSortDirection(string columnKey)
+        {
+            return columnKey is ProcessColumnCpu or
+                   ProcessColumnMemory or
+                   ProcessColumnDisk or
+                   ProcessColumnNetwork or
+                   ProcessColumnGpu
+                ? ListSortDirection.Descending
+                : ListSortDirection.Ascending;
+        }
+
+        private static ListSortDirection ToggleSortDirection(ListSortDirection direction)
+        {
+            return direction == ListSortDirection.Ascending
+                ? ListSortDirection.Descending
+                : ListSortDirection.Ascending;
+        }
+
+        private sealed class ProcessRowComparer(
+            string columnKey,
+            ListSortDirection direction) : IComparer<ProcessRowViewModel>
+        {
+            public int Compare(ProcessRowViewModel? x, ProcessRowViewModel? y)
+            {
+                if (ReferenceEquals(x, y))
+                {
+                    return 0;
+                }
+
+                if (x is null)
+                {
+                    return 1;
+                }
+
+                if (y is null)
+                {
+                    return -1;
+                }
+
+                var result = columnKey switch
+                {
+                    ProcessColumnPid => CompareValue(x.Pid, y.Pid),
+                    ProcessColumnParentPid => CompareNullableValue(x.ParentPid, y.ParentPid),
+                    ProcessColumnPublisher => CompareOptionalText(x.Publisher, y.Publisher),
+                    ProcessColumnCpu => CompareMetric(x.CpuPercent, y.CpuPercent),
+                    ProcessColumnMemory => CompareValue(x.WorkingSetBytes, y.WorkingSetBytes),
+                    ProcessColumnDisk => CompareMetric(x.DiskBytesPerSecond, y.DiskBytesPerSecond),
+                    ProcessColumnNetwork => CompareNetwork(x, y),
+                    ProcessColumnGpu => CompareNullableMetric(x.GpuPercent, y.GpuPercent),
+                    _ => CompareText(x.Name, y.Name)
+                };
+                if (result != 0)
+                {
+                    return result;
+                }
+
+                result = CompareNaturalText(x.Name, y.Name);
+                return result != 0 ? result : x.Pid.CompareTo(y.Pid);
+            }
+
+            private int CompareNetwork(ProcessRowViewModel x, ProcessRowViewModel y)
+            {
+                var result = CompareValue(x.NetworkConnectionCount, y.NetworkConnectionCount);
+                if (result != 0)
+                {
+                    return result;
+                }
+
+                result = CompareValue(x.TcpConnectionCount, y.TcpConnectionCount);
+                return result != 0 ? result : CompareValue(x.UdpConnectionCount, y.UdpConnectionCount);
+            }
+
+            private int CompareOptionalText(string? x, string? y)
+            {
+                var xMissing = string.IsNullOrWhiteSpace(x);
+                var yMissing = string.IsNullOrWhiteSpace(y);
+                if (xMissing != yMissing)
+                {
+                    return xMissing ? 1 : -1;
+                }
+
+                return xMissing ? 0 : CompareText(x!, y!);
+            }
+
+            private int CompareText(string x, string y)
+            {
+                return ApplyDirection(CompareNaturalText(x, y));
+            }
+
+            private int CompareNullableMetric(double? x, double? y)
+            {
+                var xHasValue = x is { } xValue && double.IsFinite(xValue);
+                var yHasValue = y is { } yValue && double.IsFinite(yValue);
+                if (xHasValue != yHasValue)
+                {
+                    return xHasValue ? -1 : 1;
+                }
+
+                return xHasValue ? CompareMetric(x!.Value, y!.Value) : 0;
+            }
+
+            private int CompareMetric(double x, double y)
+            {
+                var xValue = double.IsFinite(x) ? x : 0;
+                var yValue = double.IsFinite(y) ? y : 0;
+                return CompareValue(xValue, yValue);
+            }
+
+            private int CompareNullableValue<T>(T? x, T? y)
+                where T : struct, IComparable<T>
+            {
+                if (x.HasValue != y.HasValue)
+                {
+                    return x.HasValue ? -1 : 1;
+                }
+
+                return x.HasValue ? CompareValue(x.Value, y!.Value) : 0;
+            }
+
+            private int CompareValue<T>(T x, T y)
+                where T : IComparable<T>
+            {
+                return ApplyDirection(x.CompareTo(y));
+            }
+
+            private int ApplyDirection(int result)
+            {
+                return direction == ListSortDirection.Descending ? -result : result;
+            }
+
+            private static int CompareNaturalText(string? x, string? y)
+            {
+                x ??= "";
+                y ??= "";
+
+                var xIndex = 0;
+                var yIndex = 0;
+                while (xIndex < x.Length && yIndex < y.Length)
+                {
+                    var xIsDigit = IsAsciiDigit(x[xIndex]);
+                    var yIsDigit = IsAsciiDigit(y[yIndex]);
+                    var xStart = xIndex;
+                    var yStart = yIndex;
+
+                    while (xIndex < x.Length && IsAsciiDigit(x[xIndex]) == xIsDigit)
+                    {
+                        xIndex++;
+                    }
+
+                    while (yIndex < y.Length && IsAsciiDigit(y[yIndex]) == yIsDigit)
+                    {
+                        yIndex++;
+                    }
+
+                    var result = xIsDigit && yIsDigit
+                        ? CompareNumberSegments(x, xStart, xIndex, y, yStart, yIndex)
+                        : CompareTextSegments(x, xStart, xIndex, y, yStart, yIndex);
+                    if (result != 0)
+                    {
+                        return result;
+                    }
+                }
+
+                return (x.Length - xIndex).CompareTo(y.Length - yIndex);
+            }
+
+            private static int CompareNumberSegments(
+                string x,
+                int xStart,
+                int xEnd,
+                string y,
+                int yStart,
+                int yEnd)
+            {
+                var xValueStart = SkipLeadingZeroes(x, xStart, xEnd);
+                var yValueStart = SkipLeadingZeroes(y, yStart, yEnd);
+                var xValueLength = xEnd - xValueStart;
+                var yValueLength = yEnd - yValueStart;
+                if (xValueLength != yValueLength)
+                {
+                    return xValueLength.CompareTo(yValueLength);
+                }
+
+                for (var offset = 0; offset < xValueLength; offset++)
+                {
+                    var result = x[xValueStart + offset].CompareTo(y[yValueStart + offset]);
+                    if (result != 0)
+                    {
+                        return result;
+                    }
+                }
+
+                return (xEnd - xStart).CompareTo(yEnd - yStart);
+            }
+
+            private static int CompareTextSegments(
+                string x,
+                int xStart,
+                int xEnd,
+                string y,
+                int yStart,
+                int yEnd)
+            {
+                var xSegment = x[xStart..xEnd];
+                var ySegment = y[yStart..yEnd];
+                var result = CultureInfo.CurrentCulture.CompareInfo.Compare(
+                    xSegment,
+                    ySegment,
+                    CompareOptions.IgnoreCase | CompareOptions.IgnoreKanaType | CompareOptions.IgnoreWidth);
+                return result != 0 ? result : string.Compare(xSegment, ySegment, StringComparison.Ordinal);
+            }
+
+            private static int SkipLeadingZeroes(string value, int start, int end)
+            {
+                while (start < end && value[start] == '0')
+                {
+                    start++;
+                }
+
+                return start;
+            }
+
+            private static bool IsAsciiDigit(char value)
+            {
+                return value is >= '0' and <= '9';
+            }
         }
 
         private ProcessRowViewModel GetGroupRow(ProcessCategory category)

@@ -1,5 +1,6 @@
 using CodeWF.EventBus;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace NexusDash.ViewModels
 {
@@ -8,6 +9,8 @@ namespace NexusDash.ViewModels
         public IReadOnlyList<ProcessRowViewModel> VisibleProcesses { get; init; } = [];
         public IReadOnlyList<ProcessColumnOptionViewModel> ProcessColumns { get; init; } = [];
         public int? SelectedProcessPid { get; init; }
+        public string ProcessSortColumnKey { get; init; } = "name";
+        public ListSortDirection ProcessSortDirection { get; init; } = ListSortDirection.Ascending;
         public string ProcessTreeText { get; init; } = "";
         public string ProcessCountText { get; init; } = "";
         public string SearchNoResultsText { get; init; } = "";
@@ -52,5 +55,10 @@ namespace NexusDash.ViewModels
     {
         public string Key { get; } = key;
         public bool IsVisible { get; } = isVisible;
+    }
+
+    public sealed class ProcessSortChangedCommand(string columnKey) : Command
+    {
+        public string ColumnKey { get; } = columnKey;
     }
 }
