@@ -39,11 +39,21 @@ namespace NexusDash
             Csv
         }
 
+        private enum SnapshotExportScope
+        {
+            ProcessList,
+            SelectedProcess
+        }
+
         private sealed record ProcessSnapshot(
             DateTimeOffset CapturedAt,
             int TotalProcessCount,
             int ExportedProcessCount,
             IReadOnlyList<ProcessSnapshotRow> Processes);
+
+        private sealed record SelectedProcessSnapshot(
+            DateTimeOffset CapturedAt,
+            ProcessSnapshotRow Process);
 
         private sealed record ProcessSnapshotRow(
             int Pid,
@@ -256,25 +266,50 @@ namespace NexusDash
                 IsMotionEnabled = true
             };
 
-            AddExportMenuItem(menu, viewModel?.ExportJsonText ?? "Export JSON", SnapshotExportFormat.Json);
-            AddExportMenuItem(menu, viewModel?.ExportCsvText ?? "Export CSV", SnapshotExportFormat.Csv);
+            AddExportMenuItem(
+                menu,
+                viewModel?.ExportProcessListJsonText ?? "Export process list JSON",
+                SnapshotExportFormat.Json,
+                SnapshotExportScope.ProcessList,
+                isEnabled: true);
+            AddExportMenuItem(
+                menu,
+                viewModel?.ExportProcessListCsvText ?? "Export process list CSV",
+                SnapshotExportFormat.Csv,
+                SnapshotExportScope.ProcessList,
+                isEnabled: true);
+            AddExportMenuItem(
+                menu,
+                viewModel?.ExportSelectedProcessJsonText ?? "Export selected process JSON",
+                SnapshotExportFormat.Json,
+                SnapshotExportScope.SelectedProcess,
+                viewModel?.HasSelectedProcess == true);
+            AddExportMenuItem(
+                menu,
+                viewModel?.ExportSelectedProcessCsvText ?? "Export selected process CSV",
+                SnapshotExportFormat.Csv,
+                SnapshotExportScope.SelectedProcess,
+                viewModel?.HasSelectedProcess == true);
             menu.ShowAt(control);
         }
 
         private void AddExportMenuItem(
             AtomUI.Desktop.Controls.MenuFlyout menu,
             string header,
-            SnapshotExportFormat format)
+            SnapshotExportFormat format,
+            SnapshotExportScope scope,
+            bool isEnabled)
         {
             var item = new AtomUI.Desktop.Controls.MenuItem
             {
-                Header = header
+                Header = header,
+                IsEnabled = isEnabled
             };
-            item.Click += async (_, _) => await ExportProcessSnapshotAsync(format);
+            item.Click += async (_, _) => await ExportProcessSnapshotAsync(format, scope);
             menu.Items.Add(item);
         }
 
-        private async Task ExportProcessSnapshotAsync(SnapshotExportFormat format)
+        private async Task ExportProcessSnapshotAsync(SnapshotExportFormat format, SnapshotExportScope scope)
         {
             if (DataContext is not MainWindowViewModel viewModel)
             {
@@ -283,15 +318,17 @@ namespace NexusDash
 
             try
             {
-                var rows = viewModel.VisibleProcesses
-                    .Where(row => row.IsProcessRow)
-                    .Select(CreateSnapshotRow)
-                    .ToArray();
+                var rows = CreateSnapshotRows(viewModel, scope);
+                if (rows.Count == 0)
+                {
+                    return;
+                }
+
                 var extension = format == SnapshotExportFormat.Json ? "json" : "csv";
                 var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
                 {
                     Title = viewModel.ExportSnapshotText,
-                    SuggestedFileName = $"nexusdash-processes-{DateTime.Now:yyyyMMdd-HHmmss}.{extension}",
+                    SuggestedFileName = CreateSuggestedSnapshotFileName(scope, rows[0], extension),
                     FileTypeChoices = new[]
                     {
                         CreateSnapshotFileType(format)
@@ -311,13 +348,10 @@ namespace NexusDash
 
                 await using var writer = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
                 await writer.WriteAsync(format == SnapshotExportFormat.Json
-                    ? CreateSnapshotJson(viewModel, rows)
+                    ? CreateSnapshotJson(viewModel, rows, scope)
                     : CreateSnapshotCsv(rows));
 
-                viewModel.StatusMessage = string.Format(
-                    CultureInfo.CurrentCulture,
-                    viewModel.StatusSnapshotExportedText,
-                    rows.Length);
+                viewModel.StatusMessage = CreateSnapshotStatusMessage(viewModel, rows, scope);
             }
             catch (Exception exception)
             {
@@ -343,8 +377,45 @@ namespace NexusDash
                 };
         }
 
-        private static string CreateSnapshotJson(MainWindowViewModel viewModel, IReadOnlyList<ProcessSnapshotRow> rows)
+        private static IReadOnlyList<ProcessSnapshotRow> CreateSnapshotRows(
+            MainWindowViewModel viewModel,
+            SnapshotExportScope scope)
         {
+            if (scope == SnapshotExportScope.SelectedProcess)
+            {
+                return viewModel.SelectedProcess is null
+                    ? []
+                    : [CreateSnapshotRow(viewModel.SelectedProcess)];
+            }
+
+            return viewModel.VisibleProcesses
+                .Where(row => row.IsProcessRow)
+                .Select(CreateSnapshotRow)
+                .ToArray();
+        }
+
+        private static string CreateSuggestedSnapshotFileName(
+            SnapshotExportScope scope,
+            ProcessSnapshotRow firstRow,
+            string extension)
+        {
+            var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
+            return scope == SnapshotExportScope.SelectedProcess
+                ? $"nexusdash-process-{firstRow.Pid}-{timestamp}.{extension}"
+                : $"nexusdash-processes-{timestamp}.{extension}";
+        }
+
+        private static string CreateSnapshotJson(
+            MainWindowViewModel viewModel,
+            IReadOnlyList<ProcessSnapshotRow> rows,
+            SnapshotExportScope scope)
+        {
+            if (scope == SnapshotExportScope.SelectedProcess)
+            {
+                var selectedSnapshot = new SelectedProcessSnapshot(DateTimeOffset.Now, rows[0]);
+                return JsonSerializer.Serialize(selectedSnapshot, SnapshotJsonOptions);
+            }
+
             var snapshot = new ProcessSnapshot(
                 DateTimeOffset.Now,
                 viewModel.ProcessTotalCount,
@@ -379,6 +450,22 @@ namespace NexusDash
             }
 
             return builder.ToString();
+        }
+
+        private static string CreateSnapshotStatusMessage(
+            MainWindowViewModel viewModel,
+            IReadOnlyList<ProcessSnapshotRow> rows,
+            SnapshotExportScope scope)
+        {
+            return scope == SnapshotExportScope.SelectedProcess
+                ? string.Format(
+                    CultureInfo.CurrentCulture,
+                    viewModel.StatusSelectedProcessSnapshotExportedText,
+                    rows[0].Pid)
+                : string.Format(
+                    CultureInfo.CurrentCulture,
+                    viewModel.StatusSnapshotExportedText,
+                    rows.Count);
         }
 
         private static ProcessSnapshotRow CreateSnapshotRow(ProcessRowViewModel row)
