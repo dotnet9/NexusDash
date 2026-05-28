@@ -1,0 +1,290 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:atom="https://atomui.net"
+             xmlns:models="using:NexusDash.Models"
+             xmlns:vm="using:NexusDash.ViewModels"
+             mc:Ignorable="d"
+             d:DesignWidth="1060"
+             d:DesignHeight="560"
+             x:Class="NexusDash.Views.ProcessInspectorView"
+             x:DataType="vm:ProcessInspectorViewModel">
+  <Border Margin="0,12,0,0"
+          Classes="panel">
+    <atom:TabControl SizeType="Small">
+      <atom:TabItem Header="{Binding DetailsText}">
+        <Grid Margin="14">
+          <atom:TextBlock Text="{Binding NoProcessSelectedText}"
+                          IsVisible="{Binding !HasSelectedProcess}"
+                          Foreground="{DynamicResource SecondaryTextBrush}"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center" />
+
+          <ScrollViewer IsVisible="{Binding HasSelectedProcess}"
+                        HorizontalScrollBarVisibility="Disabled"
+                        VerticalScrollBarVisibility="Auto">
+            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                  RowSpacing="8">
+              <atom:TextBlock Text="{Binding SelectedProcess.Name}"
+                              FontSize="16"
+                              FontWeight="SemiBold"
+                              TextTrimming="CharacterEllipsis" />
+              <Border Grid.Row="1"
+                      IsVisible="{Binding HasSelectedProcessAccessLimit}"
+                      Background="{DynamicResource PanelAltBackgroundBrush}"
+                      BorderBrush="{DynamicResource WarningBrush}"
+                      BorderThickness="1"
+                      CornerRadius="6"
+                      Padding="10,8">
+                <StackPanel Spacing="3">
+                  <atom:TextBlock Text="{Binding AccessLimitedText}"
+                                  Foreground="{DynamicResource WarningBrush}"
+                                  FontWeight="SemiBold" />
+                  <atom:TextBlock Text="{Binding AccessLimitedDescriptionText}"
+                                  TextWrapping="Wrap"
+                                  Foreground="{DynamicResource SecondaryTextBrush}" />
+                </StackPanel>
+              </Border>
+              <Grid Grid.Row="2" ColumnDefinitions="104,*">
+                <atom:TextBlock Text="{Binding PidText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                <atom:TextBlock Grid.Column="1" Text="{Binding SelectedProcess.Pid}" />
+              </Grid>
+              <Grid Grid.Row="3" ColumnDefinitions="104,*">
+                <atom:TextBlock Text="{Binding PublisherText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                <atom:TextBlock Grid.Column="1" Text="{Binding SelectedProcess.PublisherText}" TextWrapping="Wrap" />
+              </Grid>
+              <Grid Grid.Row="4" ColumnDefinitions="104,*">
+                <atom:TextBlock Text="{Binding StartTimeText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                <atom:TextBlock Grid.Column="1" Text="{Binding SelectedProcess.StartTimeText}" TextWrapping="Wrap" />
+              </Grid>
+              <Grid Grid.Row="5" ColumnDefinitions="104,*">
+                <atom:TextBlock Text="{Binding CpuText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                <atom:TextBlock Grid.Column="1" Text="{Binding SelectedProcess.CpuText}" />
+              </Grid>
+              <Grid Grid.Row="6" ColumnDefinitions="104,*">
+                <atom:TextBlock Text="{Binding MemoryText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                <atom:TextBlock Grid.Column="1" Text="{Binding SelectedProcess.MemoryText}" />
+              </Grid>
+              <Grid Grid.Row="7" ColumnDefinitions="104,*">
+                <atom:TextBlock Text="{Binding PathText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                <atom:TextBlock Grid.Column="1"
+                                Text="{Binding SelectedProcess.ExecutablePath}"
+                                TextWrapping="Wrap" />
+              </Grid>
+              <Grid Grid.Row="8" RowDefinitions="Auto,Auto">
+                <atom:TextBlock Text="{Binding CommandLineText}"
+                                Foreground="{DynamicResource SecondaryTextBrush}"
+                                Margin="0,4,0,6" />
+                <atom:TextBox Grid.Row="1"
+                              Height="132"
+                              Text="{Binding SelectedProcess.CommandLine}"
+                              IsReadOnly="True"
+                              AcceptsReturn="True"
+                              TextWrapping="Wrap" />
+              </Grid>
+            </Grid>
+          </ScrollViewer>
+        </Grid>
+      </atom:TabItem>
+
+      <atom:TabItem Header="{Binding HandlesText}">
+        <Grid Margin="14" RowDefinitions="Auto,*" RowSpacing="12">
+          <atom:TextBox PlaceholderText="{Binding HandlesSearchPlaceholderText}"
+                        IsAllowClear="True" />
+          <atom:TextBlock Grid.Row="1"
+                          Text="{Binding HandlesUnavailableText}"
+                          TextWrapping="Wrap"
+                          Foreground="{DynamicResource SecondaryTextBrush}" />
+        </Grid>
+      </atom:TabItem>
+
+      <atom:TabItem Header="{Binding NetworkText}">
+        <Grid Margin="12"
+              RowDefinitions="Auto,Auto,*"
+              RowSpacing="12">
+          <Grid ColumnDefinitions="*,92"
+                ColumnSpacing="8">
+            <StackPanel Spacing="3"
+                        VerticalAlignment="Center">
+              <atom:TextBlock Classes="sectionTitle"
+                              Text="{Binding ProcessNetworkConnectionsText}"
+                              Foreground="{DynamicResource PrimaryTextBrush}" />
+              <atom:TextBlock Classes="muted"
+                              Text="{Binding SelectedProcessNetworkSummaryText}"
+                              FontSize="11"
+                              Foreground="{DynamicResource SecondaryTextBrush}"
+                              TextWrapping="Wrap" />
+            </StackPanel>
+            <Border Grid.Column="1"
+                    Classes="metricBadge"
+                    MinWidth="86">
+              <atom:TextBlock Text="{Binding SelectedProcessConnectionTotalText}"
+                              FontWeight="SemiBold"
+                              Foreground="{DynamicResource PrimaryTextBrush}"
+                              HorizontalAlignment="Center"
+                              TextTrimming="CharacterEllipsis" />
+            </Border>
+          </Grid>
+
+          <Grid Grid.Row="1"
+                ColumnDefinitions="*,*"
+                ColumnSpacing="8">
+            <Border Grid.Column="0"
+                    Classes="metricBadge">
+              <Grid ColumnDefinitions="Auto,*"
+                    ColumnSpacing="8">
+                <Border Width="8"
+                        Height="8"
+                        CornerRadius="4"
+                        Background="{DynamicResource AccentBrush}"
+                        VerticalAlignment="Center" />
+                <atom:TextBlock Grid.Column="1"
+                                Text="{Binding SelectedProcessTcpConnectionCountText}"
+                                Foreground="{DynamicResource PrimaryTextBrush}"
+                                FontWeight="SemiBold"
+                                TextTrimming="CharacterEllipsis" />
+              </Grid>
+            </Border>
+            <Border Grid.Column="1"
+                    Classes="metricBadge">
+              <Grid ColumnDefinitions="Auto,*"
+                    ColumnSpacing="8">
+                <Border Width="8"
+                        Height="8"
+                        CornerRadius="4"
+                        Background="{DynamicResource SuccessBrush}"
+                        VerticalAlignment="Center" />
+                <atom:TextBlock Grid.Column="1"
+                                Text="{Binding SelectedProcessUdpConnectionCountText}"
+                                Foreground="{DynamicResource PrimaryTextBrush}"
+                                FontWeight="SemiBold"
+                                TextTrimming="CharacterEllipsis" />
+              </Grid>
+            </Border>
+          </Grid>
+
+          <Grid Grid.Row="2">
+            <atom:TextBlock Text="{Binding NetworkSelectProcessText}"
+                            IsVisible="{Binding !HasSelectedProcess}"
+                            TextWrapping="Wrap"
+                            Foreground="{DynamicResource SecondaryTextBrush}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center" />
+
+            <atom:TextBlock Text="{Binding NetworkNoConnectionsText}"
+                            IsVisible="{Binding HasSelectedProcessWithoutNetworkConnections}"
+                            TextWrapping="Wrap"
+                            Foreground="{DynamicResource SecondaryTextBrush}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center" />
+
+            <atom:DataGrid x:Name="NetworkConnectionsGrid"
+                           ItemsSource="{Binding SelectedProcessNetworkConnections}"
+                           Classes="compactDataGrid"
+                           AutoGenerateColumns="False"
+                           CanUserReorderColumns="True"
+                           CanUserResizeColumns="True"
+                           CanUserSortColumns="True"
+                           IsReadOnly="True"
+                           IsFrameBorderVisible="False"
+                           IsVisible="{Binding HasSelectedProcessNetworkConnections}"
+                           PaginationVisibility="None"
+                           GridLinesVisibility="Horizontal"
+                           HorizontalScrollBarVisibility="Auto"
+                           VerticalScrollBarVisibility="Auto"
+                           PointerPressed="NetworkConnectionsGrid_PointerPressed"
+                           Background="Transparent">
+              <atom:DataGrid.Columns>
+                <atom:DataGridTemplateColumn Header="{Binding ProtocolText}"
+                                             Width="72"
+                                             SortMemberPath="Protocol"
+                                             CanUserSort="True"
+                                             CanUserResize="True">
+                  <atom:DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate x:DataType="models:ProcessNetworkConnection" x:CompileBindings="False">
+                      <atom:TextBlock Text="{Binding Protocol}"
+                                      FontWeight="SemiBold"
+                                      Foreground="{DynamicResource PrimaryTextBrush}"
+                                      VerticalAlignment="Center" />
+                    </DataTemplate>
+                  </atom:DataGridTemplateColumn.CellTemplate>
+                </atom:DataGridTemplateColumn>
+                <atom:DataGridTemplateColumn Header="{Binding LocalEndpointText}"
+                                             Width="150"
+                                             SortMemberPath="LocalEndpointText"
+                                             CanUserSort="True"
+                                             CanUserResize="True">
+                  <atom:DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate x:DataType="models:ProcessNetworkConnection" x:CompileBindings="False">
+                      <atom:TextBlock Text="{Binding LocalEndpointText}"
+                                      TextTrimming="CharacterEllipsis"
+                                      Foreground="{DynamicResource PrimaryTextBrush}"
+                                      VerticalAlignment="Center" />
+                    </DataTemplate>
+                  </atom:DataGridTemplateColumn.CellTemplate>
+                </atom:DataGridTemplateColumn>
+                <atom:DataGridTemplateColumn Header="{Binding RemoteEndpointText}"
+                                             Width="150"
+                                             SortMemberPath="RemoteEndpointText"
+                                             CanUserSort="True"
+                                             CanUserResize="True">
+                  <atom:DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate x:DataType="models:ProcessNetworkConnection" x:CompileBindings="False">
+                      <atom:TextBlock Text="{Binding RemoteEndpointText}"
+                                      TextTrimming="CharacterEllipsis"
+                                      Foreground="{DynamicResource PrimaryTextBrush}"
+                                      VerticalAlignment="Center" />
+                    </DataTemplate>
+                  </atom:DataGridTemplateColumn.CellTemplate>
+                </atom:DataGridTemplateColumn>
+                <atom:DataGridTemplateColumn Header="{Binding StateText}"
+                                             Width="92"
+                                             SortMemberPath="State"
+                                             CanUserSort="True"
+                                             CanUserResize="True">
+                  <atom:DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate x:DataType="models:ProcessNetworkConnection" x:CompileBindings="False">
+                      <atom:TextBlock Text="{Binding State}"
+                                      TextTrimming="CharacterEllipsis"
+                                      VerticalAlignment="Center"
+                                      Foreground="{DynamicResource SecondaryTextBrush}" />
+                    </DataTemplate>
+                  </atom:DataGridTemplateColumn.CellTemplate>
+                </atom:DataGridTemplateColumn>
+                <atom:DataGridTemplateColumn Header="{Binding LastSeenText}"
+                                             Width="118"
+                                             SortMemberPath="Timestamp"
+                                             CanUserSort="True"
+                                             CanUserResize="True">
+                  <atom:DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate x:DataType="models:ProcessNetworkConnection" x:CompileBindings="False">
+                      <atom:TextBlock Text="{Binding TimestampText}"
+                                      TextTrimming="CharacterEllipsis"
+                                      VerticalAlignment="Center"
+                                      Foreground="{DynamicResource SecondaryTextBrush}" />
+                    </DataTemplate>
+                  </atom:DataGridTemplateColumn.CellTemplate>
+                </atom:DataGridTemplateColumn>
+              </atom:DataGrid.Columns>
+            </atom:DataGrid>
+          </Grid>
+        </Grid>
+      </atom:TabItem>
+
+      <atom:TabItem Header="{Binding ServicesText}">
+        <atom:TextBlock Margin="14"
+                        Text="{Binding ServicesUnavailableText}"
+                        TextWrapping="Wrap"
+                        Foreground="{DynamicResource SecondaryTextBrush}" />
+      </atom:TabItem>
+
+      <atom:TabItem Header="{Binding StartupText}">
+        <atom:TextBlock Margin="14"
+                        Text="{Binding StartupUnavailableText}"
+                        TextWrapping="Wrap"
+                        Foreground="{DynamicResource SecondaryTextBrush}" />
+      </atom:TabItem>
+    </atom:TabControl>
+  </Border>
+</UserControl>

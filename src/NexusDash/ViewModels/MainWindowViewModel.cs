@@ -3,7 +3,11 @@ using Avalonia;
 using Avalonia.Threading;
 using AtomUI;
 using AtomUI.Controls;
+using AtomUI.Controls.Primitives;
+using AtomUI.Desktop.Controls;
+using AtomUI.Icons.AntDesign;
 using CodeWF.EventBus;
+using CodeWF.Log.Core;
 using Lang.Avalonia;
 using NexusDash.Controls.Models;
 using NexusDash.Models;
@@ -37,6 +41,8 @@ namespace NexusDash.ViewModels
         public const string ProcessFilterHighCpu = "highCpu";
         public const string ProcessFilterUserProcesses = "userProcesses";
         public const string ProcessFilterHideSystemProcesses = "hideSystemProcesses";
+        public const string ProcessManagerToolKey = "processManager";
+        public const string FileSearchToolKey = "fileSearch";
 
         private enum ProcessTerminationRequestKind
         {
@@ -69,6 +75,8 @@ namespace NexusDash.ViewModels
         private readonly ProcessRowViewModel _windowsGroupRow;
         private readonly Dictionary<string, double> _processColumnWidths = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, ProcessColumnOptionViewModel> _processColumnOptions = new(StringComparer.OrdinalIgnoreCase);
+        private NavMenuNode? _processManagerNode;
+        private NavMenuNode? _fileSearchNode;
         private IReadOnlyList<ProcessTerminationCandidateViewModel> _pendingTerminationCandidates = [];
         private IReadOnlyList<ProcessRowViewModel> _selectedRows = [];
         private bool _isUpdatingLanguageOptions;
@@ -81,6 +89,7 @@ namespace NexusDash.ViewModels
         private bool _filterUserProcesses;
         private bool _filterHideSystemProcesses;
         private bool _isDarkTheme = true;
+        private bool _rememberWindowSize;
         private ProcessTerminationRequestKind _pendingTerminationKind;
         private bool _pendingTerminationEntireProcessTree;
         private bool _isEndProcessConfirmationVisible;
@@ -97,6 +106,8 @@ namespace NexusDash.ViewModels
         private string _topNetworkProcessText = "";
         private int _processTotalCount;
         private ProcessRowViewModel? _selectedProcess;
+        private INavMenuNode? _selectedToolNode;
+        private string _selectedToolKey = ProcessManagerToolKey;
         private LanguageOption? _selectedLanguage;
         private IReadOnlyList<TreemapItem> _treemapProcesses = [];
         private IReadOnlyList<ProcessNetworkConnection> _networkConnections = [];
@@ -112,6 +123,7 @@ namespace NexusDash.ViewModels
         public MainWindowViewModel(
             IEventBus eventBus,
             ProcessListViewModel processList,
+            FileSearchViewModel fileSearch,
             SystemMonitorService systemMonitorService,
             ProcessTelemetryService processTelemetryService,
             ProcessNetworkConnectionService processNetworkConnectionService,
@@ -125,11 +137,22 @@ namespace NexusDash.ViewModels
             _userPreferencesService = userPreferencesService;
             _themeResourceService = themeResourceService;
             ProcessList = processList;
+            FileSearch = fileSearch;
+            ProcessManager = new ProcessManagerViewModel(eventBus, processList);
+            ToolTree = new ToolTreeViewModel(eventBus);
+            ToolContent = new ToolContentViewModel(eventBus, ProcessManager, fileSearch);
+            OperationLog = new OperationLogPaneViewModel(eventBus);
+            StatusBar = new StatusBarViewModel(eventBus);
+            EndProcessConfirmation = new EndProcessConfirmationViewModel(eventBus);
             OpenSettingsWindow = new DelegateCommand(PublishOpenSettingsWindow);
+            SelectProcessTool = new DelegateCommand(() => SelectTool(ProcessManagerToolKey));
+            SelectFileSearchTool = new DelegateCommand(() => SelectTool(FileSearchToolKey));
+            FileSearch.PropertyChanged += HandleFileSearchPropertyChanged;
             _eventBus.Subscribe(this);
 
             var preferences = _userPreferencesService.Load();
             _isDarkTheme = preferences.IsDarkTheme;
+            _rememberWindowSize = preferences.RememberWindowSize;
             InitializeProcessColumnWidths(preferences);
             ApplyApplicationTheme(_isDarkTheme);
             InitializeLanguageOptions();
@@ -149,19 +172,32 @@ namespace NexusDash.ViewModels
                 -3,
                 unavailableText,
                 HandleRowExpansionChanged);
+            InitializeToolMenu();
             SetLanguage(NormalizeCulture(preferences.CultureName), showStatus: false);
             InitializeProcessColumnOptions(preferences);
             StatusMessage = T(NexusDashL.StatusRunning);
             PublishProcessListState();
+            PublishShellState();
             PublishSettingsState();
             _refreshLoopTask = RefreshLoopAsync(_refreshCancellation.Token);
         }
 
         public ProcessListViewModel ProcessList { get; }
+        public FileSearchViewModel FileSearch { get; }
+        public ProcessManagerViewModel ProcessManager { get; }
+        public ToolTreeViewModel ToolTree { get; }
+        public ToolContentViewModel ToolContent { get; }
+        public OperationLogPaneViewModel OperationLog { get; }
+        public StatusBarViewModel StatusBar { get; }
+        public EndProcessConfirmationViewModel EndProcessConfirmation { get; }
         public ObservableCollection<ProcessRowViewModel> VisibleProcesses { get; } = new();
         public ObservableCollection<ProcessColumnOptionViewModel> ProcessColumns { get; } = new();
         public ObservableCollection<LanguageOption> Languages { get; } = new();
+        public ObservableCollection<INavMenuNode> ToolMenuItems { get; } = new();
+        public IList<TreeNodePath> ToolMenuDefaultOpenPaths { get; } = [];
         public DelegateCommand OpenSettingsWindow { get; }
+        public DelegateCommand SelectProcessTool { get; }
+        public DelegateCommand SelectFileSearchTool { get; }
         public string ProcessSortColumnKey => _processSortColumnKey;
         public ListSortDirection ProcessSortDirection => _processSortDirection;
 
@@ -169,15 +205,22 @@ namespace NexusDash.ViewModels
         public string AppNameText => T(NexusDashL.AppName);
         public string AppSubtitleText => T(NexusDashL.AppSubtitle);
         public string SettingsText => T(NexusDashL.Settings);
+        public string RememberWindowSizeText => T(NexusDashL.RememberWindowSize);
+        public string ProcessManagerText => T(NexusDashL.ProcessManager);
+        public string FileSearchToolText => T(NexusDashL.FileSearch);
+        public string OperationLogText => T(NexusDashL.OperationLog);
+        public string ProcessOverviewText => T(NexusDashL.ProcessOverview);
         public string ThemeMenuText => T(NexusDashL.ThemeMenu);
         public string DarkThemeText => T(NexusDashL.DarkTheme);
         public string LightThemeText => T(NexusDashL.LightTheme);
         public string LanguageMenuText => T(NexusDashL.LanguageMenu);
         public string PauseText => T(NexusDashL.Pause);
         public string ResumeText => T(NexusDashL.Resume);
-        public string SearchPlaceholderText => T(NexusDashL.SearchPlaceholder);
+        public string SearchPlaceholderText => IsFileSearchToolSelected
+            ? FileSearch.SearchPlaceholderText
+            : T(NexusDashL.SearchPlaceholder);
         public string SearchNoResultsText => IsSearchActive
-            ? string.Format(CultureInfo.CurrentCulture, T(NexusDashL.SearchNoResults), SearchQuery.Trim())
+            ? string.Format(CultureInfo.CurrentCulture, T(NexusDashL.SearchNoResults), _searchQuery.Trim())
             : T(NexusDashL.FilterNoResults);
         public string EndProcessText => T(NexusDashL.EndProcess);
         public string EndProcessTreeText => T(NexusDashL.EndProcessTree);
@@ -242,6 +285,8 @@ namespace NexusDash.ViewModels
             ? string.Format(CultureInfo.CurrentCulture, T(NexusDashL.SearchResultCount), VisibleProcessCount, ProcessTotalCount)
             : $"{VisibleProcessCount}/{ProcessTotalCount}";
         public string SelectedCountText => string.Format(CultureInfo.CurrentCulture, T(NexusDashL.StatusSelected), SelectedProcessCount);
+        public string ActiveStatusMessage => IsFileSearchToolSelected ? FileSearch.StatusMessage : StatusMessage;
+        public string ActiveCountText => IsFileSearchToolSelected ? FileSearch.ResultCountText : SelectedCountText;
         public string CpuUsageText => $"{CpuUsage:F1}%";
         public string MemoryUsageText => $"{MemoryUsage:F1}%";
         public string MemorySummaryText => $"{MemoryUsedText} / {MemoryTotalText}";
@@ -301,7 +346,11 @@ namespace NexusDash.ViewModels
         public bool HasSelectedPendingTerminationProcesses => PendingTerminationSelectedCount > 0;
         public bool HasSelectedProcesses => SelectedProcessCount > 0;
         public bool HasSelectedProcess => SelectedProcess is not null;
-        public bool IsSearchActive => !string.IsNullOrWhiteSpace(SearchQuery);
+        public bool IsSearchActive => !string.IsNullOrWhiteSpace(_searchQuery);
+        public bool IsProcessToolSelected => string.Equals(_selectedToolKey, ProcessManagerToolKey, StringComparison.Ordinal);
+        public bool IsFileSearchToolSelected => string.Equals(_selectedToolKey, FileSearchToolKey, StringComparison.Ordinal);
+        public bool CanShowPauseRefresh => IsProcessToolSelected && IsRefreshRunning;
+        public bool CanShowResumeRefresh => IsProcessToolSelected && IsRefreshPaused;
         public bool IsProcessFilterActive => FilterHasNetworkConnections ||
                                              FilterHighCpu ||
                                              FilterUserProcesses ||
@@ -324,10 +373,19 @@ namespace NexusDash.ViewModels
                 if (SetField(ref _isRefreshPaused, value, nameof(IsRefreshPaused)))
                 {
                     this.RaisePropertyChanged(nameof(IsRefreshRunning));
+                    this.RaisePropertyChanged(nameof(CanShowPauseRefresh));
+                    this.RaisePropertyChanged(nameof(CanShowResumeRefresh));
+                    PublishStatusBarState();
                 }
             }
         }
         public bool IsRefreshRunning => !IsRefreshPaused;
+        public bool RememberWindowSize
+        {
+            get => _rememberWindowSize;
+            private set => SetField(ref _rememberWindowSize, value, nameof(RememberWindowSize));
+        }
+
         public bool IsSimplifiedChinese => string.Equals(_selectedCultureName, "zh-CN", StringComparison.OrdinalIgnoreCase);
         public bool IsTraditionalChinese => string.Equals(_selectedCultureName, "zh-Hant", StringComparison.OrdinalIgnoreCase);
         public bool IsEnglish => string.Equals(_selectedCultureName, "en-US", StringComparison.OrdinalIgnoreCase);
@@ -351,11 +409,41 @@ namespace NexusDash.ViewModels
             }
         }
 
-        public string SearchQuery
+        public INavMenuNode? SelectedToolNode
         {
-            get => _searchQuery;
+            get => _selectedToolNode;
             set
             {
+                if (value is null)
+                {
+                    return;
+                }
+
+                var toolKey = value.ItemKey?.Value;
+                if (!TryNormalizeToolKey(toolKey, out var normalizedToolKey))
+                {
+                    this.RaisePropertyChanged(nameof(SelectedToolNode));
+                    return;
+                }
+
+                if (SetField(ref _selectedToolNode, value, nameof(SelectedToolNode)))
+                {
+                    ApplySelectedToolKey(normalizedToolKey);
+                }
+            }
+        }
+
+        public string SearchQuery
+        {
+            get => IsFileSearchToolSelected ? FileSearch.SearchQuery : _searchQuery;
+            set
+            {
+                if (IsFileSearchToolSelected)
+                {
+                    FileSearch.SearchQuery = value ?? "";
+                    return;
+                }
+
                 if (SetField(ref _searchQuery, value ?? "", nameof(SearchQuery)))
                 {
                     RebuildVisibleProcesses();
@@ -478,7 +566,15 @@ namespace NexusDash.ViewModels
         public string StatusMessage
         {
             get => _statusMessage;
-            set => this.RaiseAndSetIfChanged(ref _statusMessage, value);
+            set
+            {
+                if (SetField(ref _statusMessage, value, nameof(StatusMessage)))
+                {
+                    this.RaisePropertyChanged(nameof(ActiveStatusMessage));
+                    PublishStatusBarState();
+                    LogOperation(value);
+                }
+            }
         }
 
         public string TopCpuProcessText
@@ -527,6 +623,8 @@ namespace NexusDash.ViewModels
                     this.RaisePropertyChanged(nameof(HasSelectedProcess));
                     this.RaisePropertyChanged(nameof(HasSelectedProcessAccessLimit));
                     RefreshSelectedNetworkConnections();
+                    PublishProcessInspectorState();
+                    PublishStatusBarState();
                 }
             }
         }
@@ -534,7 +632,13 @@ namespace NexusDash.ViewModels
         public IReadOnlyList<TreemapItem> TreemapProcesses
         {
             get => _treemapProcesses;
-            set => this.RaiseAndSetIfChanged(ref _treemapProcesses, value);
+            set
+            {
+                if (SetField(ref _treemapProcesses, value, nameof(TreemapProcesses)))
+                {
+                    PublishProcessExplorerState();
+                }
+            }
         }
 
         public IReadOnlyList<ProcessNetworkConnection> SelectedProcessNetworkConnections
@@ -552,6 +656,7 @@ namespace NexusDash.ViewModels
                     this.RaisePropertyChanged(nameof(SelectedProcessConnectionTotalText));
                     this.RaisePropertyChanged(nameof(SelectedProcessTcpConnectionCountText));
                     this.RaisePropertyChanged(nameof(SelectedProcessUdpConnectionCountText));
+                    PublishProcessInspectorState();
                 }
             }
         }
@@ -619,6 +724,33 @@ namespace NexusDash.ViewModels
             StatusMessage = T(NexusDashL.StatusRunning);
         }
 
+        public void SelectTool(string toolKey)
+        {
+            if (!TryNormalizeToolKey(toolKey, out var normalizedToolKey))
+            {
+                normalizedToolKey = ProcessManagerToolKey;
+            }
+
+            SelectedToolNode = FindToolNode(normalizedToolKey);
+        }
+
+        public void ExecuteActiveSearch()
+        {
+            if (IsFileSearchToolSelected)
+            {
+                if (FileSearch.SearchFiles.CanExecute())
+                {
+                    LogOperation($"执行文件搜索：{FileSearch.SearchQuery}");
+                    FileSearch.SearchFiles.Execute();
+                }
+
+                return;
+            }
+
+            LogOperation($"执行进程筛选：{SearchQuery}");
+            RebuildVisibleProcesses();
+        }
+
         public void SelectSimplifiedChinese()
         {
             SetLanguage("zh-CN");
@@ -655,6 +787,56 @@ namespace NexusDash.ViewModels
         private void ApplyLanguageChange(LanguageChangeRequestedCommand command)
         {
             SetLanguage(command.CultureName);
+        }
+
+        [EventHandler]
+        private void ApplyToolSelection(ToolSelectionRequestedCommand command)
+        {
+            SelectTool(command.ToolKey);
+        }
+
+        [EventHandler]
+        private void ApplyPauseRefresh(PauseRefreshRequestedCommand command)
+        {
+            PauseRefresh();
+        }
+
+        [EventHandler]
+        private void ApplyResumeRefresh(ResumeRefreshRequestedCommand command)
+        {
+            ResumeRefresh();
+        }
+
+        [EventHandler]
+        private void ApplyCancelPendingProcessTermination(CancelPendingProcessTerminationCommand command)
+        {
+            CancelPendingProcessTermination();
+        }
+
+        [EventHandler]
+        private void ApplyConfirmPendingProcessTermination(ConfirmPendingProcessTerminationCommand command)
+        {
+            ConfirmPendingProcessTermination();
+        }
+
+        [EventHandler]
+        private void ApplyRememberWindowSizeChange(RememberWindowSizeChangedCommand command)
+        {
+            if (RememberWindowSize == command.IsEnabled)
+            {
+                return;
+            }
+
+            RememberWindowSize = command.IsEnabled;
+            _userPreferencesService.Update(preferences => preferences.RememberWindowSize = command.IsEnabled);
+            PublishStatusBarState();
+            LogOperation($"{RememberWindowSizeText}: {(command.IsEnabled ? "On" : "Off")}");
+        }
+
+        [EventHandler]
+        private void ApplyStatusMessageRequest(StatusMessageRequestedCommand command)
+        {
+            StatusMessage = command.Message;
         }
 
         public void EndSelectedProcesses()
@@ -705,6 +887,7 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(SelectedProcessCount));
             this.RaisePropertyChanged(nameof(HasSelectedProcesses));
             this.RaisePropertyChanged(nameof(SelectedCountText));
+            this.RaisePropertyChanged(nameof(ActiveCountText));
             StatusMessage = SelectedCountText;
             PublishProcessListState();
         }
@@ -820,6 +1003,131 @@ namespace NexusDash.ViewModels
             SetProcessSort(command.ColumnKey);
         }
 
+        private void HandleFileSearchPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(FileSearchViewModel.SearchQuery) && IsFileSearchToolSelected)
+            {
+                this.RaisePropertyChanged(nameof(SearchQuery));
+            }
+
+            if (e.PropertyName == nameof(FileSearchViewModel.SearchPlaceholderText) && IsFileSearchToolSelected)
+            {
+                this.RaisePropertyChanged(nameof(SearchPlaceholderText));
+            }
+
+            if (e.PropertyName == nameof(FileSearchViewModel.StatusMessage))
+            {
+                this.RaisePropertyChanged(nameof(ActiveStatusMessage));
+                PublishStatusBarState();
+            }
+
+            if (e.PropertyName == nameof(FileSearchViewModel.ResultCountText))
+            {
+                this.RaisePropertyChanged(nameof(ActiveCountText));
+                PublishStatusBarState();
+            }
+        }
+
+        private void InitializeToolMenu()
+        {
+            _processManagerNode = new NavMenuNode
+            {
+                Header = ProcessManagerText,
+                Icon = new AppstoreOutlined(),
+                ItemKey = ProcessManagerToolKey
+            };
+            _fileSearchNode = new NavMenuNode
+            {
+                Header = FileSearchToolText,
+                Icon = new FileSearchOutlined(),
+                ItemKey = FileSearchToolKey
+            };
+            ToolMenuItems.Clear();
+            ToolMenuItems.Add(_processManagerNode);
+            ToolMenuItems.Add(_fileSearchNode);
+            _selectedToolNode = _processManagerNode;
+        }
+
+        private INavMenuNode FindToolNode(string toolKey)
+        {
+            return string.Equals(toolKey, FileSearchToolKey, StringComparison.Ordinal)
+                ? _fileSearchNode ?? _selectedToolNode ?? ToolMenuItems.First()
+                : _processManagerNode ?? _selectedToolNode ?? ToolMenuItems.First();
+        }
+
+        private void ApplySelectedToolKey(string toolKey)
+        {
+            if (SetField(ref _selectedToolKey, toolKey, nameof(_selectedToolKey)))
+            {
+                RaiseActiveToolProperties();
+                PublishToolTreeState();
+                PublishActiveToolState();
+                PublishStatusBarState();
+                LogOperation($"切换工具：{GetToolDisplayName(toolKey)}");
+            }
+        }
+
+        private static bool TryNormalizeToolKey(string? toolKey, out string normalizedToolKey)
+        {
+            if (string.Equals(toolKey, FileSearchToolKey, StringComparison.Ordinal))
+            {
+                normalizedToolKey = FileSearchToolKey;
+                return true;
+            }
+
+            if (string.Equals(toolKey, ProcessManagerToolKey, StringComparison.Ordinal))
+            {
+                normalizedToolKey = ProcessManagerToolKey;
+                return true;
+            }
+
+            normalizedToolKey = ProcessManagerToolKey;
+            return false;
+        }
+
+        private void RefreshToolMenuHeaders()
+        {
+            if (_processManagerNode is not null)
+            {
+                _processManagerNode.Header = ProcessManagerText;
+            }
+
+            if (_fileSearchNode is not null)
+            {
+                _fileSearchNode.Header = FileSearchToolText;
+            }
+
+            PublishToolTreeState();
+            PublishProcessManagerState();
+        }
+
+        private void RaiseActiveToolProperties()
+        {
+            this.RaisePropertyChanged(nameof(IsProcessToolSelected));
+            this.RaisePropertyChanged(nameof(IsFileSearchToolSelected));
+            this.RaisePropertyChanged(nameof(CanShowPauseRefresh));
+            this.RaisePropertyChanged(nameof(CanShowResumeRefresh));
+            this.RaisePropertyChanged(nameof(SearchPlaceholderText));
+            this.RaisePropertyChanged(nameof(SearchQuery));
+            this.RaisePropertyChanged(nameof(ActiveStatusMessage));
+            this.RaisePropertyChanged(nameof(ActiveCountText));
+        }
+
+        private string GetToolDisplayName(string toolKey)
+        {
+            return string.Equals(toolKey, FileSearchToolKey, StringComparison.Ordinal)
+                ? FileSearchToolText
+                : ProcessManagerText;
+        }
+
+        private static void LogOperation(string? message)
+        {
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                Logger.Info(message, message, log2Console: false);
+            }
+        }
+
         private void PublishProcessListState()
         {
             _eventBus.Publish(new ProcessListStateChangedCommand(new ProcessListState
@@ -859,6 +1167,181 @@ namespace NexusDash.ViewModels
                 HasSelectedProcesses = HasSelectedProcesses,
                 HasNoVisibleProcesses = HasNoVisibleProcesses
             }));
+            PublishStatusBarState();
+        }
+
+        private void PublishShellState()
+        {
+            PublishToolTreeState();
+            PublishActiveToolState();
+            PublishProcessManagerState();
+            PublishProcessOverviewState();
+            PublishProcessExplorerState();
+            PublishProcessInspectorState();
+            PublishStatusBarState();
+            PublishEndProcessConfirmationState();
+            PublishOperationLogState();
+        }
+
+        private void PublishToolTreeState()
+        {
+            _eventBus.Publish(new ToolTreeStateChangedCommand(new ToolTreeState
+            {
+                ToolMenuItems = ToolMenuItems.ToArray(),
+                ToolMenuDefaultOpenPaths = ToolMenuDefaultOpenPaths,
+                SelectedToolNode = SelectedToolNode
+            }));
+        }
+
+        private void PublishActiveToolState()
+        {
+            _eventBus.Publish(new ActiveToolStateChangedCommand(new ActiveToolState
+            {
+                IsProcessToolSelected = IsProcessToolSelected,
+                IsFileSearchToolSelected = IsFileSearchToolSelected
+            }));
+        }
+
+        private void PublishProcessManagerState()
+        {
+            _eventBus.Publish(new ProcessManagerStateChangedCommand(new ProcessManagerState
+            {
+                ProcessOverviewText = ProcessOverviewText,
+                ProcessTreeText = ProcessTreeText,
+                DetailsText = DetailsText
+            }));
+        }
+
+        private void PublishProcessOverviewState()
+        {
+            _eventBus.Publish(new ProcessOverviewStateChangedCommand(new ProcessOverviewState
+            {
+                CpuText = CpuText,
+                MemoryText = MemoryText,
+                DiskText = DiskText,
+                NetworkText = NetworkText,
+                CpuUsageText = CpuUsageText,
+                MemoryUsageText = MemoryUsageText,
+                MemorySummaryText = MemorySummaryText,
+                DiskSpeedText = DiskSpeedText,
+                NetworkSpeedText = NetworkSpeedText,
+                TopCpuProcessText = TopCpuProcessText,
+                TopMemoryProcessText = TopMemoryProcessText,
+                TopDiskProcessText = TopDiskProcessText,
+                TopNetworkProcessText = TopNetworkProcessText,
+                CpuUsage = CpuUsage,
+                CpuHistory = CpuHistory,
+                MemoryHistory = MemoryHistory,
+                DiskHistory = DiskHistory,
+                NetworkHistory = NetworkHistory
+            }));
+        }
+
+        private void PublishProcessExplorerState()
+        {
+            _eventBus.Publish(new ProcessExplorerStateChangedCommand(new ProcessExplorerState
+            {
+                TreemapText = TreemapText,
+                TreemapProcesses = TreemapProcesses
+            }));
+        }
+
+        private void PublishProcessInspectorState()
+        {
+            _eventBus.Publish(new ProcessInspectorStateChangedCommand(new ProcessInspectorState
+            {
+                DetailsText = DetailsText,
+                HandlesText = HandlesText,
+                NetworkText = NetworkText,
+                ServicesText = ServicesText,
+                StartupText = StartupText,
+                NoProcessSelectedText = NoProcessSelectedText,
+                AccessLimitedText = AccessLimitedText,
+                AccessLimitedDescriptionText = AccessLimitedDescriptionText,
+                PidText = PidText,
+                PublisherText = PublisherText,
+                StartTimeText = StartTimeText,
+                CpuText = CpuText,
+                MemoryText = MemoryText,
+                PathText = PathText,
+                CommandLineText = CommandLineText,
+                HandlesSearchPlaceholderText = HandlesSearchPlaceholderText,
+                HandlesUnavailableText = HandlesUnavailableText,
+                ServicesUnavailableText = ServicesUnavailableText,
+                StartupUnavailableText = StartupUnavailableText,
+                ProcessNetworkConnectionsText = ProcessNetworkConnectionsText,
+                SelectedProcessNetworkSummaryText = SelectedProcessNetworkSummaryText,
+                SelectedProcessConnectionTotalText = SelectedProcessConnectionTotalText,
+                SelectedProcessTcpConnectionCountText = SelectedProcessTcpConnectionCountText,
+                SelectedProcessUdpConnectionCountText = SelectedProcessUdpConnectionCountText,
+                NetworkSelectProcessText = NetworkSelectProcessText,
+                NetworkNoConnectionsText = NetworkNoConnectionsText,
+                ProtocolText = ProtocolText,
+                LocalEndpointText = LocalEndpointText,
+                RemoteEndpointText = RemoteEndpointText,
+                StateText = StateText,
+                LastSeenText = LastSeenText,
+                CopyLocalEndpointText = CopyLocalEndpointText,
+                CopyRemoteEndpointText = CopyRemoteEndpointText,
+                CopyConnectionInfoText = CopyConnectionInfoText,
+                SelectedProcess = SelectedProcess,
+                HasSelectedProcess = HasSelectedProcess,
+                HasSelectedProcessAccessLimit = HasSelectedProcessAccessLimit,
+                HasSelectedProcessNetworkConnections = HasSelectedProcessNetworkConnections,
+                HasSelectedProcessWithoutNetworkConnections = HasSelectedProcessWithoutNetworkConnections,
+                SelectedProcessNetworkConnections = SelectedProcessNetworkConnections
+            }));
+        }
+
+        private void PublishStatusBarState()
+        {
+            _eventBus.Publish(new StatusBarStateChangedCommand(new StatusBarState
+            {
+                SettingsText = SettingsText,
+                PauseText = PauseText,
+                ResumeText = ResumeText,
+                ExportSnapshotText = ExportSnapshotText,
+                ExportProcessListJsonText = ExportProcessListJsonText,
+                ExportProcessListCsvText = ExportProcessListCsvText,
+                ExportSelectedProcessJsonText = ExportSelectedProcessJsonText,
+                ExportSelectedProcessCsvText = ExportSelectedProcessCsvText,
+                StatusSnapshotExportedText = StatusSnapshotExportedText,
+                StatusSnapshotExportFailedText = StatusSnapshotExportFailedText,
+                StatusSelectedProcessSnapshotExportedText = StatusSelectedProcessSnapshotExportedText,
+                RememberWindowSizeText = RememberWindowSizeText,
+                ActiveStatusMessage = ActiveStatusMessage,
+                ActiveCountText = ActiveCountText,
+                CanShowPauseRefresh = CanShowPauseRefresh,
+                CanShowResumeRefresh = CanShowResumeRefresh,
+                IsProcessToolSelected = IsProcessToolSelected,
+                HasSelectedProcess = HasSelectedProcess,
+                RememberWindowSize = RememberWindowSize,
+                ProcessTotalCount = ProcessTotalCount,
+                SelectedProcess = SelectedProcess,
+                VisibleProcesses = VisibleProcesses.Where(static row => row.IsProcessRow).ToArray()
+            }));
+        }
+
+        private void PublishEndProcessConfirmationState()
+        {
+            _eventBus.Publish(new EndProcessConfirmationStateChangedCommand(new EndProcessConfirmationState
+            {
+                IsEndProcessConfirmationVisible = IsEndProcessConfirmationVisible,
+                EndProcessConfirmationTitleText = EndProcessConfirmationTitleText,
+                EndProcessConfirmationMessageText = EndProcessConfirmationMessageText,
+                PendingTerminationCandidates = PendingTerminationCandidates,
+                HasSelectedPendingTerminationProcesses = HasSelectedPendingTerminationProcesses,
+                CancelText = CancelText,
+                ConfirmText = ConfirmText
+            }));
+        }
+
+        private void PublishOperationLogState()
+        {
+            _eventBus.Publish(new OperationLogStateChangedCommand(new OperationLogState
+            {
+                OperationLogText = OperationLogText
+            }));
         }
 
         private void PublishSettingsState()
@@ -896,6 +1379,10 @@ namespace NexusDash.ViewModels
             _pendingTerminationEntireProcessTree = entireProcessTree && !includeAssociatedProcesses;
             IsEndProcessConfirmationVisible = true;
             RaiseTerminationConfirmationProperties();
+            Logger.Warn(
+                $"Process termination confirmation requested: kind={_pendingTerminationKind}; candidates={candidates.Length}; pids={string.Join(", ", candidates.Select(static candidate => candidate.Pid))}",
+                $"请求结束进程确认：{candidates.Length} 个候选进程",
+                log2Console: false);
         }
 
         private ProcessTerminationCandidateViewModel[] CreateProcessTerminationCandidates(
@@ -1184,6 +1671,10 @@ namespace NexusDash.ViewModels
 
             ProcessTotalCount = processSnapshot.Length;
             RebuildProcessTree(processSnapshot);
+            PublishProcessOverviewState();
+            PublishProcessExplorerState();
+            PublishProcessInspectorState();
+            PublishStatusBarState();
         }
 
         private static IReadOnlyList<ProcessNetworkConnection> EnrichNetworkConnections(
@@ -1919,6 +2410,10 @@ namespace NexusDash.ViewModels
 
             try
             {
+                Logger.Warn(
+                    $"Ending processes: entireProcessTree={entireProcessTree}; pids={string.Join(", ", pids)}",
+                    $"开始结束进程：{string.Join(", ", pids)}",
+                    log2Console: false);
                 await Task.Run(() =>
                 {
                     foreach (var pid in pids)
@@ -1928,10 +2423,19 @@ namespace NexusDash.ViewModels
                 });
 
                 StatusMessage = string.Format(CultureInfo.CurrentCulture, T(NexusDashL.StatusEnded), pids.Length);
+                Logger.Info(
+                    $"End process request completed: pids={string.Join(", ", pids)}",
+                    $"结束进程请求已完成：{string.Join(", ", pids)}",
+                    log2Console: false);
             }
             catch (Exception exception)
             {
                 StatusMessage = string.Format(CultureInfo.CurrentCulture, T(NexusDashL.StatusEndFailed), exception.Message);
+                Logger.Error(
+                    $"End process request failed: pids={string.Join(", ", pids)}",
+                    exception,
+                    StatusMessage,
+                    log2Console: false);
             }
         }
 
@@ -1952,6 +2456,7 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(PendingTerminationSelectedCount));
             this.RaisePropertyChanged(nameof(PendingTerminationTotalCount));
             this.RaisePropertyChanged(nameof(HasSelectedPendingTerminationProcesses));
+            PublishEndProcessConfirmationState();
         }
 
         private void InitializeProcessColumnOptions(UserPreferences preferences)
@@ -2134,6 +2639,12 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(AppNameText));
             this.RaisePropertyChanged(nameof(AppSubtitleText));
             this.RaisePropertyChanged(nameof(SettingsText));
+            this.RaisePropertyChanged(nameof(RememberWindowSizeText));
+            this.RaisePropertyChanged(nameof(ProcessManagerText));
+            this.RaisePropertyChanged(nameof(FileSearchToolText));
+            this.RaisePropertyChanged(nameof(OperationLogText));
+            this.RaisePropertyChanged(nameof(ProcessOverviewText));
+            RefreshToolMenuHeaders();
             this.RaisePropertyChanged(nameof(ThemeMenuText));
             this.RaisePropertyChanged(nameof(DarkThemeText));
             this.RaisePropertyChanged(nameof(LightThemeText));
@@ -2224,7 +2735,11 @@ namespace NexusDash.ViewModels
             RaiseTerminationConfirmationProperties();
             RefreshProcessColumnHeaders();
             this.RaisePropertyChanged(nameof(SelectedCountText));
+            this.RaisePropertyChanged(nameof(ActiveCountText));
+            this.RaisePropertyChanged(nameof(ActiveStatusMessage));
+            FileSearch.RefreshLocalizedText();
             PublishProcessListState();
+            PublishShellState();
         }
 
         private static string NormalizeCulture(string cultureName)
@@ -2299,7 +2814,15 @@ namespace NexusDash.ViewModels
             _isDisposed = true;
             _refreshCancellation.Cancel();
             _eventBus.Unsubscribe(this);
+            FileSearch.PropertyChanged -= HandleFileSearchPropertyChanged;
+            ToolTree.Dispose();
+            ToolContent.Dispose();
+            OperationLog.Dispose();
+            StatusBar.Dispose();
+            EndProcessConfirmation.Dispose();
+            ProcessManager.Dispose();
             ProcessList.Dispose();
+            FileSearch.Dispose();
             _systemMonitorService.Dispose();
             _ = DisposeRefreshCancellationWhenIdleAsync();
         }

@@ -1,0 +1,55 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:atom="https://atomui.net"
+             xmlns:antdicons="https://atomui.net/icons/antdesign"
+             xmlns:vm="using:NexusDash.ViewModels"
+             mc:Ignorable="d"
+             d:DesignWidth="1200"
+             d:DesignHeight="42"
+             x:Class="NexusDash.Views.StatusBarView"
+             x:DataType="vm:StatusBarViewModel">
+  <Border Background="{DynamicResource PanelBackgroundBrush}"
+          BorderBrush="{DynamicResource PanelBorderBrush}"
+          BorderThickness="0,1,0,0"
+          Padding="18,7">
+    <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto"
+          ColumnSpacing="10">
+      <atom:IconButton Classes="statusBarButton"
+                       Icon="{antdicons:AntDesignIconProvider Kind=SettingOutlined}"
+                       Click="SettingsButton_Click"
+                       AutomationProperties.Name="{Binding SettingsText}"
+                       ToolTip.Tip="{Binding SettingsText}" />
+      <atom:IconButton Grid.Column="1"
+                       Classes="statusBarButton"
+                       Icon="{antdicons:AntDesignIconProvider Kind=PauseCircleOutlined}"
+                       Command="{Binding PauseRefreshCommand}"
+                       AutomationProperties.Name="{Binding PauseText}"
+                       ToolTip.Tip="{Binding PauseText}"
+                       IsVisible="{Binding CanShowPauseRefresh}" />
+      <atom:IconButton Grid.Column="1"
+                       Classes="statusBarButton"
+                       Icon="{antdicons:AntDesignIconProvider Kind=PlayCircleOutlined}"
+                       Command="{Binding ResumeRefreshCommand}"
+                       AutomationProperties.Name="{Binding ResumeText}"
+                       ToolTip.Tip="{Binding ResumeText}"
+                       IsVisible="{Binding CanShowResumeRefresh}" />
+      <atom:Button Grid.Column="2"
+                   Classes="statusBarExportButton"
+                   Content="{Binding ExportSnapshotText}"
+                   Click="ExportSnapshotButton_Click"
+                   ToolTip.Tip="{Binding ExportSnapshotText}"
+                   IsVisible="{Binding IsProcessToolSelected}" />
+      <atom:TextBlock Grid.Column="3"
+                      Text="{Binding ActiveStatusMessage}"
+                      Foreground="{DynamicResource SecondaryTextBrush}"
+                      TextTrimming="CharacterEllipsis"
+                      VerticalAlignment="Center" />
+      <atom:TextBlock Grid.Column="4"
+                      Text="{Binding ActiveCountText}"
+                      Foreground="{DynamicResource SecondaryTextBrush}"
+                      VerticalAlignment="Center" />
+    </Grid>
+  </Border>
+</UserControl>

@@ -1,0 +1,175 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:atom="https://atomui.net"
+             xmlns:vm="using:NexusDash.ViewModels"
+             mc:Ignorable="d"
+             d:DesignWidth="980"
+             d:DesignHeight="620"
+             x:Class="NexusDash.Views.FileSearchView"
+             x:DataType="vm:FileSearchViewModel">
+  <Grid RowDefinitions="Auto,*"
+        RowSpacing="12"
+        Margin="18,14,18,10">
+    <Border Classes="panel"
+            Padding="14">
+      <Grid RowDefinitions="Auto,Auto"
+            RowSpacing="10">
+        <Grid ColumnDefinitions="*,Auto,Auto"
+              ColumnSpacing="8">
+          <atom:TextBox PlaceholderText="{Binding SearchPlaceholderText}"
+                        Text="{Binding SearchQuery, Mode=TwoWay}"
+                        IsAllowClear="True" />
+          <atom:Button Grid.Column="1"
+                       Content="{Binding SearchButtonText}"
+                       ButtonType="Primary"
+                       Command="{Binding SearchFiles}" />
+          <atom:Button Grid.Column="2"
+                       Content="{Binding CancelButtonText}"
+                       Command="{Binding CancelSearch}"
+                       IsVisible="{Binding IsSearching}" />
+        </Grid>
+
+        <Grid Grid.Row="1"
+              ColumnDefinitions="Auto,*"
+              ColumnSpacing="10">
+          <atom:TextBlock Text="{Binding SearchLocationText}"
+                          Foreground="{DynamicResource SecondaryTextBrush}"
+                          VerticalAlignment="Center" />
+          <atom:TextBox Grid.Column="1"
+                        PlaceholderText="{Binding SearchRootPlaceholderText}"
+                        Text="{Binding SearchRootText, Mode=TwoWay}"
+                        IsAllowClear="True" />
+        </Grid>
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="1"
+            Classes="panel">
+      <Grid RowDefinitions="Auto,*">
+        <Grid Grid.Row="0"
+              ColumnDefinitions="*,Auto"
+              Margin="14,10,14,6">
+          <atom:TextBlock Text="{Binding FileSearchText}"
+                          Classes="sectionTitle" />
+          <atom:TextBlock Grid.Column="1"
+                          Text="{Binding ResultCountText}"
+                          Foreground="{DynamicResource SecondaryTextBrush}"
+                          VerticalAlignment="Center" />
+        </Grid>
+
+        <Grid Grid.Row="1">
+          <atom:DataGrid x:Name="ResultsGrid"
+                         ItemsSource="{Binding Results}"
+                         Classes="compactDataGrid"
+                         AutoGenerateColumns="False"
+                         CanUserReorderColumns="True"
+                         CanUserResizeColumns="True"
+                         CanUserSortColumns="True"
+                         IsReadOnly="True"
+                         IsFrameBorderVisible="False"
+                         PaginationVisibility="None"
+                         GridLinesVisibility="Horizontal"
+                         HorizontalScrollBarVisibility="Auto"
+                         VerticalScrollBarVisibility="Auto"
+                         Background="Transparent">
+            <atom:DataGrid.Columns>
+              <atom:DataGridTemplateColumn Header="{Binding NameColumnText}"
+                                           Width="220"
+                                           SortMemberPath="Name"
+                                           CanUserSort="True"
+                                           CanUserResize="True">
+                <atom:DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:FileSearchResultViewModel" x:CompileBindings="False">
+                    <atom:TextBlock Text="{Binding Name}"
+                                    Foreground="{DynamicResource PrimaryTextBrush}"
+                                    VerticalAlignment="Center" />
+                  </DataTemplate>
+                </atom:DataGridTemplateColumn.CellTemplate>
+              </atom:DataGridTemplateColumn>
+
+              <atom:DataGridTemplateColumn Header="{Binding DirectoryColumnText}"
+                                           Width="260"
+                                           SortMemberPath="DirectoryPath"
+                                           CanUserSort="True"
+                                           CanUserResize="True">
+                <atom:DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:FileSearchResultViewModel" x:CompileBindings="False">
+                    <atom:TextBlock Text="{Binding DirectoryPath}"
+                                    Foreground="{DynamicResource SecondaryTextBrush}"
+                                    VerticalAlignment="Center" />
+                  </DataTemplate>
+                </atom:DataGridTemplateColumn.CellTemplate>
+              </atom:DataGridTemplateColumn>
+
+              <atom:DataGridTemplateColumn Header="{Binding FullPathColumnText}"
+                                           Width="*"
+                                           SortMemberPath="FullPath"
+                                           CanUserSort="True"
+                                           CanUserResize="True">
+                <atom:DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:FileSearchResultViewModel" x:CompileBindings="False">
+                    <atom:TextBlock Text="{Binding FullPath}"
+                                    Foreground="{DynamicResource PrimaryTextBrush}"
+                                    TextTrimming="CharacterEllipsis"
+                                    VerticalAlignment="Center" />
+                  </DataTemplate>
+                </atom:DataGridTemplateColumn.CellTemplate>
+              </atom:DataGridTemplateColumn>
+
+              <atom:DataGridTemplateColumn Header="{Binding TypeColumnText}"
+                                           Width="82"
+                                           SortMemberPath="TypeText"
+                                           CanUserSort="True"
+                                           CanUserResize="True">
+                <atom:DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:FileSearchResultViewModel" x:CompileBindings="False">
+                    <atom:TextBlock Text="{Binding TypeText}"
+                                    Foreground="{DynamicResource SecondaryTextBrush}"
+                                    VerticalAlignment="Center" />
+                  </DataTemplate>
+                </atom:DataGridTemplateColumn.CellTemplate>
+              </atom:DataGridTemplateColumn>
+
+              <atom:DataGridTemplateColumn Header="{Binding SizeColumnText}"
+                                           Width="96"
+                                           SortMemberPath="SizeText"
+                                           CanUserSort="True"
+                                           CanUserResize="True">
+                <atom:DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:FileSearchResultViewModel" x:CompileBindings="False">
+                    <atom:TextBlock Text="{Binding SizeText}"
+                                    Foreground="{DynamicResource PrimaryTextBrush}"
+                                    VerticalAlignment="Center" />
+                  </DataTemplate>
+                </atom:DataGridTemplateColumn.CellTemplate>
+              </atom:DataGridTemplateColumn>
+
+              <atom:DataGridTemplateColumn Header="{Binding ModifiedColumnText}"
+                                           Width="150"
+                                           SortMemberPath="ModifiedText"
+                                           CanUserSort="True"
+                                           CanUserResize="True">
+                <atom:DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:FileSearchResultViewModel" x:CompileBindings="False">
+                    <atom:TextBlock Text="{Binding ModifiedText}"
+                                    Foreground="{DynamicResource SecondaryTextBrush}"
+                                    VerticalAlignment="Center" />
+                  </DataTemplate>
+                </atom:DataGridTemplateColumn.CellTemplate>
+              </atom:DataGridTemplateColumn>
+            </atom:DataGrid.Columns>
+          </atom:DataGrid>
+
+          <atom:TextBlock Text="{Binding NoResultsText}"
+                          IsVisible="{Binding HasNoResults}"
+                          Foreground="{DynamicResource SecondaryTextBrush}"
+                          TextWrapping="Wrap"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center" />
+        </Grid>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

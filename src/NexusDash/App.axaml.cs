@@ -6,6 +6,7 @@ using AtomUI.Theme.Language;
 using Avalonia;
 using Avalonia.Markup.Xaml;
 using CodeWF.EventBus;
+using CodeWF.Log.Core;
 using DryIoc;
 using Lang.Avalonia;
 using Lang.Avalonia.Json;
@@ -29,6 +30,7 @@ namespace NexusDash
     {
         public override void Initialize()
         {
+            ConfigureOperationLogger();
             AvaloniaXamlLoader.Load(this);
 
             var langPlugin = new JsonLangPlugin
@@ -47,6 +49,7 @@ namespace NexusDash
             });
 
             this.SetDarkThemeMode(true);
+            Logger.Info("NexusDash application initialized.", "NexusDash 已启动。", log2Console: false);
             base.Initialize();
         }
 
@@ -79,9 +82,11 @@ namespace NexusDash
             containerRegistry.RegisterSingleton<SystemMonitorService>();
             containerRegistry.RegisterSingleton<ProcessTelemetryService>();
             containerRegistry.RegisterSingleton<ProcessNetworkConnectionService>();
+            containerRegistry.RegisterSingleton<FileSearchService>();
             containerRegistry.RegisterSingleton<ISettingsWindowService, SettingsWindowService>();
             containerRegistry.RegisterSingleton<SettingsTabControlRegionAdapter>();
             containerRegistry.RegisterSingleton<ProcessListViewModel>();
+            containerRegistry.RegisterSingleton<FileSearchViewModel>();
             containerRegistry.RegisterSingleton<MainWindowViewModel>();
             containerRegistry.Register<AppearanceSettingsViewModel>();
             containerRegistry.Register<ChangelogSettingsViewModel>();
@@ -95,6 +100,20 @@ namespace NexusDash
             ViewModelLocationProvider.Register<AppearanceSettingsView, AppearanceSettingsViewModel>();
             ViewModelLocationProvider.Register<ChangelogSettingsView, ChangelogSettingsViewModel>();
             ViewModelLocationProvider.Register<AboutSettingsView, AboutSettingsViewModel>();
+        }
+
+        private static void ConfigureOperationLogger()
+        {
+            Logger.Level = LogType.Debug;
+            Logger.LogDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "NexusDash");
+            Logger.BatchProcessSize = 80;
+            Logger.LogUIDuration = 80;
+            Logger.MaxUIDisplayCount = 1200;
+            Logger.MaxLogFileSizeMB = 20;
+            Logger.TimeFormat = "HH:mm:ss";
+            Logger.EnableConsoleOutput = false;
         }
     }
 }

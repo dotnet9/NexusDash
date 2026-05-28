@@ -77,6 +77,40 @@
     <Setter Property="BoxShadow" Value="0 6 18 0 #12000000" />
   </Style>
 
+  <Style Selector="Border.toolSidebar">
+    <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,1,0" />
+  </Style>
+
+  <Style Selector="Border.logViewerPanel">
+    <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+  </Style>
+
+  <Style Selector="Border.logViewerHeader">
+    <Setter Property="Padding" Value="14,7" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+  </Style>
+
+  <Style Selector="Border.logViewerContent">
+    <Setter Property="Background" Value="#FAFAFA" />
+    <Setter Property="Padding" Value="8,5" />
+  </Style>
+
+  <Style Selector="atom|NavMenu.toolNavMenu">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="atom|NavMenu.toolNavMenu atom|TextBlock,
+                   atom|NavMenu.toolNavMenu TextBlock">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+  </Style>
+
   <Style Selector="Border.metricPanel">
     <Setter Property="MinHeight" Value="116" />
     <Setter Property="Padding" Value="12" />

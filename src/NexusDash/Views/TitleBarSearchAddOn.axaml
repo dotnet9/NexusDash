@@ -10,7 +10,8 @@
   <Grid HorizontalAlignment="Stretch"
         VerticalAlignment="Center"
         Margin="12,0,128,0">
-    <atom:LineEdit Classes="titleBarSearch"
+    <atom:LineEdit x:Name="SearchLineEdit"
+                   Classes="titleBarSearch"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
                    PlaceholderText="{Binding SearchPlaceholderText}"

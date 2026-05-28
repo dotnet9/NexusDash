@@ -18,6 +18,7 @@
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Desktop" />
     <PackageReference Include="CodeWF.EventBus" />
+    <PackageReference Include="CodeWF.LogViewer.Avalonia" />
     <PackageReference Include="CodeWF.Markdown.Lite.Themes" />
     <PackageReference Include="Lang.Avalonia.Json" />
     <PackageReference Include="Prism.DryIoc.Avalonia" />

@@ -1,0 +1,20 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:views="using:NexusDash.Views"
+             xmlns:vm="using:NexusDash.ViewModels"
+             mc:Ignorable="d"
+             d:DesignWidth="1000"
+             d:DesignHeight="640"
+             x:Class="NexusDash.Views.ToolContentView"
+             x:DataType="vm:ToolContentViewModel">
+  <Grid>
+    <ContentControl IsVisible="{Binding IsProcessToolSelected}">
+      <views:ProcessManagerView DataContext="{Binding ProcessManager}" />
+    </ContentControl>
+    <ContentControl IsVisible="{Binding IsFileSearchToolSelected}">
+      <views:FileSearchView DataContext="{Binding FileSearch}" />
+    </ContentControl>
+  </Grid>
+</UserControl>

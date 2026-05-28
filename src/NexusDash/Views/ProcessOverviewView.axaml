@@ -1,0 +1,104 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:atom="https://atomui.net"
+             xmlns:ndc="https://nexusdash.net/controls"
+             xmlns:vm="using:NexusDash.ViewModels"
+             mc:Ignorable="d"
+             d:DesignWidth="1060"
+             d:DesignHeight="560"
+             x:Class="NexusDash.Views.ProcessOverviewView"
+             x:DataType="vm:ProcessOverviewViewModel">
+  <Grid Margin="0,12,0,0"
+        ColumnDefinitions="*,*"
+        RowDefinitions="*,*"
+        ColumnSpacing="12"
+        RowSpacing="12">
+    <Border Grid.Column="0"
+            Grid.Row="0"
+            Classes="panel metricPanel">
+      <Grid RowDefinitions="Auto,*,Auto,Auto">
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+          <atom:TextBlock Classes="metricLabel" Text="{Binding CpuText}" />
+          <atom:TextBlock Grid.Column="1" Classes="metricValue" Text="{Binding CpuUsageText}" />
+        </Grid>
+        <ndc:MetricSparklineControl Grid.Row="1"
+                                    MinHeight="120"
+                                    Margin="0,10"
+                                    Values="{Binding CpuHistory}"
+                                    Stroke="{DynamicResource AccentBrush}" />
+        <atom:ProgressBar Grid.Row="2"
+                          Value="{Binding CpuUsage}"
+                          Minimum="0"
+                          Maximum="100"
+                          IsProgressInfoVisible="False" />
+        <atom:TextBlock Grid.Row="3"
+                        Classes="metricHint"
+                        Text="{Binding TopCpuProcessText}"
+                        Margin="0,8,0,0" />
+      </Grid>
+    </Border>
+
+    <Border Grid.Column="1"
+            Grid.Row="0"
+            Classes="panel metricPanel">
+      <Grid RowDefinitions="Auto,*,Auto,Auto">
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+          <atom:TextBlock Classes="metricLabel" Text="{Binding MemoryText}" />
+          <atom:TextBlock Grid.Column="1" Classes="metricValue" Text="{Binding MemoryUsageText}" />
+        </Grid>
+        <ndc:MetricSparklineControl Grid.Row="1"
+                                    MinHeight="120"
+                                    Margin="0,10"
+                                    Values="{Binding MemoryHistory}"
+                                    Stroke="{DynamicResource SuccessBrush}" />
+        <atom:TextBlock Grid.Row="2"
+                        Text="{Binding MemorySummaryText}"
+                        Foreground="{DynamicResource SecondaryTextBrush}" />
+        <atom:TextBlock Grid.Row="3"
+                        Classes="metricHint"
+                        Text="{Binding TopMemoryProcessText}"
+                        Margin="0,6,0,0" />
+      </Grid>
+    </Border>
+
+    <Border Grid.Column="0"
+            Grid.Row="1"
+            Classes="panel metricPanel">
+      <Grid RowDefinitions="Auto,*,Auto">
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+          <atom:TextBlock Classes="metricLabel" Text="{Binding DiskText}" />
+          <atom:TextBlock Grid.Column="1" Classes="metricValue" Text="{Binding DiskSpeedText}" />
+        </Grid>
+        <ndc:MetricSparklineControl Grid.Row="1"
+                                    MinHeight="120"
+                                    Margin="0,10"
+                                    Values="{Binding DiskHistory}"
+                                    Stroke="{DynamicResource WarningBrush}" />
+        <atom:TextBlock Grid.Row="2"
+                        Classes="metricHint"
+                        Text="{Binding TopDiskProcessText}" />
+      </Grid>
+    </Border>
+
+    <Border Grid.Column="1"
+            Grid.Row="1"
+            Classes="panel metricPanel">
+      <Grid RowDefinitions="Auto,*,Auto">
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+          <atom:TextBlock Classes="metricLabel" Text="{Binding NetworkText}" />
+          <atom:TextBlock Grid.Column="1" Classes="metricValue" Text="{Binding NetworkSpeedText}" />
+        </Grid>
+        <ndc:MetricSparklineControl Grid.Row="1"
+                                    MinHeight="120"
+                                    Margin="0,10"
+                                    Values="{Binding NetworkHistory}"
+                                    Stroke="{DynamicResource DangerBrush}" />
+        <atom:TextBlock Grid.Row="2"
+                        Classes="metricHint"
+                        Text="{Binding TopNetworkProcessText}" />
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

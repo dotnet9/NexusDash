@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:atom="https://atomui.net"
+             xmlns:log="https://codewf.com"
+             xmlns:vm="using:NexusDash.ViewModels"
+             mc:Ignorable="d"
+             d:DesignWidth="900"
+             d:DesignHeight="180"
+             x:Class="NexusDash.Views.OperationLogPaneView"
+             x:DataType="vm:OperationLogPaneViewModel">
+  <Border Classes="logViewerPanel">
+    <Grid RowDefinitions="Auto,*">
+      <Border Classes="logViewerHeader">
+        <atom:TextBlock Text="{Binding OperationLogText}"
+                        Classes="sectionTitle" />
+      </Border>
+      <Border Grid.Row="1"
+              Classes="logViewerContent">
+        <log:LogView />
+      </Border>
+    </Grid>
+  </Border>
+</UserControl>
