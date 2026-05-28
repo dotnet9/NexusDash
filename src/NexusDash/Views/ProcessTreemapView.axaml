@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ndc="https://nexusdash.net/controls"
+             xmlns:vm="using:NexusDash.ViewModels"
+             mc:Ignorable="d"
+             d:DesignWidth="1060"
+             d:DesignHeight="560"
+             x:Class="NexusDash.Views.ProcessTreemapView"
+             x:DataType="vm:ProcessTreemapViewModel">
+  <Border Margin="0,12,0,0"
+          Classes="panel"
+          Padding="12">
+    <Grid RowDefinitions="Auto,*">
+      <TextBlock Text="{Binding TreemapText}"
+                 Classes="sectionTitle"
+                 FontWeight="SemiBold"
+                 Margin="2,0,0,10" />
+      <ndc:ProcessTreemapControl Grid.Row="1"
+                                 Items="{Binding TreemapProcesses}" />
+    </Grid>
+  </Border>
+</UserControl>

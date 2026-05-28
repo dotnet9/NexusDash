@@ -1,6 +1,4 @@
 using CodeWF.EventBus;
-using AtomUI.Controls.Primitives;
-using AtomUI.Desktop.Controls;
 using NexusDash.Controls.Models;
 using NexusDash.Models;
 using System.Collections.Generic;
@@ -9,15 +7,15 @@ namespace NexusDash.ViewModels
 {
     public sealed class ToolTreeState
     {
-        public IReadOnlyList<INavMenuNode> ToolMenuItems { get; init; } = [];
-        public IList<TreeNodePath> ToolMenuDefaultOpenPaths { get; init; } = [];
-        public INavMenuNode? SelectedToolNode { get; init; }
+        public IReadOnlyList<ToolMenuNode> ToolMenuItems { get; init; } = [];
+        public ToolMenuNode? SelectedToolNode { get; init; }
     }
 
     public sealed class ActiveToolState
     {
         public bool IsProcessToolSelected { get; init; }
         public bool IsFileSearchToolSelected { get; init; }
+        public bool IsHardwareInfoToolSelected { get; init; }
     }
 
     public sealed class ProcessManagerState

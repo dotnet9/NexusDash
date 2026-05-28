@@ -1,10 +1,7 @@
-using AtomUI;
-using AtomUI.Controls;
-using AtomUI.Desktop.Controls;
-using AtomUI.Theme;
-using AtomUI.Theme.Language;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+using Avalonia.Styling;
 using CodeWF.EventBus;
 using CodeWF.Log.Core;
 using DryIoc;
@@ -21,6 +18,7 @@ using Prism.Modularity;
 using Prism.Mvvm;
 using Prism.Regions;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 
@@ -32,23 +30,20 @@ namespace NexusDash
         {
             ConfigureOperationLogger();
             AvaloniaXamlLoader.Load(this);
+            var preferences = new UserPreferencesService().Load();
+            var startupCulture = ResolveStartupCulture(preferences.CultureName);
+            CultureInfo.CurrentCulture = startupCulture;
+            CultureInfo.CurrentUICulture = startupCulture;
+            CultureInfo.DefaultThreadCurrentCulture = startupCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = startupCulture;
 
             var langPlugin = new JsonLangPlugin
             {
                 ResourceFolder = Path.Combine(AppContext.BaseDirectory, "I18n")
             };
-            I18nManager.Instance.Register(langPlugin, new CultureInfo("zh-CN"), out _);
-
-            this.UseAtomUI(builder =>
-            {
-                builder.WithDefaultLanguageVariant(LanguageVariant.zh_CN);
-                builder.WithDefaultTheme(IThemeManager.DEFAULT_THEME_ID);
-                builder.UseAlibabaSansFont();
-                builder.UseDesktopControls();
-                builder.UseDesktopDataGrid();
-            });
-
-            this.SetDarkThemeMode(true);
+            I18nManager.Instance.Register(langPlugin, startupCulture, out _);
+            ApplyThirdPartyCulture(startupCulture.Name);
+            RequestedThemeVariant = preferences.IsDarkTheme ? ThemeVariant.Dark : ThemeVariant.Light;
             Logger.Info("NexusDash application initialized.", "NexusDash 已启动。", log2Console: false);
             base.Initialize();
         }
@@ -69,7 +64,7 @@ namespace NexusDash
         {
             base.ConfigureRegionAdapterMappings(regionAdapterMappings);
             regionAdapterMappings.RegisterMapping(
-                typeof(AtomUI.Desktop.Controls.TabControl),
+                typeof(TabControl),
                 Container.Resolve<SettingsTabControlRegionAdapter>());
         }
 
@@ -83,10 +78,13 @@ namespace NexusDash
             containerRegistry.RegisterSingleton<ProcessTelemetryService>();
             containerRegistry.RegisterSingleton<ProcessNetworkConnectionService>();
             containerRegistry.RegisterSingleton<FileSearchService>();
+            containerRegistry.RegisterSingleton<HardwareInfoService>();
+            containerRegistry.RegisterSingleton<IProcessSnapshotExportService, ProcessSnapshotExportService>();
             containerRegistry.RegisterSingleton<ISettingsWindowService, SettingsWindowService>();
             containerRegistry.RegisterSingleton<SettingsTabControlRegionAdapter>();
             containerRegistry.RegisterSingleton<ProcessListViewModel>();
             containerRegistry.RegisterSingleton<FileSearchViewModel>();
+            containerRegistry.RegisterSingleton<HardwareInfoViewModel>();
             containerRegistry.RegisterSingleton<MainWindowViewModel>();
             containerRegistry.Register<AppearanceSettingsViewModel>();
             containerRegistry.Register<ChangelogSettingsViewModel>();
@@ -114,6 +112,96 @@ namespace NexusDash
             Logger.MaxLogFileSizeMB = 20;
             Logger.TimeFormat = "HH:mm:ss";
             Logger.EnableConsoleOutput = false;
+        }
+
+        internal static CultureInfo ResolveStartupCulture(string? configuredCultureName)
+        {
+            var cultureName = string.IsNullOrWhiteSpace(configuredCultureName)
+                ? CultureInfo.CurrentUICulture.Name
+                : configuredCultureName;
+            return CultureInfo.GetCultureInfo(NormalizeCulture(cultureName));
+        }
+
+        internal static string NormalizeCulture(string? cultureName)
+        {
+            if (string.IsNullOrWhiteSpace(cultureName))
+            {
+                return "en-US";
+            }
+
+            if (cultureName.StartsWith("zh-Hant", StringComparison.OrdinalIgnoreCase) ||
+                cultureName.Equals("zh-TW", StringComparison.OrdinalIgnoreCase) ||
+                cultureName.Equals("zh-HK", StringComparison.OrdinalIgnoreCase))
+            {
+                return "zh-Hant";
+            }
+
+            if (cultureName.StartsWith("zh", StringComparison.OrdinalIgnoreCase))
+            {
+                return "zh-CN";
+            }
+
+            if (cultureName.StartsWith("ja", StringComparison.OrdinalIgnoreCase))
+            {
+                return "ja-JP";
+            }
+
+            if (cultureName.StartsWith("en", StringComparison.OrdinalIgnoreCase))
+            {
+                return "en-US";
+            }
+
+            return "en-US";
+        }
+
+        internal static void ApplyThirdPartyCulture(string cultureName)
+        {
+            if (Current is not { } app)
+            {
+                return;
+            }
+
+            var normalizedCultureName = NormalizeCulture(cultureName);
+            if (SemiCultures.TryGetValue(normalizedCultureName, out var semiCulture))
+            {
+                MergeCultureResources(app.Resources, semiCulture);
+            }
+
+            if (UrsaCultures.TryGetValue(normalizedCultureName, out var ursaCulture))
+            {
+                MergeCultureResources(app.Resources, ursaCulture);
+            }
+        }
+
+        private static readonly IReadOnlyDictionary<string, ResourceDictionary> SemiCultures =
+            new Dictionary<string, ResourceDictionary>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["en-US"] = new Semi.Avalonia.Locale.en_us(),
+                ["ja-JP"] = new Semi.Avalonia.Locale.ja_jp(),
+                ["zh-CN"] = new Semi.Avalonia.Locale.zh_cn(),
+                ["zh-Hant"] = new Semi.Avalonia.Locale.zh_cn()
+            };
+
+        private static readonly IReadOnlyDictionary<string, ResourceDictionary> UrsaCultures =
+            new Dictionary<string, ResourceDictionary>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["en-US"] = new Ursa.Themes.Semi.Locale.en_us(),
+                ["ja-JP"] = new Ursa.Themes.Semi.Locale.en_us(),
+                ["zh-CN"] = new Ursa.Themes.Semi.Locale.zh_cn(),
+                ["zh-Hant"] = new Ursa.Themes.Semi.Locale.zh_cn()
+            };
+
+        private static void MergeCultureResources(IResourceDictionary appResources, ResourceDictionary cultureResources)
+        {
+            foreach (var item in cultureResources)
+            {
+                if (appResources.ContainsKey(item.Key))
+                {
+                    appResources.Remove(item.Key);
+                }
+
+                appResources.Add(item);
+            }
         }
     }
 }

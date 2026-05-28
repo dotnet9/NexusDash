@@ -1,7 +1,4 @@
-using AtomUI.Controls.Primitives;
-using AtomUI.Desktop.Controls;
 using CodeWF.EventBus;
-using ReactiveUI;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
@@ -9,7 +6,7 @@ namespace NexusDash.ViewModels
 {
     public sealed class ToolTreeViewModel : EventBusViewModel
     {
-        private INavMenuNode? _selectedToolNode;
+        private ToolMenuNode? _selectedToolNode;
         private bool _isApplyingState;
 
         public ToolTreeViewModel(IEventBus eventBus)
@@ -17,22 +14,21 @@ namespace NexusDash.ViewModels
         {
         }
 
-        public ObservableCollection<INavMenuNode> ToolMenuItems { get; } = new();
-        public IList<TreeNodePath> ToolMenuDefaultOpenPaths { get; private set; } = [];
+        public ObservableCollection<ToolMenuNode> ToolMenuItems { get; } = new();
 
-        public INavMenuNode? SelectedToolNode
+        public ToolMenuNode? SelectedToolNode
         {
             get => _selectedToolNode;
             set
             {
                 if (!SetField(ref _selectedToolNode, value, nameof(SelectedToolNode)) ||
                     _isApplyingState ||
-                    value?.ItemKey?.Value is not { } toolKey)
+                    value is not { } selectedNode)
                 {
                     return;
                 }
 
-                EventBus.Publish(new ToolSelectionRequestedCommand(toolKey));
+                EventBus.Publish(new ToolSelectionRequestedCommand(selectedNode.ToolKey));
             }
         }
 
@@ -43,8 +39,6 @@ namespace NexusDash.ViewModels
             try
             {
                 SyncCollection(ToolMenuItems, command.State.ToolMenuItems);
-                ToolMenuDefaultOpenPaths = command.State.ToolMenuDefaultOpenPaths;
-                this.RaisePropertyChanged(nameof(ToolMenuDefaultOpenPaths));
                 SelectedToolNode = command.State.SelectedToolNode;
             }
             finally

@@ -1,10 +1,11 @@
-using AtomUI.Desktop.Controls;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.VisualTree;
+using CodeWF.AvaloniaControls;
 using CodeWF.Log.Core;
 using NexusDash.ViewModels;
 using System.Diagnostics;
@@ -28,6 +29,7 @@ namespace NexusDash.Views
                 ResultsGrid_PointerPressed,
                 RoutingStrategies.Tunnel,
                 handledEventsToo: true);
+            resultsGrid?.ApplyPerformancePreset();
         }
 
         private void ResultsGrid_PointerPressed(object? sender, PointerPressedEventArgs e)
@@ -45,6 +47,11 @@ namespace NexusDash.Views
                 return;
             }
 
+            if ((DataContext as FileSearchViewModel)?.Results.Contains(result) != true)
+            {
+                return;
+            }
+
             dataGrid.SelectedItem = result;
             e.Handled = true;
             ShowResultMenu(dataGrid, result);
@@ -53,13 +60,12 @@ namespace NexusDash.Views
         private void ShowResultMenu(DataGrid dataGrid, FileSearchResultViewModel result)
         {
             var viewModel = DataContext as FileSearchViewModel;
-            var menu = new AtomUI.Desktop.Controls.MenuFlyout
+            var menu = new MenuFlyout
             {
-                Placement = PlacementMode.Pointer,
-                IsMotionEnabled = true
+                Placement = PlacementMode.Pointer
             };
 
-            var openContainingDirectoryItem = new AtomUI.Desktop.Controls.MenuItem
+            var openContainingDirectoryItem = new MenuItem
             {
                 Header = viewModel?.OpenContainingDirectoryText ?? "Open file location",
                 IsEnabled = !string.IsNullOrWhiteSpace(result.FullPath)

@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Media;
+using Avalonia.Styling;
 
 namespace NexusDash.Services
 {
@@ -27,6 +28,7 @@ namespace NexusDash.Services
             SetBrush(application, nameof(palette.DialogMaskBrush), palette.DialogMaskBrush);
             SetBrush(application, nameof(palette.RowHoverBrush), palette.RowHoverBrush);
             SetBrush(application, nameof(palette.RowSelectedBrush), palette.RowSelectedBrush);
+            application.RequestedThemeVariant = isDarkTheme ? ThemeVariant.Dark : ThemeVariant.Light;
         }
 
         private static void SetBrush(Application application, string key, string color)

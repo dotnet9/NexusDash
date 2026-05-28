@@ -1,7 +1,5 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:atom="https://atomui.net"
-             xmlns:antdicons="https://atomui.net/icons/antdesign"
              xmlns:vm="using:NexusDash.ViewModels"
              x:Class="NexusDash.Views.TitleBarSearchAddOn"
              x:DataType="vm:MainWindowViewModel"
@@ -10,14 +8,12 @@
   <Grid HorizontalAlignment="Stretch"
         VerticalAlignment="Center"
         Margin="12,0,128,0">
-    <atom:LineEdit x:Name="SearchLineEdit"
-                   Classes="titleBarSearch"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   PlaceholderText="{Binding SearchPlaceholderText}"
-                   InnerLeftContent="{antdicons:AntDesignIconProvider SearchOutlined}"
-                   Text="{Binding SearchQuery, Mode=TwoWay}"
-                   IsAllowClear="True"
-                   StyleVariant="Filled" />
+    <TextBox x:Name="SearchLineEdit"
+             Classes="titleBarSearch"
+             HorizontalAlignment="Center"
+             VerticalAlignment="Center"
+             IsVisible="{Binding IsSearchBoxVisible}"
+             PlaceholderText="{Binding SearchPlaceholderText}"
+             Text="{Binding SearchQuery, Mode=TwoWay}" />
   </Grid>
 </UserControl>

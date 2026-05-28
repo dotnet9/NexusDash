@@ -1,9 +1,9 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:atom="https://atomui.net"
-             xmlns:antdicons="https://atomui.net/icons/antdesign"
+             xmlns:i="using:Avalonia.Xaml.Interactivity"
+             xmlns:behaviors="using:NexusDash.Views.Behaviors"
              xmlns:converters="using:NexusDash.Converters"
              xmlns:vm="using:NexusDash.ViewModels"
              mc:Ignorable="d"
@@ -16,7 +16,7 @@
       <Grid Grid.Row="0"
             ColumnDefinitions="*,Auto,Auto"
             Margin="14,10,14,6">
-        <atom:TextBlock Text="{Binding ProcessTreeText}"
+        <TextBlock Text="{Binding ProcessTreeText}"
                         Classes="sectionTitle" />
         <StackPanel Grid.Column="1"
                     Orientation="Horizontal"
@@ -24,98 +24,99 @@
                     Margin="12,0"
                     VerticalAlignment="Center">
           <Border Classes="processFilterChip">
-            <atom:CheckBox Classes="processFilterCheck"
+            <CheckBox Classes="processFilterCheck"
                            Content="{Binding FilterHasNetworkConnectionsText}"
                            IsChecked="{Binding FilterHasNetworkConnections, Mode=TwoWay}" />
           </Border>
           <Border Classes="processFilterChip">
-            <atom:CheckBox Classes="processFilterCheck"
+            <CheckBox Classes="processFilterCheck"
                            Content="{Binding FilterHighCpuText}"
                            IsChecked="{Binding FilterHighCpu, Mode=TwoWay}" />
           </Border>
           <Border Classes="processFilterChip">
-            <atom:CheckBox Classes="processFilterCheck"
+            <CheckBox Classes="processFilterCheck"
                            Content="{Binding FilterUserProcessesText}"
                            IsChecked="{Binding FilterUserProcesses, Mode=TwoWay}" />
           </Border>
           <Border Classes="processFilterChip">
-            <atom:CheckBox Classes="processFilterCheck"
+            <CheckBox Classes="processFilterCheck"
                            Content="{Binding FilterHideSystemProcessesText}"
                            IsChecked="{Binding FilterHideSystemProcesses, Mode=TwoWay}" />
           </Border>
         </StackPanel>
-        <atom:TextBlock Grid.Column="2"
+        <TextBlock Grid.Column="2"
                         Text="{Binding ProcessCountText}"
                         Foreground="{DynamicResource SecondaryTextBrush}"
                         VerticalAlignment="Center" />
       </Grid>
 
       <Grid Grid.Row="1">
-        <atom:DataGrid x:Name="ProcessGrid"
+        <DataGrid x:Name="ProcessGrid"
                        Classes="compactDataGrid"
                        ItemsSource="{Binding VisibleProcesses}"
                        AutoGenerateColumns="False"
                        CanUserReorderColumns="True"
                        CanUserResizeColumns="True"
                        CanUserSortColumns="True"
-                       LeftFrozenColumnCount="3"
+                       FrozenColumnCount="3"
                        IsReadOnly="True"
-                       IsFrameBorderVisible="False"
-                       PaginationVisibility="None"
+
                        SelectionMode="Extended"
-                       SelectTriggerType="Cell"
-                       SelectionChanged="ProcessGrid_SelectionChanged"
+
                        GridLinesVisibility="Horizontal"
                        HorizontalScrollBarVisibility="Auto"
                        VerticalScrollBarVisibility="Auto"
                        Background="Transparent">
-          <atom:DataGrid.Columns>
-            <atom:DataGridTemplateColumn Header="{Binding PidText}"
+          <i:Interaction.Behaviors>
+            <behaviors:ProcessGridSelectionBehavior />
+          </i:Interaction.Behaviors>
+          <DataGrid.Columns>
+            <DataGridTemplateColumn Header="{Binding PidText}"
                                          Width="74"
                                          CanUserSort="True"
                                          Tag="pid"
                                          CanUserResize="True">
-              <atom:DataGridTemplateColumn.CellTemplate>
+              <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
-                  <atom:TextBlock Text="{Binding PidCellText}"
+                  <TextBlock Text="{Binding PidCellText}"
                                   Foreground="{DynamicResource PrimaryTextBrush}"
                                   VerticalAlignment="Center" />
                 </DataTemplate>
-              </atom:DataGridTemplateColumn.CellTemplate>
-            </atom:DataGridTemplateColumn>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
 
-            <atom:DataGridTemplateColumn Header="{Binding ParentPidText}"
+            <DataGridTemplateColumn Header="{Binding ParentPidText}"
                                          Width="84"
                                          CanUserSort="True"
                                          Tag="parentPid"
                                          CanUserResize="True">
-              <atom:DataGridTemplateColumn.CellTemplate>
+              <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
-                  <atom:TextBlock Text="{Binding ParentPidText}"
+                  <TextBlock Text="{Binding ParentPidText}"
                                   Foreground="{DynamicResource SecondaryTextBrush}"
                                   VerticalAlignment="Center" />
                 </DataTemplate>
-              </atom:DataGridTemplateColumn.CellTemplate>
-            </atom:DataGridTemplateColumn>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
 
-            <atom:DataGridTemplateColumn Header="{Binding ProcessNameText}"
+            <DataGridTemplateColumn Header="{Binding ProcessNameText}"
                                          Width="2.2*"
                                          MinWidth="310"
                                          CanUserSort="True"
                                          Tag="name"
                                          CanUserResize="True">
-              <atom:DataGridTemplateColumn.CellTemplate>
+              <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
                   <Grid ColumnDefinitions="Auto,20,20,*,Auto"
                         Margin="{Binding DisplayDepth, Converter={x:Static converters:DepthToMarginConverter.Instance}}">
-                    <atom:Button Grid.Column="1"
+                    <Button Grid.Column="1"
                                  Width="18"
                                  Height="18"
                                  Padding="0"
-                                 ButtonType="Text"
+
                                  Content="{Binding ExpanderGlyph}"
                                  Command="{Binding ToggleExpanded}"
                                  IsVisible="{Binding HasChildren}" />
@@ -128,122 +129,119 @@
                              Height="16"
                              Stretch="Uniform"
                              IsVisible="{Binding HasIcon}" />
-                      <antdicons:AppstoreOutlined Classes="processCategoryIcon"
-                                                  HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center"
-                                                  IsVisible="{Binding ShowsApplicationIcon}" />
-                      <antdicons:CloudServerOutlined Classes="processCategoryIcon"
-                                                     HorizontalAlignment="Center"
-                                                     VerticalAlignment="Center"
-                                                     IsVisible="{Binding ShowsBackgroundIcon}" />
-                      <antdicons:WindowsOutlined Classes="processCategoryIcon"
-                                                 HorizontalAlignment="Center"
-                                                 VerticalAlignment="Center"
-                                                 IsVisible="{Binding ShowsWindowsIcon}" />
+                      <TextBlock Classes="processCategoryIcon"
+                                 Text="A"
+                                 IsVisible="{Binding ShowsApplicationIcon}" />
+                      <TextBlock Classes="processCategoryIcon"
+                                 Text="B"
+                                 IsVisible="{Binding ShowsBackgroundIcon}" />
+                      <TextBlock Classes="processCategoryIcon"
+                                 Text="W"
+                                 IsVisible="{Binding ShowsWindowsIcon}" />
                     </Grid>
-                    <atom:TextBlock Grid.Column="3"
+                    <TextBlock Grid.Column="3"
                                     Text="{Binding Name}"
                                     VerticalAlignment="Center"
                                     FontWeight="{Binding NameFontWeight}"
                                     Foreground="{DynamicResource PrimaryTextBrush}"
                                     TextTrimming="CharacterEllipsis" />
-                    <atom:TextBlock Grid.Column="4"
+                    <TextBlock Grid.Column="4"
                                     Text="{Binding $parent[UserControl].DataContext.AccessLimitedText}"
                                     IsVisible="{Binding IsAccessDenied}"
                                     Margin="8,0,0,0"
                                     Classes="processAccessBadge" />
                   </Grid>
                 </DataTemplate>
-              </atom:DataGridTemplateColumn.CellTemplate>
-            </atom:DataGridTemplateColumn>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
 
-            <atom:DataGridTemplateColumn Header="{Binding PublisherText}"
+            <DataGridTemplateColumn Header="{Binding PublisherText}"
                                          Width="138"
                                          CanUserSort="True"
                                          Tag="publisher"
                                          CanUserResize="True">
-              <atom:DataGridTemplateColumn.CellTemplate>
+              <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
-                  <atom:TextBlock Text="{Binding PublisherText}"
+                  <TextBlock Text="{Binding PublisherText}"
                                   Foreground="{DynamicResource SecondaryTextBrush}"
                                   TextTrimming="CharacterEllipsis" />
                 </DataTemplate>
-              </atom:DataGridTemplateColumn.CellTemplate>
-            </atom:DataGridTemplateColumn>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
 
-            <atom:DataGridTemplateColumn Header="{Binding CpuText}"
+            <DataGridTemplateColumn Header="{Binding CpuText}"
                                          Width="68"
                                          CanUserSort="True"
                                          Tag="cpu"
                                          CanUserResize="True">
-              <atom:DataGridTemplateColumn.CellTemplate>
+              <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
-                  <atom:TextBlock Text="{Binding CpuText}"
+                  <TextBlock Text="{Binding CpuText}"
                                   Foreground="{DynamicResource PrimaryTextBrush}" />
                 </DataTemplate>
-              </atom:DataGridTemplateColumn.CellTemplate>
-            </atom:DataGridTemplateColumn>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
 
-            <atom:DataGridTemplateColumn Header="{Binding MemoryText}"
+            <DataGridTemplateColumn Header="{Binding MemoryText}"
                                          Width="98"
                                          CanUserSort="True"
                                          Tag="memory"
                                          CanUserResize="True">
-              <atom:DataGridTemplateColumn.CellTemplate>
+              <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
-                  <atom:TextBlock Text="{Binding MemoryText}"
+                  <TextBlock Text="{Binding MemoryText}"
                                   Foreground="{DynamicResource PrimaryTextBrush}" />
                 </DataTemplate>
-              </atom:DataGridTemplateColumn.CellTemplate>
-            </atom:DataGridTemplateColumn>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
 
-            <atom:DataGridTemplateColumn Header="{Binding DiskText}"
+            <DataGridTemplateColumn Header="{Binding DiskText}"
                                          Width="108"
                                          CanUserSort="True"
                                          Tag="disk"
                                          CanUserResize="True">
-              <atom:DataGridTemplateColumn.CellTemplate>
+              <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
-                  <atom:TextBlock Text="{Binding DiskText}"
+                  <TextBlock Text="{Binding DiskText}"
                                   Foreground="{DynamicResource PrimaryTextBrush}" />
                 </DataTemplate>
-              </atom:DataGridTemplateColumn.CellTemplate>
-            </atom:DataGridTemplateColumn>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
 
-            <atom:DataGridTemplateColumn Header="{Binding NetworkColumnText}"
+            <DataGridTemplateColumn Header="{Binding NetworkColumnText}"
                                          Width="98"
                                          CanUserSort="True"
                                          Tag="network"
                                          CanUserResize="True">
-              <atom:DataGridTemplateColumn.CellTemplate>
+              <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
-                  <atom:TextBlock Text="{Binding NetworkText}"
+                  <TextBlock Text="{Binding NetworkText}"
                                   Foreground="{DynamicResource PrimaryTextBrush}" />
                 </DataTemplate>
-              </atom:DataGridTemplateColumn.CellTemplate>
-            </atom:DataGridTemplateColumn>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
 
-            <atom:DataGridTemplateColumn Header="{Binding GpuText}"
+            <DataGridTemplateColumn Header="{Binding GpuText}"
                                          Width="64"
                                          CanUserSort="True"
                                          Tag="gpu"
                                          CanUserResize="True">
-              <atom:DataGridTemplateColumn.CellTemplate>
+              <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
-                  <atom:TextBlock Text="{Binding GpuText}"
+                  <TextBlock Text="{Binding GpuText}"
                                   Foreground="{DynamicResource SecondaryTextBrush}" />
                 </DataTemplate>
-              </atom:DataGridTemplateColumn.CellTemplate>
-            </atom:DataGridTemplateColumn>
-          </atom:DataGrid.Columns>
-        </atom:DataGrid>
-        <atom:TextBlock Text="{Binding SearchNoResultsText}"
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+          </DataGrid.Columns>
+        </DataGrid>
+        <TextBlock Text="{Binding SearchNoResultsText}"
                         IsVisible="{Binding HasNoVisibleProcesses}"
                         Foreground="{DynamicResource SecondaryTextBrush}"
                         TextWrapping="Wrap"

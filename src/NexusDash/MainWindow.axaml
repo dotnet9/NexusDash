@@ -1,46 +1,62 @@
-<atom:Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:atom="https://atomui.net"
-        xmlns:views="using:NexusDash.Views"
-        xmlns:vm="using:NexusDash.ViewModels"
-        xmlns:prism="http://prismlibrary.com/"
-        mc:Ignorable="d"
-        d:DesignWidth="1440"
-        d:DesignHeight="760"
-        x:Class="NexusDash.MainWindow"
-        x:DataType="vm:MainWindowViewModel"
-        prism:ViewModelLocator.AutoWireViewModel="True"
-        Classes="mainShell"
-        Title="{Binding WindowTitle}"
-        WindowStartupLocation="CenterScreen"
-        Icon="/Assets/logo.ico"
-        TitleBarFrameBackground="{DynamicResource PanelBackgroundBrush}"
-        Background="{DynamicResource AppBackgroundBrush}"
-        Foreground="{DynamicResource PrimaryTextBrush}">
+﻿<codewf:CodeWFWindow xmlns="https://github.com/avaloniaui"
+                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                     xmlns:codewf="https://codewf.com"
+                     xmlns:views="using:NexusDash.Views"
+                     xmlns:vm="using:NexusDash.ViewModels"
+                     xmlns:prism="http://prismlibrary.com/"
+                     mc:Ignorable="d"
+                     d:DesignWidth="1440"
+                     d:DesignHeight="760"
+                     x:Class="NexusDash.MainWindow"
+                     x:DataType="vm:MainWindowViewModel"
+                     prism:ViewModelLocator.AutoWireViewModel="True"
+                     Classes="mainShell"
+                     Title="{Binding WindowTitle}"
+                     WindowStartupLocation="CenterScreen"
+                     Icon="/Assets/logo.ico">
 
-  <atom:Window.Logo>
-    <Image Source="/Assets/logo.png" />
-  </atom:Window.Logo>
+  <codewf:CodeWFWindow.LeftContent>
+    <StackPanel Orientation="Horizontal"
+                Spacing="8"
+                Margin="8,0,10,0"
+                VerticalAlignment="Center">
+      <Image Source="/Assets/logo.png"
+             Width="18"
+             Height="18" />
+      <TextBlock Text="{Binding AppNameText}"
+                 FontSize="12"
+                 FontWeight="SemiBold"
+                 VerticalAlignment="Center" />
+    </StackPanel>
+  </codewf:CodeWFWindow.LeftContent>
+
+  <codewf:CodeWFWindow.RightContent>
+    <views:TitleBarSearchAddOn DataContext="{Binding}" />
+  </codewf:CodeWFWindow.RightContent>
 
   <Grid RowDefinitions="*,Auto">
-    <atom:Splitter Grid.Row="0"
-                   Orientation="Vertical">
-      <views:ToolTreeView DataContext="{Binding ToolTree}"
-                          atom:Splitter.Size="220"
-                          atom:Splitter.MinSize="180"
-                          atom:Splitter.MaxSize="360" />
-
-      <atom:Splitter Orientation="Horizontal">
-        <views:ToolContentView DataContext="{Binding ToolContent}"
-                               atom:Splitter.MinSize="340" />
-        <views:OperationLogPaneView DataContext="{Binding OperationLog}"
-                                    atom:Splitter.Size="180"
-                                    atom:Splitter.MinSize="120"
-                                    atom:Splitter.MaxSize="360" />
-      </atom:Splitter>
-    </atom:Splitter>
+    <Grid Grid.Row="0"
+          ColumnDefinitions="220,5,*">
+      <views:ToolTreeView Grid.Column="0"
+                          DataContext="{Binding ToolTree}" />
+      <GridSplitter Grid.Column="1"
+                    ResizeDirection="Columns"
+                    HorizontalAlignment="Stretch"
+                    Background="{DynamicResource PanelBorderBrush}" />
+      <Grid Grid.Column="2"
+            RowDefinitions="*,5,180">
+        <views:ToolContentView Grid.Row="0"
+                               DataContext="{Binding ToolContent}" />
+        <GridSplitter Grid.Row="1"
+                      ResizeDirection="Rows"
+                      VerticalAlignment="Stretch"
+                      Background="{DynamicResource PanelBorderBrush}" />
+        <views:OperationLogPaneView Grid.Row="2"
+                                    DataContext="{Binding OperationLog}" />
+      </Grid>
+    </Grid>
 
     <views:StatusBarView Grid.Row="1"
                          DataContext="{Binding StatusBar}" />
@@ -48,4 +64,4 @@
     <views:EndProcessConfirmationView Grid.RowSpan="2"
                                       DataContext="{Binding EndProcessConfirmation}" />
   </Grid>
-</atom:Window>
+</codewf:CodeWFWindow>

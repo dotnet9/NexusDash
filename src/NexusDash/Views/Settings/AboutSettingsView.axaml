@@ -1,8 +1,9 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:atom="https://atomui.net"
+             xmlns:i="using:Avalonia.Xaml.Interactivity"
+             xmlns:ia="using:Avalonia.Xaml.Interactions.Core"
              xmlns:prism="http://prismlibrary.com/"
              xmlns:vm="using:NexusDash.ViewModels.Settings"
              prism:ViewModelLocator.AutoWireViewModel="True"
@@ -63,16 +64,20 @@
         <TextBlock Grid.Row="3"
                    Text="{Binding RepositoryLabel}"
                    Classes="aboutLabel" />
-        <atom:HyperLinkButton Grid.Row="3"
-                              Grid.Column="1"
-                              NavigateUri="{Binding RepositoryUri}"
-                              Padding="0"
-                              HorizontalAlignment="Left"
-                              HorizontalContentAlignment="Left"
-                              VerticalAlignment="Center">
+        <Button Grid.Row="3"
+                Grid.Column="1"
+                Padding="0"
+                HorizontalAlignment="Left"
+                HorizontalContentAlignment="Left"
+                VerticalAlignment="Center">
+          <i:Interaction.Behaviors>
+            <ia:EventTriggerBehavior EventName="Click">
+              <ia:InvokeCommandAction Command="{Binding OpenRepositoryCommand}" />
+            </ia:EventTriggerBehavior>
+          </i:Interaction.Behaviors>
           <TextBlock Text="{Binding RepositoryUrl}"
                      TextWrapping="Wrap" />
-        </atom:HyperLinkButton>
+        </Button>
 
         <TextBlock Grid.Row="4"
                    Text="{Binding LicenseLabel}"

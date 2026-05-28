@@ -1,8 +1,7 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:atom="https://atomui.net"
              xmlns:vm="using:NexusDash.ViewModels"
              mc:Ignorable="d"
              d:DesignWidth="1200"
@@ -20,21 +19,21 @@
         <Grid ColumnDefinitions="Auto,*"
               ColumnSpacing="12">
           <Border Classes="dialogIcon">
-            <atom:TextBlock Text="!"
+            <TextBlock Text="!"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             FontSize="15"
                             FontWeight="SemiBold"
                             Foreground="{DynamicResource WarningBrush}" />
           </Border>
-          <atom:TextBlock Grid.Column="1"
+          <TextBlock Grid.Column="1"
                           Text="{Binding EndProcessConfirmationTitleText}"
                           FontSize="16"
                           FontWeight="SemiBold"
                           Foreground="{DynamicResource PrimaryTextBrush}"
                           VerticalAlignment="Center" />
         </Grid>
-        <atom:TextBlock Grid.Row="1"
+        <TextBlock Grid.Row="1"
                         Text="{Binding EndProcessConfirmationMessageText}"
                         TextWrapping="Wrap"
                         Foreground="{DynamicResource SecondaryTextBrush}" />
@@ -64,11 +63,11 @@
                                 Background="{DynamicResource PanelAltBackgroundBrush}"
                                 BorderBrush="{DynamicResource PanelBorderBrush}"
                                 BorderThickness="1">
-                          <atom:TextBlock Text="{Binding RelationText}"
+                          <TextBlock Text="{Binding RelationText}"
                                           FontSize="11"
                                           Foreground="{DynamicResource SecondaryTextBrush}" />
                         </Border>
-                        <atom:CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
                                        Width="18"
                                        Height="18"
                                        MinWidth="18"
@@ -76,7 +75,7 @@
                         <SelectableTextBlock Text="{Binding Name}"
                                              FontWeight="SemiBold"
                                              Foreground="{DynamicResource PrimaryTextBrush}" />
-                        <atom:TextBlock Text="{Binding PidText}"
+                        <TextBlock Text="{Binding PidText}"
                                         Foreground="{DynamicResource SecondaryTextBrush}" />
                       </StackPanel>
                       <SelectableTextBlock Grid.Row="1"
@@ -95,11 +94,10 @@
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     Spacing="8">
-          <atom:Button Content="{Binding CancelText}"
+          <Button Content="{Binding CancelText}"
                        Command="{Binding CancelPendingProcessTerminationCommand}" />
-          <atom:Button Content="{Binding ConfirmText}"
-                       ButtonType="Primary"
-                       IsDanger="True"
+          <Button Content="{Binding ConfirmText}"
+
                        IsEnabled="{Binding HasSelectedPendingTerminationProcesses}"
                        Command="{Binding ConfirmPendingProcessTerminationCommand}" />
         </StackPanel>

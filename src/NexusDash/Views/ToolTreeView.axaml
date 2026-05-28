@@ -1,8 +1,7 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:atom="https://atomui.net"
              xmlns:vm="using:NexusDash.ViewModels"
              mc:Ignorable="d"
              d:DesignWidth="220"
@@ -11,20 +10,16 @@
              x:DataType="vm:ToolTreeViewModel">
   <Border Classes="toolSidebar">
     <Grid Margin="14,14,10,10">
-      <atom:NavMenu Classes="toolNavMenu"
-                    Mode="Inline"
-                    ItemsSource="{Binding ToolMenuItems}"
-                    SelectedItem="{Binding SelectedToolNode, Mode=TwoWay}"
-                    DefaultOpenPaths="{Binding ToolMenuDefaultOpenPaths}"
-                    IsAccordionMode="True"
-                    HorizontalAlignment="Stretch">
-        <atom:NavMenu.ItemTemplate>
-          <TreeDataTemplate ItemsSource="{Binding Children}"
-                            x:DataType="atom:INavMenuNode">
-            <atom:TextBlock Text="{Binding Header}" />
-          </TreeDataTemplate>
-        </atom:NavMenu.ItemTemplate>
-      </atom:NavMenu>
+      <ListBox Classes="toolNavMenu"
+               ItemsSource="{Binding ToolMenuItems}"
+               SelectedItem="{Binding SelectedToolNode, Mode=TwoWay}"
+               HorizontalAlignment="Stretch">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:ToolMenuNode">
+            <TextBlock Text="{Binding Header}" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
     </Grid>
   </Border>
 </UserControl>

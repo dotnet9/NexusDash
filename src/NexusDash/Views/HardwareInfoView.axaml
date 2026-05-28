@@ -1,0 +1,82 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:NexusDash.ViewModels"
+             mc:Ignorable="d"
+             d:DesignWidth="1000"
+             d:DesignHeight="640"
+             x:Class="NexusDash.Views.HardwareInfoView"
+             x:DataType="vm:HardwareInfoViewModel">
+  <Grid RowDefinitions="Auto,*"
+        Background="{DynamicResource AppBackgroundBrush}">
+    <Border BorderBrush="{DynamicResource PanelBorderBrush}"
+            BorderThickness="0,0,0,1"
+            Padding="16,11">
+      <Grid ColumnDefinitions="*,Auto"
+            ColumnSpacing="14">
+        <StackPanel Spacing="3">
+          <TextBlock Classes="sectionTitle"
+                     Text="{Binding HardwareInfoText}" />
+          <TextBlock Classes="muted"
+                     Text="{Binding StatusText}"
+                     TextTrimming="CharacterEllipsis" />
+          <TextBlock Classes="muted"
+                     Text="{Binding LastUpdatedText}"
+                     FontSize="11"
+                     IsVisible="{Binding HasLastUpdated}" />
+        </StackPanel>
+        <Button Grid.Column="1"
+                MinWidth="88"
+                Height="30"
+                Padding="14,0"
+                Command="{Binding RefreshHardwareInfo}"
+                Content="{Binding RefreshText}" />
+      </Grid>
+    </Border>
+
+    <ScrollViewer Grid.Row="1"
+                  Padding="14"
+                  HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+      <ItemsControl ItemsSource="{Binding Sections}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Spacing="12" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:HardwareInfoSectionViewModel">
+            <Border Classes="hardwareSection">
+              <Grid RowDefinitions="Auto,*"
+                    RowSpacing="10">
+                <TextBlock Classes="sectionTitle"
+                           Text="{Binding Title}" />
+                <ItemsControl Grid.Row="1"
+                              ItemsSource="{Binding Items}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <StackPanel Spacing="6" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:HardwareInfoItemViewModel">
+                      <Grid ColumnDefinitions="180,*"
+                            ColumnSpacing="12">
+                        <TextBlock Classes="hardwareInfoName"
+                                   Text="{Binding Name}" />
+                        <SelectableTextBlock Grid.Column="1"
+                                             Classes="hardwareInfoValue"
+                                             Text="{Binding Value}" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

@@ -1,11 +1,5 @@
-using AtomUI.Theme.Language;
 using Avalonia;
 using Avalonia.Threading;
-using AtomUI;
-using AtomUI.Controls;
-using AtomUI.Controls.Primitives;
-using AtomUI.Desktop.Controls;
-using AtomUI.Icons.AntDesign;
 using CodeWF.EventBus;
 using CodeWF.Log.Core;
 using Lang.Avalonia;
@@ -28,21 +22,22 @@ namespace NexusDash.ViewModels
 {
     public sealed class MainWindowViewModel : ReactiveObject, IDisposable
     {
-        public const string ProcessColumnPid = "pid";
-        public const string ProcessColumnParentPid = "parentPid";
-        public const string ProcessColumnName = "name";
-        public const string ProcessColumnPublisher = "publisher";
-        public const string ProcessColumnCpu = "cpu";
-        public const string ProcessColumnMemory = "memory";
-        public const string ProcessColumnDisk = "disk";
-        public const string ProcessColumnNetwork = "network";
-        public const string ProcessColumnGpu = "gpu";
+        public const string ProcessColumnPid = ProcessTableColumns.Pid;
+        public const string ProcessColumnParentPid = ProcessTableColumns.ParentPid;
+        public const string ProcessColumnName = ProcessTableColumns.Name;
+        public const string ProcessColumnPublisher = ProcessTableColumns.Publisher;
+        public const string ProcessColumnCpu = ProcessTableColumns.Cpu;
+        public const string ProcessColumnMemory = ProcessTableColumns.Memory;
+        public const string ProcessColumnDisk = ProcessTableColumns.Disk;
+        public const string ProcessColumnNetwork = ProcessTableColumns.Network;
+        public const string ProcessColumnGpu = ProcessTableColumns.Gpu;
         public const string ProcessFilterHasNetworkConnections = "hasNetworkConnections";
         public const string ProcessFilterHighCpu = "highCpu";
         public const string ProcessFilterUserProcesses = "userProcesses";
         public const string ProcessFilterHideSystemProcesses = "hideSystemProcesses";
         public const string ProcessManagerToolKey = "processManager";
         public const string FileSearchToolKey = "fileSearch";
+        public const string HardwareInfoToolKey = "hardwareInfo";
 
         private enum ProcessTerminationRequestKind
         {
@@ -75,12 +70,13 @@ namespace NexusDash.ViewModels
         private readonly ProcessRowViewModel _windowsGroupRow;
         private readonly Dictionary<string, double> _processColumnWidths = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, ProcessColumnOptionViewModel> _processColumnOptions = new(StringComparer.OrdinalIgnoreCase);
-        private NavMenuNode? _processManagerNode;
-        private NavMenuNode? _fileSearchNode;
+        private ToolMenuNode? _processManagerNode;
+        private ToolMenuNode? _fileSearchNode;
+        private ToolMenuNode? _hardwareInfoNode;
         private IReadOnlyList<ProcessTerminationCandidateViewModel> _pendingTerminationCandidates = [];
         private IReadOnlyList<ProcessRowViewModel> _selectedRows = [];
         private bool _isUpdatingLanguageOptions;
-        private string _selectedCultureName = "zh-CN";
+        private string _selectedCultureName = "";
         private string _searchQuery = "";
         private string _processSortColumnKey = ProcessColumnName;
         private ListSortDirection _processSortDirection = ListSortDirection.Ascending;
@@ -106,7 +102,7 @@ namespace NexusDash.ViewModels
         private string _topNetworkProcessText = "";
         private int _processTotalCount;
         private ProcessRowViewModel? _selectedProcess;
-        private INavMenuNode? _selectedToolNode;
+        private ToolMenuNode? _selectedToolNode;
         private string _selectedToolKey = ProcessManagerToolKey;
         private LanguageOption? _selectedLanguage;
         private IReadOnlyList<TreemapItem> _treemapProcesses = [];
@@ -124,11 +120,13 @@ namespace NexusDash.ViewModels
             IEventBus eventBus,
             ProcessListViewModel processList,
             FileSearchViewModel fileSearch,
+            HardwareInfoViewModel hardwareInfo,
             SystemMonitorService systemMonitorService,
             ProcessTelemetryService processTelemetryService,
             ProcessNetworkConnectionService processNetworkConnectionService,
             IUserPreferencesService userPreferencesService,
-            IThemeResourceService themeResourceService)
+            IThemeResourceService themeResourceService,
+            IProcessSnapshotExportService processSnapshotExportService)
         {
             _eventBus = eventBus;
             _systemMonitorService = systemMonitorService;
@@ -138,16 +136,18 @@ namespace NexusDash.ViewModels
             _themeResourceService = themeResourceService;
             ProcessList = processList;
             FileSearch = fileSearch;
+            HardwareInfo = hardwareInfo;
             ProcessManager = new ProcessManagerViewModel(eventBus, processList);
             ToolTree = new ToolTreeViewModel(eventBus);
-            ToolContent = new ToolContentViewModel(eventBus, ProcessManager, fileSearch);
+            ToolContent = new ToolContentViewModel(eventBus, ProcessManager, fileSearch, hardwareInfo);
             OperationLog = new OperationLogPaneViewModel(eventBus);
-            StatusBar = new StatusBarViewModel(eventBus);
+            StatusBar = new StatusBarViewModel(eventBus, processSnapshotExportService);
             EndProcessConfirmation = new EndProcessConfirmationViewModel(eventBus);
             OpenSettingsWindow = new DelegateCommand(PublishOpenSettingsWindow);
             SelectProcessTool = new DelegateCommand(() => SelectTool(ProcessManagerToolKey));
             SelectFileSearchTool = new DelegateCommand(() => SelectTool(FileSearchToolKey));
             FileSearch.PropertyChanged += HandleFileSearchPropertyChanged;
+            HardwareInfo.PropertyChanged += HandleHardwareInfoPropertyChanged;
             _eventBus.Subscribe(this);
 
             var preferences = _userPreferencesService.Load();
@@ -173,7 +173,7 @@ namespace NexusDash.ViewModels
                 unavailableText,
                 HandleRowExpansionChanged);
             InitializeToolMenu();
-            SetLanguage(NormalizeCulture(preferences.CultureName), showStatus: false);
+            SetLanguage(ResolveStartupCultureName(preferences.CultureName), showStatus: false, persist: false);
             InitializeProcessColumnOptions(preferences);
             StatusMessage = T(NexusDashL.StatusRunning);
             PublishProcessListState();
@@ -184,6 +184,7 @@ namespace NexusDash.ViewModels
 
         public ProcessListViewModel ProcessList { get; }
         public FileSearchViewModel FileSearch { get; }
+        public HardwareInfoViewModel HardwareInfo { get; }
         public ProcessManagerViewModel ProcessManager { get; }
         public ToolTreeViewModel ToolTree { get; }
         public ToolContentViewModel ToolContent { get; }
@@ -193,8 +194,7 @@ namespace NexusDash.ViewModels
         public ObservableCollection<ProcessRowViewModel> VisibleProcesses { get; } = new();
         public ObservableCollection<ProcessColumnOptionViewModel> ProcessColumns { get; } = new();
         public ObservableCollection<LanguageOption> Languages { get; } = new();
-        public ObservableCollection<INavMenuNode> ToolMenuItems { get; } = new();
-        public IList<TreeNodePath> ToolMenuDefaultOpenPaths { get; } = [];
+        public ObservableCollection<ToolMenuNode> ToolMenuItems { get; } = new();
         public DelegateCommand OpenSettingsWindow { get; }
         public DelegateCommand SelectProcessTool { get; }
         public DelegateCommand SelectFileSearchTool { get; }
@@ -208,6 +208,7 @@ namespace NexusDash.ViewModels
         public string RememberWindowSizeText => T(NexusDashL.RememberWindowSize);
         public string ProcessManagerText => T(NexusDashL.ProcessManager);
         public string FileSearchToolText => T(NexusDashL.FileSearch);
+        public string HardwareInfoToolText => T(NexusDashL.HardwareInfo);
         public string OperationLogText => T(NexusDashL.OperationLog);
         public string ProcessOverviewText => T(NexusDashL.ProcessOverview);
         public string ThemeMenuText => T(NexusDashL.ThemeMenu);
@@ -285,8 +286,16 @@ namespace NexusDash.ViewModels
             ? string.Format(CultureInfo.CurrentCulture, T(NexusDashL.SearchResultCount), VisibleProcessCount, ProcessTotalCount)
             : $"{VisibleProcessCount}/{ProcessTotalCount}";
         public string SelectedCountText => string.Format(CultureInfo.CurrentCulture, T(NexusDashL.StatusSelected), SelectedProcessCount);
-        public string ActiveStatusMessage => IsFileSearchToolSelected ? FileSearch.StatusMessage : StatusMessage;
-        public string ActiveCountText => IsFileSearchToolSelected ? FileSearch.ResultCountText : SelectedCountText;
+        public string ActiveStatusMessage => IsFileSearchToolSelected
+            ? FileSearch.StatusMessage
+            : IsHardwareInfoToolSelected
+                ? HardwareInfo.StatusText
+                : StatusMessage;
+        public string ActiveCountText => IsFileSearchToolSelected
+            ? FileSearch.ResultCountText
+            : IsHardwareInfoToolSelected
+                ? ""
+                : SelectedCountText;
         public string CpuUsageText => $"{CpuUsage:F1}%";
         public string MemoryUsageText => $"{MemoryUsage:F1}%";
         public string MemorySummaryText => $"{MemoryUsedText} / {MemoryTotalText}";
@@ -349,6 +358,8 @@ namespace NexusDash.ViewModels
         public bool IsSearchActive => !string.IsNullOrWhiteSpace(_searchQuery);
         public bool IsProcessToolSelected => string.Equals(_selectedToolKey, ProcessManagerToolKey, StringComparison.Ordinal);
         public bool IsFileSearchToolSelected => string.Equals(_selectedToolKey, FileSearchToolKey, StringComparison.Ordinal);
+        public bool IsHardwareInfoToolSelected => string.Equals(_selectedToolKey, HardwareInfoToolKey, StringComparison.Ordinal);
+        public bool IsSearchBoxVisible => !IsHardwareInfoToolSelected;
         public bool CanShowPauseRefresh => IsProcessToolSelected && IsRefreshRunning;
         public bool CanShowResumeRefresh => IsProcessToolSelected && IsRefreshPaused;
         public bool IsProcessFilterActive => FilterHasNetworkConnections ||
@@ -409,7 +420,7 @@ namespace NexusDash.ViewModels
             }
         }
 
-        public INavMenuNode? SelectedToolNode
+        public ToolMenuNode? SelectedToolNode
         {
             get => _selectedToolNode;
             set
@@ -419,7 +430,7 @@ namespace NexusDash.ViewModels
                     return;
                 }
 
-                var toolKey = value.ItemKey?.Value;
+                var toolKey = value.ToolKey;
                 if (!TryNormalizeToolKey(toolKey, out var normalizedToolKey))
                 {
                     this.RaisePropertyChanged(nameof(SelectedToolNode));
@@ -907,7 +918,7 @@ namespace NexusDash.ViewModels
 
         public void SetProcessColumnWidth(string key, double width)
         {
-            if (!TryNormalizeProcessColumnKey(key, out var normalizedKey) ||
+            if (!ProcessTableSort.TryNormalizeColumnKey(key, out var normalizedKey) ||
                 width < 32 ||
                 !double.IsFinite(width))
             {
@@ -955,10 +966,10 @@ namespace NexusDash.ViewModels
 
         public void SetProcessSort(string columnKey)
         {
-            var normalizedColumnKey = NormalizeProcessSortColumnKey(columnKey);
+            var normalizedColumnKey = ProcessTableSort.NormalizeColumnKey(columnKey);
             var direction = string.Equals(_processSortColumnKey, normalizedColumnKey, StringComparison.OrdinalIgnoreCase)
-                ? ToggleSortDirection(_processSortDirection)
-                : GetDefaultSortDirection(normalizedColumnKey);
+                ? ProcessTableSort.ToggleDirection(_processSortDirection)
+                : ProcessTableSort.GetDefaultDirection(normalizedColumnKey);
 
             _processSortColumnKey = normalizedColumnKey;
             _processSortDirection = direction;
@@ -1028,31 +1039,35 @@ namespace NexusDash.ViewModels
             }
         }
 
+        private void HandleHardwareInfoPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(HardwareInfoViewModel.StatusText) && IsHardwareInfoToolSelected)
+            {
+                this.RaisePropertyChanged(nameof(ActiveStatusMessage));
+                PublishStatusBarState();
+            }
+        }
+
         private void InitializeToolMenu()
         {
-            _processManagerNode = new NavMenuNode
-            {
-                Header = ProcessManagerText,
-                Icon = new AppstoreOutlined(),
-                ItemKey = ProcessManagerToolKey
-            };
-            _fileSearchNode = new NavMenuNode
-            {
-                Header = FileSearchToolText,
-                Icon = new FileSearchOutlined(),
-                ItemKey = FileSearchToolKey
-            };
+            _processManagerNode = new ToolMenuNode(ProcessManagerText, ProcessManagerToolKey);
+            _fileSearchNode = new ToolMenuNode(FileSearchToolText, FileSearchToolKey);
+            _hardwareInfoNode = new ToolMenuNode(HardwareInfoToolText, HardwareInfoToolKey);
             ToolMenuItems.Clear();
             ToolMenuItems.Add(_processManagerNode);
             ToolMenuItems.Add(_fileSearchNode);
+            ToolMenuItems.Add(_hardwareInfoNode);
             _selectedToolNode = _processManagerNode;
         }
 
-        private INavMenuNode FindToolNode(string toolKey)
+        private ToolMenuNode FindToolNode(string toolKey)
         {
-            return string.Equals(toolKey, FileSearchToolKey, StringComparison.Ordinal)
-                ? _fileSearchNode ?? _selectedToolNode ?? ToolMenuItems.First()
-                : _processManagerNode ?? _selectedToolNode ?? ToolMenuItems.First();
+            return toolKey switch
+            {
+                FileSearchToolKey => _fileSearchNode ?? _selectedToolNode ?? ToolMenuItems.First(),
+                HardwareInfoToolKey => _hardwareInfoNode ?? _selectedToolNode ?? ToolMenuItems.First(),
+                _ => _processManagerNode ?? _selectedToolNode ?? ToolMenuItems.First()
+            };
         }
 
         private void ApplySelectedToolKey(string toolKey)
@@ -1072,6 +1087,12 @@ namespace NexusDash.ViewModels
             if (string.Equals(toolKey, FileSearchToolKey, StringComparison.Ordinal))
             {
                 normalizedToolKey = FileSearchToolKey;
+                return true;
+            }
+
+            if (string.Equals(toolKey, HardwareInfoToolKey, StringComparison.Ordinal))
+            {
+                normalizedToolKey = HardwareInfoToolKey;
                 return true;
             }
 
@@ -1097,6 +1118,11 @@ namespace NexusDash.ViewModels
                 _fileSearchNode.Header = FileSearchToolText;
             }
 
+            if (_hardwareInfoNode is not null)
+            {
+                _hardwareInfoNode.Header = HardwareInfoToolText;
+            }
+
             PublishToolTreeState();
             PublishProcessManagerState();
         }
@@ -1105,6 +1131,8 @@ namespace NexusDash.ViewModels
         {
             this.RaisePropertyChanged(nameof(IsProcessToolSelected));
             this.RaisePropertyChanged(nameof(IsFileSearchToolSelected));
+            this.RaisePropertyChanged(nameof(IsHardwareInfoToolSelected));
+            this.RaisePropertyChanged(nameof(IsSearchBoxVisible));
             this.RaisePropertyChanged(nameof(CanShowPauseRefresh));
             this.RaisePropertyChanged(nameof(CanShowResumeRefresh));
             this.RaisePropertyChanged(nameof(SearchPlaceholderText));
@@ -1115,9 +1143,12 @@ namespace NexusDash.ViewModels
 
         private string GetToolDisplayName(string toolKey)
         {
-            return string.Equals(toolKey, FileSearchToolKey, StringComparison.Ordinal)
-                ? FileSearchToolText
-                : ProcessManagerText;
+            return toolKey switch
+            {
+                FileSearchToolKey => FileSearchToolText,
+                HardwareInfoToolKey => HardwareInfoToolText,
+                _ => ProcessManagerText
+            };
         }
 
         private static void LogOperation(string? message)
@@ -1188,7 +1219,6 @@ namespace NexusDash.ViewModels
             _eventBus.Publish(new ToolTreeStateChangedCommand(new ToolTreeState
             {
                 ToolMenuItems = ToolMenuItems.ToArray(),
-                ToolMenuDefaultOpenPaths = ToolMenuDefaultOpenPaths,
                 SelectedToolNode = SelectedToolNode
             }));
         }
@@ -1198,7 +1228,8 @@ namespace NexusDash.ViewModels
             _eventBus.Publish(new ActiveToolStateChangedCommand(new ActiveToolState
             {
                 IsProcessToolSelected = IsProcessToolSelected,
-                IsFileSearchToolSelected = IsFileSearchToolSelected
+                IsFileSearchToolSelected = IsFileSearchToolSelected,
+                IsHardwareInfoToolSelected = IsHardwareInfoToolSelected
             }));
         }
 
@@ -2085,261 +2116,7 @@ namespace NexusDash.ViewModels
 
         private IEnumerable<ProcessRowViewModel> SortProcessRows(IEnumerable<ProcessRowViewModel> rows)
         {
-            return rows.OrderBy(row => row, new ProcessRowComparer(_processSortColumnKey, _processSortDirection));
-        }
-
-        private static string NormalizeProcessSortColumnKey(string? columnKey)
-        {
-            return TryNormalizeProcessColumnKey(columnKey, out var normalizedKey)
-                ? normalizedKey
-                : ProcessColumnName;
-        }
-
-        private static bool TryNormalizeProcessColumnKey(string? columnKey, out string normalizedKey)
-        {
-            normalizedKey = columnKey switch
-            {
-                ProcessColumnPid => ProcessColumnPid,
-                ProcessColumnParentPid => ProcessColumnParentPid,
-                ProcessColumnName => ProcessColumnName,
-                ProcessColumnPublisher => ProcessColumnPublisher,
-                ProcessColumnCpu => ProcessColumnCpu,
-                ProcessColumnMemory => ProcessColumnMemory,
-                ProcessColumnDisk => ProcessColumnDisk,
-                ProcessColumnNetwork => ProcessColumnNetwork,
-                ProcessColumnGpu => ProcessColumnGpu,
-                _ => ""
-            };
-
-            return normalizedKey.Length > 0;
-        }
-
-        private static ListSortDirection GetDefaultSortDirection(string columnKey)
-        {
-            return columnKey is ProcessColumnCpu or
-                   ProcessColumnMemory or
-                   ProcessColumnDisk or
-                   ProcessColumnNetwork or
-                   ProcessColumnGpu
-                ? ListSortDirection.Descending
-                : ListSortDirection.Ascending;
-        }
-
-        private static ListSortDirection ToggleSortDirection(ListSortDirection direction)
-        {
-            return direction == ListSortDirection.Ascending
-                ? ListSortDirection.Descending
-                : ListSortDirection.Ascending;
-        }
-
-        private sealed class ProcessRowComparer(
-            string columnKey,
-            ListSortDirection direction) : IComparer<ProcessRowViewModel>
-        {
-            public int Compare(ProcessRowViewModel? x, ProcessRowViewModel? y)
-            {
-                if (ReferenceEquals(x, y))
-                {
-                    return 0;
-                }
-
-                if (x is null)
-                {
-                    return 1;
-                }
-
-                if (y is null)
-                {
-                    return -1;
-                }
-
-                var result = columnKey switch
-                {
-                    ProcessColumnPid => CompareValue(x.Pid, y.Pid),
-                    ProcessColumnParentPid => CompareNullableValue(x.ParentPid, y.ParentPid),
-                    ProcessColumnPublisher => CompareOptionalText(x.Publisher, y.Publisher),
-                    ProcessColumnCpu => CompareMetric(x.CpuPercent, y.CpuPercent),
-                    ProcessColumnMemory => CompareValue(x.WorkingSetBytes, y.WorkingSetBytes),
-                    ProcessColumnDisk => CompareMetric(x.DiskBytesPerSecond, y.DiskBytesPerSecond),
-                    ProcessColumnNetwork => CompareNetwork(x, y),
-                    ProcessColumnGpu => CompareNullableMetric(x.GpuPercent, y.GpuPercent),
-                    _ => CompareText(x.Name, y.Name)
-                };
-                if (result != 0)
-                {
-                    return result;
-                }
-
-                result = CompareNaturalText(x.Name, y.Name);
-                return result != 0 ? result : x.Pid.CompareTo(y.Pid);
-            }
-
-            private int CompareNetwork(ProcessRowViewModel x, ProcessRowViewModel y)
-            {
-                var result = CompareValue(x.NetworkConnectionCount, y.NetworkConnectionCount);
-                if (result != 0)
-                {
-                    return result;
-                }
-
-                result = CompareValue(x.TcpConnectionCount, y.TcpConnectionCount);
-                return result != 0 ? result : CompareValue(x.UdpConnectionCount, y.UdpConnectionCount);
-            }
-
-            private int CompareOptionalText(string? x, string? y)
-            {
-                var xMissing = string.IsNullOrWhiteSpace(x);
-                var yMissing = string.IsNullOrWhiteSpace(y);
-                if (xMissing != yMissing)
-                {
-                    return xMissing ? 1 : -1;
-                }
-
-                return xMissing ? 0 : CompareText(x!, y!);
-            }
-
-            private int CompareText(string x, string y)
-            {
-                return ApplyDirection(CompareNaturalText(x, y));
-            }
-
-            private int CompareNullableMetric(double? x, double? y)
-            {
-                var xHasValue = x is { } xValue && double.IsFinite(xValue);
-                var yHasValue = y is { } yValue && double.IsFinite(yValue);
-                if (xHasValue != yHasValue)
-                {
-                    return xHasValue ? -1 : 1;
-                }
-
-                return xHasValue ? CompareMetric(x!.Value, y!.Value) : 0;
-            }
-
-            private int CompareMetric(double x, double y)
-            {
-                var xValue = double.IsFinite(x) ? x : 0;
-                var yValue = double.IsFinite(y) ? y : 0;
-                return CompareValue(xValue, yValue);
-            }
-
-            private int CompareNullableValue<T>(T? x, T? y)
-                where T : struct, IComparable<T>
-            {
-                if (x.HasValue != y.HasValue)
-                {
-                    return x.HasValue ? -1 : 1;
-                }
-
-                return x.HasValue ? CompareValue(x.Value, y!.Value) : 0;
-            }
-
-            private int CompareValue<T>(T x, T y)
-                where T : IComparable<T>
-            {
-                return ApplyDirection(x.CompareTo(y));
-            }
-
-            private int ApplyDirection(int result)
-            {
-                return direction == ListSortDirection.Descending ? -result : result;
-            }
-
-            private static int CompareNaturalText(string? x, string? y)
-            {
-                x ??= "";
-                y ??= "";
-
-                var xIndex = 0;
-                var yIndex = 0;
-                while (xIndex < x.Length && yIndex < y.Length)
-                {
-                    var xIsDigit = IsAsciiDigit(x[xIndex]);
-                    var yIsDigit = IsAsciiDigit(y[yIndex]);
-                    var xStart = xIndex;
-                    var yStart = yIndex;
-
-                    while (xIndex < x.Length && IsAsciiDigit(x[xIndex]) == xIsDigit)
-                    {
-                        xIndex++;
-                    }
-
-                    while (yIndex < y.Length && IsAsciiDigit(y[yIndex]) == yIsDigit)
-                    {
-                        yIndex++;
-                    }
-
-                    var result = xIsDigit && yIsDigit
-                        ? CompareNumberSegments(x, xStart, xIndex, y, yStart, yIndex)
-                        : CompareTextSegments(x, xStart, xIndex, y, yStart, yIndex);
-                    if (result != 0)
-                    {
-                        return result;
-                    }
-                }
-
-                return (x.Length - xIndex).CompareTo(y.Length - yIndex);
-            }
-
-            private static int CompareNumberSegments(
-                string x,
-                int xStart,
-                int xEnd,
-                string y,
-                int yStart,
-                int yEnd)
-            {
-                var xValueStart = SkipLeadingZeroes(x, xStart, xEnd);
-                var yValueStart = SkipLeadingZeroes(y, yStart, yEnd);
-                var xValueLength = xEnd - xValueStart;
-                var yValueLength = yEnd - yValueStart;
-                if (xValueLength != yValueLength)
-                {
-                    return xValueLength.CompareTo(yValueLength);
-                }
-
-                for (var offset = 0; offset < xValueLength; offset++)
-                {
-                    var result = x[xValueStart + offset].CompareTo(y[yValueStart + offset]);
-                    if (result != 0)
-                    {
-                        return result;
-                    }
-                }
-
-                return (xEnd - xStart).CompareTo(yEnd - yStart);
-            }
-
-            private static int CompareTextSegments(
-                string x,
-                int xStart,
-                int xEnd,
-                string y,
-                int yStart,
-                int yEnd)
-            {
-                var xSegment = x[xStart..xEnd];
-                var ySegment = y[yStart..yEnd];
-                var result = CultureInfo.CurrentCulture.CompareInfo.Compare(
-                    xSegment,
-                    ySegment,
-                    CompareOptions.IgnoreCase | CompareOptions.IgnoreKanaType | CompareOptions.IgnoreWidth);
-                return result != 0 ? result : string.Compare(xSegment, ySegment, StringComparison.Ordinal);
-            }
-
-            private static int SkipLeadingZeroes(string value, int start, int end)
-            {
-                while (start < end && value[start] == '0')
-                {
-                    start++;
-                }
-
-                return start;
-            }
-
-            private static bool IsAsciiDigit(char value)
-            {
-                return value is >= '0' and <= '9';
-            }
+            return rows.OrderBy(row => row, new ProcessTableSort.RowComparer(_processSortColumnKey, _processSortDirection));
         }
 
         private ProcessRowViewModel GetGroupRow(ProcessCategory category)
@@ -2483,7 +2260,7 @@ namespace NexusDash.ViewModels
 
             foreach (var (key, width) in preferences.ProcessColumnWidths)
             {
-                if (TryNormalizeProcessColumnKey(key, out var normalizedKey) &&
+                if (ProcessTableSort.TryNormalizeColumnKey(key, out var normalizedKey) &&
                     width >= 32 &&
                     double.IsFinite(width))
                 {
@@ -2559,7 +2336,7 @@ namespace NexusDash.ViewModels
             Languages.Add(new LanguageOption("ja-JP", T(NexusDashL.Japanese)));
         }
 
-        private void SetLanguage(string cultureName, bool showStatus = true)
+        private void SetLanguage(string? cultureName, bool showStatus = true, bool persist = true)
         {
             var normalizedCultureName = NormalizeCulture(cultureName);
             if (string.Equals(_selectedCultureName, normalizedCultureName, StringComparison.OrdinalIgnoreCase) && showStatus)
@@ -2571,12 +2348,15 @@ namespace NexusDash.ViewModels
             _selectedCultureName = culture.Name;
             CultureInfo.CurrentCulture = culture;
             CultureInfo.CurrentUICulture = culture;
+            CultureInfo.DefaultThreadCurrentCulture = culture;
+            CultureInfo.DefaultThreadCurrentUICulture = culture;
             I18nManager.Instance.Culture = culture;
-            _userPreferencesService.Update(preferences => preferences.CultureName = culture.Name);
-            Application.Current?.SetLanguageVariant(
-                culture.TwoLetterISOLanguageName.Equals("zh", StringComparison.OrdinalIgnoreCase)
-                    ? LanguageVariant.zh_CN
-                    : LanguageVariant.en_US);
+            if (persist)
+            {
+                _userPreferencesService.Update(preferences => preferences.CultureName = culture.Name);
+            }
+
+            App.ApplyThirdPartyCulture(culture.Name);
 
             RefreshLanguageOptions();
             RefreshLocalizedProperties();
@@ -2642,6 +2422,7 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(RememberWindowSizeText));
             this.RaisePropertyChanged(nameof(ProcessManagerText));
             this.RaisePropertyChanged(nameof(FileSearchToolText));
+            this.RaisePropertyChanged(nameof(HardwareInfoToolText));
             this.RaisePropertyChanged(nameof(OperationLogText));
             this.RaisePropertyChanged(nameof(ProcessOverviewText));
             RefreshToolMenuHeaders();
@@ -2738,35 +2519,19 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(ActiveCountText));
             this.RaisePropertyChanged(nameof(ActiveStatusMessage));
             FileSearch.RefreshLocalizedText();
+            HardwareInfo.RefreshLocalizedText();
             PublishProcessListState();
             PublishShellState();
         }
 
-        private static string NormalizeCulture(string cultureName)
+        private static string ResolveStartupCultureName(string? configuredCultureName)
         {
-            if (cultureName.StartsWith("zh-Hant", StringComparison.OrdinalIgnoreCase) ||
-                cultureName.Equals("zh-TW", StringComparison.OrdinalIgnoreCase) ||
-                cultureName.Equals("zh-HK", StringComparison.OrdinalIgnoreCase))
-            {
-                return "zh-Hant";
-            }
+            return App.ResolveStartupCulture(configuredCultureName).Name;
+        }
 
-            if (cultureName.StartsWith("zh", StringComparison.OrdinalIgnoreCase))
-            {
-                return "zh-CN";
-            }
-
-            if (cultureName.StartsWith("ja", StringComparison.OrdinalIgnoreCase))
-            {
-                return "ja-JP";
-            }
-
-            if (cultureName.StartsWith("en", StringComparison.OrdinalIgnoreCase))
-            {
-                return "en-US";
-            }
-
-            return "zh-CN";
+        private static string NormalizeCulture(string? cultureName)
+        {
+            return App.NormalizeCulture(cultureName);
         }
 
         private static string T(string key)
@@ -2777,7 +2542,6 @@ namespace NexusDash.ViewModels
         private void ApplyApplicationTheme(bool isDarkTheme)
         {
             _themeResourceService.Apply(isDarkTheme);
-            Application.Current?.SetDarkThemeMode(isDarkTheme);
         }
 
         private bool SetField<T>(ref T field, T value, string propertyName)
@@ -2815,6 +2579,7 @@ namespace NexusDash.ViewModels
             _refreshCancellation.Cancel();
             _eventBus.Unsubscribe(this);
             FileSearch.PropertyChanged -= HandleFileSearchPropertyChanged;
+            HardwareInfo.PropertyChanged -= HandleHardwareInfoPropertyChanged;
             ToolTree.Dispose();
             ToolContent.Dispose();
             OperationLog.Dispose();
@@ -2823,6 +2588,7 @@ namespace NexusDash.ViewModels
             ProcessManager.Dispose();
             ProcessList.Dispose();
             FileSearch.Dispose();
+            HardwareInfo.Dispose();
             _systemMonitorService.Dispose();
             _ = DisposeRefreshCancellationWhenIdleAsync();
         }

@@ -4,7 +4,6 @@ using Avalonia.Data;
 using NexusDash.ViewModels.Settings;
 using Prism.Ioc;
 using Prism.Regions;
-using AtomTabItem = AtomUI.Desktop.Controls.TabItem;
 
 namespace NexusDash.Regions
 {
@@ -19,7 +18,7 @@ namespace NexusDash.Regions
             regionManager.RegisterViewWithRegion(RegionNames.SettingsRegion, () =>
             {
                 var view = container.Resolve<TView>();
-                var tabItem = new AtomTabItem
+                var tabItem = new TabItem
                 {
                     Content = view,
                     Tag = order

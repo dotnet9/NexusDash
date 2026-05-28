@@ -3,6 +3,7 @@ using CodeWF.EventBus;
 using NexusDash.Services;
 using ReactiveUI;
 using System;
+using System.Globalization;
 
 namespace NexusDash.ViewModels.Settings
 {
@@ -11,14 +12,16 @@ namespace NexusDash.ViewModels.Settings
         private readonly IEventBus _eventBus;
         private bool _isDisposed;
         private bool _isDarkTheme = true;
-        private string _cultureName = "zh-CN";
+        private string _cultureName = "";
 
         protected SettingsPageViewModelBase(IEventBus eventBus, IUserPreferencesService userPreferencesService)
         {
             _eventBus = eventBus;
             var preferences = userPreferencesService.Load();
             _isDarkTheme = preferences.IsDarkTheme;
-            _cultureName = preferences.CultureName;
+            _cultureName = preferences.CultureName ??
+                           I18nManager.Instance.Culture?.Name ??
+                           CultureInfo.CurrentUICulture.Name;
             _eventBus.Subscribe(this);
         }
 

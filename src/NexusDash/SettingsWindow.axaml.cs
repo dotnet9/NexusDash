@@ -1,22 +1,17 @@
-using AtomUI.Controls;
-using AtomUI.Theme;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+using CodeWF.AvaloniaControls.Controls;
 using Prism.Regions;
 using System;
 using System.Linq;
-using AtomTabControl = AtomUI.Desktop.Controls.TabControl;
-using AtomTabItem = AtomUI.Desktop.Controls.TabItem;
 
 namespace NexusDash
 {
-    public partial class SettingsWindow : AtomUI.Desktop.Controls.Window
+    public partial class SettingsWindow : CodeWFWindow
     {
-        private const string DarkClass = "dark";
-
         private IRegionManager? _regionManager;
-        private AtomTabControl? _settingsRegionTabs;
+        private TabControl? _settingsRegionTabs;
 
         public SettingsWindow()
         {
@@ -37,14 +32,7 @@ namespace NexusDash
             }
 
             AvaloniaXamlLoader.Load(this);
-            SetDarkThemeClass(Application.Current?.IsDarkThemeMode() ?? false);
-            if (Application.Current?.GetThemeManager() is { } themeManager)
-            {
-                themeManager.BindingSource.PropertyChanged += HandleThemeManagerPropertyChanged;
-                Closed += (_, _) => themeManager.BindingSource.PropertyChanged -= HandleThemeManagerPropertyChanged;
-            }
-
-            _settingsRegionTabs = this.FindControl<AtomTabControl>("SettingsRegionTabs");
+            _settingsRegionTabs = this.FindControl<TabControl>("SettingsRegionTabs");
 
             if (_regionManager is not null && _settingsRegionTabs is not null)
             {
@@ -54,9 +42,9 @@ namespace NexusDash
 
         protected override void OnClosed(EventArgs e)
         {
-            foreach (var tabItem in _settingsRegionTabs?.Items.OfType<AtomTabItem>() ?? [])
+            foreach (var tabItem in _settingsRegionTabs?.Items.OfType<TabItem>() ?? [])
             {
-                if (tabItem.Content is Avalonia.Controls.Control { DataContext: IDisposable viewModel })
+                if (tabItem.Content is Control { DataContext: IDisposable viewModel })
                 {
                     viewModel.Dispose();
                 }
@@ -68,29 +56,6 @@ namespace NexusDash
             }
 
             base.OnClosed(e);
-        }
-
-        private void HandleThemeManagerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-        {
-            if (e.Property == IThemeManager.IsDarkThemeModeProperty)
-            {
-                SetDarkThemeClass(e.GetNewValue<bool>());
-            }
-        }
-
-        private void SetDarkThemeClass(bool isDarkTheme)
-        {
-            if (isDarkTheme)
-            {
-                if (!Classes.Contains(DarkClass))
-                {
-                    Classes.Add(DarkClass);
-                }
-
-                return;
-            }
-
-            Classes.Remove(DarkClass);
         }
     }
 }

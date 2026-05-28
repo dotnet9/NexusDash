@@ -1,8 +1,10 @@
 using NexusDash;
 using CodeWF.EventBus;
 using NexusDash.Services;
+using Prism.Commands;
 using ReactiveUI;
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -19,6 +21,7 @@ namespace NexusDash.ViewModels.Settings
 
         public override string Header => T(NexusDashL.SettingsAbout);
         public override int Order => 30;
+        public DelegateCommand OpenRepositoryCommand { get; } = new(OpenRepository);
         public string AppName => T(NexusDashL.AppName);
         public string Description => T(NexusDashL.AboutDescription);
         public string VersionLabel => T(NexusDashL.AboutVersion);
@@ -36,6 +39,15 @@ namespace NexusDash.ViewModels.Settings
             AppAssembly.GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright
             ?? $"Copyright (c) {DateTime.Now.Year} {Author}";
         public Uri RepositoryUri => new(RepositoryUrl);
+
+        private static void OpenRepository()
+        {
+            var repositoryUrl = GetAssemblyMetadata("ProjectUrl", "https://codewf.com");
+            Process.Start(new ProcessStartInfo(repositoryUrl)
+            {
+                UseShellExecute = true
+            });
+        }
 
         protected override void RaiseLocalizedProperties()
         {

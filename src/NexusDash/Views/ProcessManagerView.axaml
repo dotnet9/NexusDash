@@ -1,8 +1,7 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:atom="https://atomui.net"
              xmlns:views="using:NexusDash.Views"
              xmlns:vm="using:NexusDash.ViewModels"
              mc:Ignorable="d"
@@ -10,15 +9,15 @@
              d:DesignHeight="620"
              x:Class="NexusDash.Views.ProcessManagerView"
              x:DataType="vm:ProcessManagerViewModel">
-  <atom:TabControl Margin="18,14,18,10">
-    <atom:TabItem Header="{Binding ProcessOverviewText}">
+  <TabControl Margin="18,14,18,10">
+    <TabItem Header="{Binding ProcessOverviewText}">
       <views:ProcessOverviewView DataContext="{Binding Overview}" />
-    </atom:TabItem>
-    <atom:TabItem Header="{Binding ProcessTreeText}">
+    </TabItem>
+    <TabItem Header="{Binding ProcessTreeText}">
       <views:ProcessExplorerView DataContext="{Binding Explorer}" />
-    </atom:TabItem>
-    <atom:TabItem Header="{Binding DetailsText}">
-      <views:ProcessInspectorView DataContext="{Binding Inspector}" />
-    </atom:TabItem>
-  </atom:TabControl>
+    </TabItem>
+    <TabItem Header="{Binding TreemapText}">
+      <views:ProcessTreemapView DataContext="{Binding Treemap}" />
+    </TabItem>
+  </TabControl>
 </UserControl>

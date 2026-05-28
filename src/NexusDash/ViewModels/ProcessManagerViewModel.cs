@@ -6,19 +6,22 @@ namespace NexusDash.ViewModels
     {
         private string _processOverviewText = "";
         private string _processTreeText = "";
+        private string _treemapText = "";
         private string _detailsText = "";
 
         public ProcessManagerViewModel(IEventBus eventBus, ProcessListViewModel processList)
             : base(eventBus)
         {
             Overview = new ProcessOverviewViewModel(eventBus);
-            Explorer = new ProcessExplorerViewModel(eventBus, processList);
             Inspector = new ProcessInspectorViewModel(eventBus);
+            Explorer = new ProcessExplorerViewModel(eventBus, processList, Inspector);
+            Treemap = new ProcessTreemapViewModel(eventBus);
         }
 
         public ProcessOverviewViewModel Overview { get; }
         public ProcessExplorerViewModel Explorer { get; }
         public ProcessInspectorViewModel Inspector { get; }
+        public ProcessTreemapViewModel Treemap { get; }
 
         public string ProcessOverviewText
         {
@@ -38,10 +41,17 @@ namespace NexusDash.ViewModels
             private set => SetField(ref _detailsText, value, nameof(DetailsText));
         }
 
+        public string TreemapText
+        {
+            get => _treemapText;
+            private set => SetField(ref _treemapText, value, nameof(TreemapText));
+        }
+
         public override void Dispose()
         {
             Overview.Dispose();
             Explorer.Dispose();
+            Treemap.Dispose();
             Inspector.Dispose();
             base.Dispose();
         }
@@ -52,6 +62,12 @@ namespace NexusDash.ViewModels
             ProcessOverviewText = command.State.ProcessOverviewText;
             ProcessTreeText = command.State.ProcessTreeText;
             DetailsText = command.State.DetailsText;
+        }
+
+        [EventHandler]
+        private void ApplyExplorerState(ProcessExplorerStateChangedCommand command)
+        {
+            TreemapText = command.State.TreemapText;
         }
     }
 }

@@ -1,10 +1,11 @@
-using AtomUI.Desktop.Controls;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.VisualTree;
+using CodeWF.AvaloniaControls;
 using NexusDash.ViewModels;
 using System;
 using System.Collections.Specialized;
@@ -33,6 +34,7 @@ namespace NexusDash.Views
                 return;
             }
 
+            processGrid.ApplyPerformancePreset();
             processGrid.AddHandler(
                 PointerPressedEvent,
                 ProcessGrid_PointerPressed,
@@ -77,30 +79,6 @@ namespace NexusDash.Views
             ApplyColumnVisibility();
             ApplyColumnHeaders();
             ApplyColumnWidths();
-        }
-
-        private void ProcessGrid_SelectionChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            if (_viewModel is null || sender is not DataGrid dataGrid)
-            {
-                return;
-            }
-
-            var selectedItems = dataGrid.SelectedItems.OfType<ProcessRowViewModel>().ToArray();
-            foreach (var groupHeader in selectedItems.Where(static row => row.IsGroupHeader))
-            {
-                dataGrid.SelectedItems.Remove(groupHeader);
-            }
-
-            var selectedRows = selectedItems
-                .Where(static row => !row.IsGroupHeader)
-                .ToArray();
-            if (selectedRows.Length == 0 && _viewModel.IsSelectedProcessStillVisible())
-            {
-                return;
-            }
-
-            _viewModel.SetSelectedProcesses(selectedRows);
         }
 
         private void ProcessGrid_PointerPressed(object? sender, PointerPressedEventArgs e)
@@ -184,13 +162,12 @@ namespace NexusDash.Views
                 return;
             }
 
-            var menu = new AtomUI.Desktop.Controls.MenuFlyout
+            var menu = new MenuFlyout
             {
-                Placement = PlacementMode.Pointer,
-                IsMotionEnabled = true
+                Placement = PlacementMode.Pointer
             };
 
-            var endProcessItem = new AtomUI.Desktop.Controls.MenuItem
+            var endProcessItem = new MenuItem
             {
                 Header = _viewModel.EndProcessText,
                 IsEnabled = _viewModel.HasSelectedProcesses
@@ -198,7 +175,7 @@ namespace NexusDash.Views
             endProcessItem.Click += (_, _) => _viewModel.EndSelectedProcesses();
             menu.Items.Add(endProcessItem);
 
-            var endTreeItem = new AtomUI.Desktop.Controls.MenuItem
+            var endTreeItem = new MenuItem
             {
                 Header = _viewModel.EndProcessTreeText,
                 IsEnabled = _viewModel.HasSelectedProcesses
@@ -206,7 +183,7 @@ namespace NexusDash.Views
             endTreeItem.Click += (_, _) => _viewModel.EndSelectedProcessTrees();
             menu.Items.Add(endTreeItem);
 
-            var endAssociatedItem = new AtomUI.Desktop.Controls.MenuItem
+            var endAssociatedItem = new MenuItem
             {
                 Header = _viewModel.EndAssociatedProcessesText,
                 IsEnabled = _viewModel.HasSelectedProcesses
@@ -224,22 +201,21 @@ namespace NexusDash.Views
                 return;
             }
 
-            var menu = new AtomUI.Desktop.Controls.MenuFlyout
+            var menu = new MenuFlyout
             {
-                Placement = PlacementMode.Pointer,
-                IsMotionEnabled = true
+                Placement = PlacementMode.Pointer
             };
 
-            menu.Items.Add(new AtomUI.Desktop.Controls.MenuItem
+            menu.Items.Add(new MenuItem
             {
                 Header = _viewModel.ColumnVisibilityText,
                 IsEnabled = false
             });
-            menu.Items.Add(new MenuSeparator());
+            menu.Items.Add(new Separator());
 
             foreach (var option in _viewModel.ProcessColumns)
             {
-                var item = new AtomUI.Desktop.Controls.MenuItem
+                var item = new MenuItem
                 {
                     Header = option.Header,
                     ToggleType = MenuItemToggleType.CheckBox,
@@ -343,8 +319,8 @@ namespace NexusDash.Views
                 return;
             }
 
-            var directionGlyph = _viewModel.ProcessSortDirection == ListSortDirection.Ascending ? " ↑" : " ↓";
-            column.Header = string.Concat(header, directionGlyph);
+            var directionText = _viewModel.ProcessSortDirection == ListSortDirection.Ascending ? " ASC" : " DESC";
+            column.Header = string.Concat(header, directionText);
         }
 
         private DataGrid? GetProcessGrid()
@@ -386,10 +362,12 @@ namespace NexusDash.Views
         private void HandleProcessGridColumnPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
         {
             if (_viewModel is null ||
+                _viewModel.IsApplyingState ||
                 _isApplyingColumnWidths ||
                 e.Property != DataGridColumn.WidthProperty ||
                 sender is not DataGridColumn column ||
-                column.Tag is not string columnKey)
+                column.Tag is not string columnKey ||
+                !column.Width.IsAbsolute)
             {
                 return;
             }
@@ -403,9 +381,7 @@ namespace NexusDash.Views
 
         private static double GetPersistableColumnWidth(DataGridColumn column)
         {
-            return column.Width.IsAbsolute && column.Width.Value > 0
-                ? column.Width.Value
-                : column.ActualWidth;
+            return column.Width.Value;
         }
 
         private void HandleProcessColumnsChanged(object? sender, NotifyCollectionChangedEventArgs e)

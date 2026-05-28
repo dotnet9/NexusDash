@@ -1,11 +1,18 @@
 using CodeWF.EventBus;
+using CodeWF.Log.Core;
+using NexusDash.Services;
 using Prism.Commands;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace NexusDash.ViewModels
 {
     public sealed class StatusBarViewModel : EventBusViewModel
     {
+        private readonly IProcessSnapshotExportService _snapshotExportService;
         private string _settingsText = "";
         private string _pauseText = "";
         private string _resumeText = "";
@@ -29,17 +36,34 @@ namespace NexusDash.ViewModels
         private ProcessRowViewModel? _selectedProcess;
         private IReadOnlyList<ProcessRowViewModel> _visibleProcesses = [];
 
-        public StatusBarViewModel(IEventBus eventBus)
+        public StatusBarViewModel(
+            IEventBus eventBus,
+            IProcessSnapshotExportService snapshotExportService)
             : base(eventBus)
         {
+            _snapshotExportService = snapshotExportService;
             OpenSettingsWindowCommand = new DelegateCommand(() => EventBus.Publish(new OpenSettingsWindowCommand()));
+            ToggleRememberWindowSizeCommand = new DelegateCommand(() => SetRememberWindowSize(!RememberWindowSize));
             PauseRefreshCommand = new DelegateCommand(() => EventBus.Publish(new PauseRefreshRequestedCommand()));
             ResumeRefreshCommand = new DelegateCommand(() => EventBus.Publish(new ResumeRefreshRequestedCommand()));
+            ExportProcessListJsonCommand = new DelegateCommand(() =>
+                _ = ExportProcessSnapshotAsync(ProcessSnapshotExportFormat.Json, ProcessSnapshotExportScope.ProcessList));
+            ExportProcessListCsvCommand = new DelegateCommand(() =>
+                _ = ExportProcessSnapshotAsync(ProcessSnapshotExportFormat.Csv, ProcessSnapshotExportScope.ProcessList));
+            ExportSelectedProcessJsonCommand = new DelegateCommand(() =>
+                _ = ExportProcessSnapshotAsync(ProcessSnapshotExportFormat.Json, ProcessSnapshotExportScope.SelectedProcess));
+            ExportSelectedProcessCsvCommand = new DelegateCommand(() =>
+                _ = ExportProcessSnapshotAsync(ProcessSnapshotExportFormat.Csv, ProcessSnapshotExportScope.SelectedProcess));
         }
 
         public DelegateCommand OpenSettingsWindowCommand { get; }
+        public DelegateCommand ToggleRememberWindowSizeCommand { get; }
         public DelegateCommand PauseRefreshCommand { get; }
         public DelegateCommand ResumeRefreshCommand { get; }
+        public DelegateCommand ExportProcessListJsonCommand { get; }
+        public DelegateCommand ExportProcessListCsvCommand { get; }
+        public DelegateCommand ExportSelectedProcessJsonCommand { get; }
+        public DelegateCommand ExportSelectedProcessCsvCommand { get; }
 
         public string SettingsText { get => _settingsText; private set => SetField(ref _settingsText, value, nameof(SettingsText)); }
         public string PauseText { get => _pauseText; private set => SetField(ref _pauseText, value, nameof(PauseText)); }
@@ -72,6 +96,76 @@ namespace NexusDash.ViewModels
         public void ReportStatus(string message)
         {
             EventBus.Publish(new StatusMessageRequestedCommand(message));
+        }
+
+        private async Task ExportProcessSnapshotAsync(
+            ProcessSnapshotExportFormat format,
+            ProcessSnapshotExportScope scope)
+        {
+            try
+            {
+                var result = await _snapshotExportService.ExportAsync(CreateSnapshotExportState(), format, scope);
+                if (!result.Exported)
+                {
+                    return;
+                }
+
+                ReportStatus(scope == ProcessSnapshotExportScope.SelectedProcess && result.SelectedProcessId is { } pid
+                    ? string.Format(CultureInfo.CurrentCulture, StatusSelectedProcessSnapshotExportedText, pid)
+                    : string.Format(CultureInfo.CurrentCulture, StatusSnapshotExportedText, result.RowCount));
+
+                Logger.Info(
+                    $"Exported process snapshot: scope={scope}, format={format}, rows={result.RowCount}, path={result.FilePath}",
+                    $"Exported process snapshot: {result.RowCount} rows, {result.FilePath}",
+                    log2Console: false);
+            }
+            catch (Exception exception)
+            {
+                var statusMessage = string.Format(
+                    CultureInfo.CurrentCulture,
+                    StatusSnapshotExportFailedText,
+                    exception.Message);
+                ReportStatus(statusMessage);
+                Logger.Error(
+                    "Process snapshot export failed.",
+                    exception,
+                    statusMessage,
+                    log2Console: false);
+            }
+        }
+
+        private ProcessSnapshotExportState CreateSnapshotExportState()
+        {
+            return new ProcessSnapshotExportState(
+                ProcessTotalCount,
+                ExportSnapshotText,
+                VisibleProcesses
+                    .Where(static row => row.IsProcessRow)
+                    .Select(CreateSnapshotRow)
+                    .ToArray(),
+                SelectedProcess is null ? null : CreateSnapshotRow(SelectedProcess));
+        }
+
+        private static ProcessSnapshotExportRow CreateSnapshotRow(ProcessRowViewModel row)
+        {
+            return new ProcessSnapshotExportRow(
+                row.Pid,
+                row.ParentPid,
+                row.Name,
+                row.RawName,
+                row.Publisher,
+                row.Category.ToString(),
+                row.CpuPercent,
+                row.WorkingSetBytes,
+                row.DiskBytesPerSecond,
+                row.TcpConnectionCount,
+                row.UdpConnectionCount,
+                row.NetworkConnectionCount,
+                row.GpuPercent,
+                row.ExecutablePath,
+                row.CommandLine,
+                row.StartTime,
+                row.IsAccessDenied);
         }
 
         [EventHandler]

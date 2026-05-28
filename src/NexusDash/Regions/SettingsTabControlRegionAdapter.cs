@@ -4,17 +4,15 @@ using Avalonia.Interactivity;
 using Prism.Regions;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using AtomTabControl = AtomUI.Desktop.Controls.TabControl;
-using AtomTabItem = AtomUI.Desktop.Controls.TabItem;
 
 namespace NexusDash.Regions
 {
     public sealed class SettingsTabControlRegionAdapter(IRegionBehaviorFactory regionBehaviorFactory)
-        : RegionAdapterBase<AtomTabControl>(regionBehaviorFactory)
+        : RegionAdapterBase<TabControl>(regionBehaviorFactory)
     {
-        private static readonly ConditionalWeakTable<AtomTabItem, SelectionRegistration> SelectionRegistrations = new();
+        private static readonly ConditionalWeakTable<TabItem, SelectionRegistration> SelectionRegistrations = new();
 
-        protected override void Adapt(IRegion region, AtomTabControl regionTarget)
+        protected override void Adapt(IRegion region, TabControl regionTarget)
         {
             void RefreshItems()
             {
@@ -54,9 +52,9 @@ namespace NexusDash.Regions
             return view is Control { Tag: int order } ? order : int.MaxValue;
         }
 
-        private static void RegisterSelectionFallback(AtomTabControl tabControl, object? view)
+        private static void RegisterSelectionFallback(TabControl tabControl, object? view)
         {
-            if (view is not AtomTabItem tabItem || SelectionRegistrations.TryGetValue(tabItem, out _))
+            if (view is not TabItem tabItem || SelectionRegistrations.TryGetValue(tabItem, out _))
             {
                 return;
             }
@@ -74,7 +72,7 @@ namespace NexusDash.Regions
                 handledEventsToo: true);
         }
 
-        private static void SelectTab(AtomTabControl tabControl, AtomTabItem tabItem)
+        private static void SelectTab(TabControl tabControl, TabItem tabItem)
         {
             var index = tabControl.Items.IndexOf(tabItem);
             if (index >= 0)

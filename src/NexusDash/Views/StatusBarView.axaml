@@ -1,9 +1,7 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:atom="https://atomui.net"
-             xmlns:antdicons="https://atomui.net/icons/antdesign"
              xmlns:vm="using:NexusDash.ViewModels"
              mc:Ignorable="d"
              d:DesignWidth="1200"
@@ -16,37 +14,69 @@
           Padding="18,7">
     <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto"
           ColumnSpacing="10">
-      <atom:IconButton Classes="statusBarButton"
-                       Icon="{antdicons:AntDesignIconProvider Kind=SettingOutlined}"
-                       Click="SettingsButton_Click"
-                       AutomationProperties.Name="{Binding SettingsText}"
-                       ToolTip.Tip="{Binding SettingsText}" />
-      <atom:IconButton Grid.Column="1"
-                       Classes="statusBarButton"
-                       Icon="{antdicons:AntDesignIconProvider Kind=PauseCircleOutlined}"
-                       Command="{Binding PauseRefreshCommand}"
-                       AutomationProperties.Name="{Binding PauseText}"
-                       ToolTip.Tip="{Binding PauseText}"
-                       IsVisible="{Binding CanShowPauseRefresh}" />
-      <atom:IconButton Grid.Column="1"
-                       Classes="statusBarButton"
-                       Icon="{antdicons:AntDesignIconProvider Kind=PlayCircleOutlined}"
-                       Command="{Binding ResumeRefreshCommand}"
-                       AutomationProperties.Name="{Binding ResumeText}"
-                       ToolTip.Tip="{Binding ResumeText}"
-                       IsVisible="{Binding CanShowResumeRefresh}" />
-      <atom:Button Grid.Column="2"
+      <Button Classes="statusBarButton"
+              AutomationProperties.Name="{Binding SettingsText}"
+              ToolTip.Tip="{Binding SettingsText}">
+        <Button.Flyout>
+          <MenuFlyout Placement="Top">
+            <MenuItem Header="{Binding SettingsText}"
+                      Command="{Binding OpenSettingsWindowCommand}" />
+            <MenuItem Header="{Binding RememberWindowSizeText}"
+                      ToggleType="CheckBox"
+                      IsChecked="{Binding RememberWindowSize}"
+                      Command="{Binding ToggleRememberWindowSizeCommand}" />
+          </MenuFlyout>
+        </Button.Flyout>
+        <PathIcon Width="15"
+                  Height="15"
+                  Data="M12,8 A4,4 0 1 0 12,16 A4,4 0 1 0 12,8 M4,12 L2,12 M22,12 L20,12 M12,4 L12,2 M12,22 L12,20 M5.6,5.6 L4.2,4.2 M19.8,19.8 L18.4,18.4 M18.4,5.6 L19.8,4.2 M4.2,19.8 L5.6,18.4" />
+      </Button>
+      <Button Grid.Column="1"
+              Classes="statusBarButton"
+              Command="{Binding PauseRefreshCommand}"
+              AutomationProperties.Name="{Binding PauseText}"
+              ToolTip.Tip="{Binding PauseText}"
+              IsVisible="{Binding CanShowPauseRefresh}">
+        <PathIcon Width="15"
+                  Height="15"
+                  Data="M8,5 L10,5 L10,19 L8,19 Z M14,5 L16,5 L16,19 L14,19 Z" />
+      </Button>
+      <Button Grid.Column="1"
+              Classes="statusBarButton"
+              Command="{Binding ResumeRefreshCommand}"
+              AutomationProperties.Name="{Binding ResumeText}"
+              ToolTip.Tip="{Binding ResumeText}"
+              IsVisible="{Binding CanShowResumeRefresh}">
+        <PathIcon Width="15"
+                  Height="15"
+                  Data="M8,5 L19,12 L8,19 Z" />
+      </Button>
+      <Button Grid.Column="2"
                    Classes="statusBarExportButton"
                    Content="{Binding ExportSnapshotText}"
-                   Click="ExportSnapshotButton_Click"
                    ToolTip.Tip="{Binding ExportSnapshotText}"
-                   IsVisible="{Binding IsProcessToolSelected}" />
-      <atom:TextBlock Grid.Column="3"
+                   IsVisible="{Binding IsProcessToolSelected}">
+        <Button.Flyout>
+          <MenuFlyout Placement="Top">
+            <MenuItem Header="{Binding ExportProcessListJsonText}"
+                      Command="{Binding ExportProcessListJsonCommand}" />
+            <MenuItem Header="{Binding ExportProcessListCsvText}"
+                      Command="{Binding ExportProcessListCsvCommand}" />
+            <MenuItem Header="{Binding ExportSelectedProcessJsonText}"
+                      Command="{Binding ExportSelectedProcessJsonCommand}"
+                      IsEnabled="{Binding HasSelectedProcess}" />
+            <MenuItem Header="{Binding ExportSelectedProcessCsvText}"
+                      Command="{Binding ExportSelectedProcessCsvCommand}"
+                      IsEnabled="{Binding HasSelectedProcess}" />
+          </MenuFlyout>
+        </Button.Flyout>
+      </Button>
+      <TextBlock Grid.Column="3"
                       Text="{Binding ActiveStatusMessage}"
                       Foreground="{DynamicResource SecondaryTextBrush}"
                       TextTrimming="CharacterEllipsis"
                       VerticalAlignment="Center" />
-      <atom:TextBlock Grid.Column="4"
+      <TextBlock Grid.Column="4"
                       Text="{Binding ActiveCountText}"
                       Foreground="{DynamicResource SecondaryTextBrush}"
                       VerticalAlignment="Center" />

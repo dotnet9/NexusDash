@@ -54,6 +54,7 @@ namespace NexusDash.ViewModels
 
         public ObservableCollection<ProcessRowViewModel> VisibleProcesses { get; } = new();
         public ObservableCollection<ProcessColumnOptionViewModel> ProcessColumns { get; } = new();
+        public bool IsApplyingState => _isApplyingState;
 
         public string ProcessTreeText
         {
@@ -260,6 +261,11 @@ namespace NexusDash.ViewModels
 
         public void SetSelectedProcesses(IEnumerable<ProcessRowViewModel> selectedRows)
         {
+            if (_isApplyingState)
+            {
+                return;
+            }
+
             _eventBus.Publish(new ProcessListSelectionChangedCommand(
                 selectedRows.Where(static row => !row.IsGroupHeader).ToArray()));
         }
@@ -278,16 +284,31 @@ namespace NexusDash.ViewModels
 
         public void SetProcessColumnVisibility(string key, bool isVisible)
         {
+            if (_isApplyingState)
+            {
+                return;
+            }
+
             _eventBus.Publish(new ProcessColumnVisibilityChangedCommand(key, isVisible));
         }
 
         public void SetProcessColumnWidth(string key, double width)
         {
+            if (_isApplyingState)
+            {
+                return;
+            }
+
             _eventBus.Publish(new ProcessColumnWidthChangedCommand(key, width));
         }
 
         public void SetProcessSort(string columnKey)
         {
+            if (_isApplyingState)
+            {
+                return;
+            }
+
             _eventBus.Publish(new ProcessSortChangedCommand(columnKey));
         }
 

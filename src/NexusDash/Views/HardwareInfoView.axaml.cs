@@ -3,9 +3,9 @@ using Avalonia.Markup.Xaml;
 
 namespace NexusDash.Views
 {
-    public partial class StatusBarView : UserControl
+    public partial class HardwareInfoView : UserControl
     {
-        public StatusBarView()
+        public HardwareInfoView()
         {
             AvaloniaXamlLoader.Load(this);
         }

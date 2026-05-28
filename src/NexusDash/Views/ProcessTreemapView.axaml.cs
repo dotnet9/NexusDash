@@ -3,9 +3,9 @@ using Avalonia.Markup.Xaml;
 
 namespace NexusDash.Views
 {
-    public partial class StatusBarView : UserControl
+    public partial class ProcessTreemapView : UserControl
     {
-        public StatusBarView()
+        public ProcessTreemapView()
         {
             AvaloniaXamlLoader.Load(this);
         }
