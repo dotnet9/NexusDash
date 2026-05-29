@@ -3,6 +3,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using ReactiveUI;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
@@ -20,6 +21,7 @@ namespace NexusDash.ViewModels
 
     public sealed class ProcessRowViewModel : ReactiveObject
     {
+        private static readonly Dictionary<byte[], Bitmap?> IconBitmapCache = new();
         private readonly Action<ProcessRowViewModel, bool> _expandedChanged;
         private ProcessMetrics _metrics;
         private byte[]? _iconBytes;
@@ -392,10 +394,18 @@ namespace NexusDash.ViewModels
 
             try
             {
-                return new Bitmap(new MemoryStream(iconBytes));
+                if (IconBitmapCache.TryGetValue(iconBytes, out var cachedBitmap))
+                {
+                    return cachedBitmap;
+                }
+
+                var bitmap = new Bitmap(new MemoryStream(iconBytes));
+                IconBitmapCache[iconBytes] = bitmap;
+                return bitmap;
             }
             catch
             {
+                IconBitmapCache[iconBytes] = null;
                 return null;
             }
         }

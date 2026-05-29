@@ -94,9 +94,9 @@ namespace NexusDash
             Logger.LogDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "NexusDash");
-            Logger.BatchProcessSize = 80;
-            Logger.LogUIDuration = 80;
-            Logger.MaxUIDisplayCount = 1200;
+            Logger.BatchProcessSize = 40;
+            Logger.LogUIDuration = 2000;
+            Logger.MaxUIDisplayCount = 200;
             Logger.MaxLogFileSizeMB = 20;
             Logger.TimeFormat = "HH:mm:ss";
             Logger.EnableConsoleOutput = false;

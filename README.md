@@ -4,6 +4,33 @@
 
 NexusDash is an Avalonia desktop dashboard for local system monitoring. The project uses `NexusDash.slnx` and central NuGet package management through `Directory.Packages.props`.
 
+## Performance and UI Refresh Optimization (2026-05-29)
+
+Recent monitoring and UI work focused on reducing NexusDash's own resource usage while keeping the dashboard responsive.
+
+Main changes:
+
+- Replaced the live metric chart path with a lightweight Avalonia-rendered control, avoiding per-refresh plot bitmap generation and removing the `ScottPlot.Avalonia` dependency from the app.
+- Split refresh cadence by data cost: lightweight system metrics refresh every 2 seconds, while process snapshots, process tree updates, treemap data, and network connection snapshots refresh at a lower cadence of about 6 seconds.
+- Optimized process telemetry on Windows by using Toolhelp/native process snapshots and native IO counters, while moving expensive static metadata refreshes to a 2-minute interval.
+- Removed per-refresh disk enumeration and active TCP connection counting from the system monitor because those values are not used by the current overview UI.
+- Added icon decode caching and limited icon extraction to application processes.
+- Replaced the third-party log viewer surface with a lightweight in-app operation log so theme colors and refresh cost are controlled by NexusDash.
+- Automatically pauses monitoring refresh while the main window is minimized, then resumes when the window is restored.
+- Consolidated theme-sensitive surfaces through semantic resources such as `AppBackgroundBrush`, `PanelBackgroundBrush`, `PanelAltBackgroundBrush`, `PanelBorderBrush`, `PrimaryTextBrush`, `SecondaryTextBrush`, `AccentBrush`, `RowHoverBrush`, and `RowSelectedBrush`.
+- Verified the overview screen across light, dark, aquatic, desert, dusk, and night-sky themes.
+
+Measured results from the Release `net11.0-windows` build on the test machine:
+
+| Measurement | Result |
+| --- | --- |
+| Process telemetry baseline before optimization | avg `1458.7 ms`, p95 `1514.7 ms` |
+| Process telemetry after optimization | avg `83.7 ms`, p95 `97.3 ms` |
+| System metrics collection | avg `15.8 ms`, p95 `18.8 ms` |
+| Network connection collection | avg `42.9 ms`, p95 `48.9 ms` |
+| Full app active monitoring, 45-second sample | avg CPU `5.34%`, p95 sample `17.69%`, working set avg `210.4 MB`, final working set `217.1 MB` |
+| Full app minimized, 20-second sample | avg CPU `0.02%`, working set `131.4 MB`, private memory `46.8 MB` |
+
 ## Third-Party Open Source Audit (2026-05-20)
 
 Checked with `dotnet restore NexusDash.slnx`, `dotnet list src/NexusDash/NexusDash.csproj package --include-transitive`, NuGet `.nuspec` metadata, NuGet.org, and upstream source repositories. MIT / Apache-2.0 / BSD are preferred; LGPL-3.0 and other source-open licenses are explicitly marked when source and transitive dependencies are traceable.

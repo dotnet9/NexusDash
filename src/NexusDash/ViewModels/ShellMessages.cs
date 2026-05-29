@@ -135,6 +135,7 @@ namespace NexusDash.ViewModels
     public sealed class OperationLogState
     {
         public string OperationLogText { get; init; } = "";
+        public string OperationLogContent { get; init; } = "";
     }
 
     public sealed class ToolTreeStateChangedCommand(ToolTreeState state) : Command

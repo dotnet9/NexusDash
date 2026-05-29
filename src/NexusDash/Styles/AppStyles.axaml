@@ -52,6 +52,23 @@
     <Setter Property="Width" Value="520" />
     <Setter Property="Height" Value="30" />
     <Setter Property="FontSize" Value="11" />
+    <Setter Property="Background" Value="{DynamicResource PanelAltBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+  </Style>
+
+  <Style Selector="TabItem">
+    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+
+  <Style Selector="TabItem:selected">
+    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
+  </Style>
+
+  <Style Selector="TabItem:pointerover">
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
   </Style>
 
   <Style Selector="DataGrid.compactDataGrid">
@@ -124,6 +141,43 @@
     <Setter Property="MinHeight" Value="34" />
     <Setter Property="Padding" Value="8,5" />
     <Setter Property="Margin" Value="0,0,0,4" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ListBox.toolNavMenu ListBoxItem /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ListBox.toolNavMenu ListBoxItem /template/ Border">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ListBox.toolNavMenu ListBoxItem:pointerover">
+    <Setter Property="Background" Value="{DynamicResource RowHoverBrush}" />
+  </Style>
+
+  <Style Selector="ListBox.toolNavMenu ListBoxItem:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource RowHoverBrush}" />
+  </Style>
+
+  <Style Selector="ListBox.toolNavMenu ListBoxItem:pointerover /template/ Border">
+    <Setter Property="Background" Value="{DynamicResource RowHoverBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ListBox.toolNavMenu ListBoxItem:selected">
+    <Setter Property="Background" Value="{DynamicResource RowSelectedBrush}" />
+  </Style>
+
+  <Style Selector="ListBox.toolNavMenu ListBoxItem:selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource RowSelectedBrush}" />
+  </Style>
+
+  <Style Selector="ListBox.toolNavMenu ListBoxItem:selected /template/ Border">
+    <Setter Property="Background" Value="{DynamicResource RowSelectedBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
   </Style>
 
   <Style Selector="ListBox.toolNavMenu TextBlock">
@@ -273,6 +327,43 @@
     <Setter Property="MinHeight" Value="32" />
     <Setter Property="Padding" Value="10,5" />
     <Setter Property="Margin" Value="0,0,0,3" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ListBox.settingsNav ListBoxItem /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ListBox.settingsNav ListBoxItem /template/ Border">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ListBox.settingsNav ListBoxItem:pointerover">
+    <Setter Property="Background" Value="{DynamicResource RowHoverBrush}" />
+  </Style>
+
+  <Style Selector="ListBox.settingsNav ListBoxItem:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource RowHoverBrush}" />
+  </Style>
+
+  <Style Selector="ListBox.settingsNav ListBoxItem:pointerover /template/ Border">
+    <Setter Property="Background" Value="{DynamicResource RowHoverBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ListBox.settingsNav ListBoxItem:selected">
+    <Setter Property="Background" Value="{DynamicResource RowSelectedBrush}" />
+  </Style>
+
+  <Style Selector="ListBox.settingsNav ListBoxItem:selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource RowSelectedBrush}" />
+  </Style>
+
+  <Style Selector="ListBox.settingsNav ListBoxItem:selected /template/ Border">
+    <Setter Property="Background" Value="{DynamicResource RowSelectedBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
   </Style>
 
   <Style Selector="ListBox.settingsNav TextBlock">
@@ -312,6 +403,12 @@
     <Setter Property="MinHeight" Value="26" />
     <Setter Property="MaxHeight" Value="26" />
     <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="{DynamicResource PanelAltBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+  </Style>
+
+  <Style Selector="Button.statusBarButton PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
   </Style>
 
   <Style Selector="Button.statusBarExportButton">
@@ -319,6 +416,9 @@
     <Setter Property="MinHeight" Value="26" />
     <Setter Property="Padding" Value="10,0" />
     <Setter Property="FontSize" Value="11" />
+    <Setter Property="Background" Value="{DynamicResource PanelAltBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
   </Style>
 
   <Style Selector="Border.titleBarSeparator">

@@ -13,6 +13,7 @@ namespace NexusDash.Services
     {
         private readonly Dictionary<string, NetworkSample> _networkSamples = new(StringComparer.Ordinal);
         private readonly IProcessCommandRunner _processCommandRunner;
+        private CpuSample? _lastCpuSample;
 
         public SystemMonitorService(IProcessCommandRunner processCommandRunner)
         {
@@ -31,12 +32,21 @@ namespace NexusDash.Services
                 Timestamp = DateTime.Now
             };
 
-            metrics.Cpu.CoreCount = Environment.ProcessorCount;
+            PopulateCpu(metrics);
             PopulateMemory(metrics);
-            PopulateDisks(metrics);
             PopulateNetwork(metrics);
 
             return metrics;
+        }
+
+        private void PopulateCpu(SystemMetrics metrics)
+        {
+            metrics.Cpu.CoreCount = Environment.ProcessorCount;
+
+            if (OperatingSystem.IsWindows() && TryGetWindowsCpuUsage(out var usage))
+            {
+                metrics.Cpu.TotalUsage = usage;
+            }
         }
 
         private void PopulateMemory(SystemMetrics metrics)
@@ -156,16 +166,7 @@ namespace NexusDash.Services
             metrics.Network.TotalBytesUploaded = totalSent;
             metrics.Network.TotalBytesDownloaded = totalReceived;
 
-            try
-            {
-                metrics.Network.ConnectionCount = IPGlobalProperties.GetIPGlobalProperties()
-                    .GetActiveTcpConnections()
-                    .Length;
-            }
-            catch
-            {
-                metrics.Network.ConnectionCount = 0;
-            }
+            metrics.Network.ConnectionCount = 0;
         }
 
         private static bool TryGetWindowsMemory(out ulong totalBytes, out ulong availableBytes)
@@ -268,12 +269,72 @@ namespace NexusDash.Services
         public void Dispose()
         {
             _networkSamples.Clear();
+            _lastCpuSample = null;
         }
 
+        private bool TryGetWindowsCpuUsage(out double usage)
+        {
+            usage = 0;
+
+            if (!GetSystemTimes(out var idleTime, out var kernelTime, out var userTime))
+            {
+                return false;
+            }
+
+            var sample = new CpuSample(
+                ToUInt64(idleTime),
+                ToUInt64(kernelTime),
+                ToUInt64(userTime));
+
+            if (_lastCpuSample is not { } previous)
+            {
+                _lastCpuSample = sample;
+                return false;
+            }
+
+            if (sample.Idle < previous.Idle ||
+                sample.Kernel < previous.Kernel ||
+                sample.User < previous.User)
+            {
+                _lastCpuSample = sample;
+                return false;
+            }
+
+            var idleDelta = sample.Idle - previous.Idle;
+            var kernelDelta = sample.Kernel - previous.Kernel;
+            var userDelta = sample.User - previous.User;
+            var totalDelta = kernelDelta + userDelta;
+            _lastCpuSample = sample;
+
+            if (totalDelta == 0)
+            {
+                return false;
+            }
+
+            usage = Math.Clamp((double)(totalDelta - idleDelta) / totalDelta * 100, 0, 100);
+            return true;
+        }
+
+        private static ulong ToUInt64(FileTime fileTime)
+        {
+            return ((ulong)fileTime.HighDateTime << 32) | fileTime.LowDateTime;
+        }
+
+        private readonly record struct CpuSample(ulong Idle, ulong Kernel, ulong User);
         private readonly record struct NetworkSample(DateTime Timestamp, ulong BytesSent, ulong BytesReceived);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool GlobalMemoryStatusEx([In, Out] MemoryStatusEx lpBuffer);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GetSystemTimes(out FileTime idleTime, out FileTime kernelTime, out FileTime userTime);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct FileTime
+        {
+            public uint LowDateTime;
+            public uint HighDateTime;
+        }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
         private sealed class MemoryStatusEx

@@ -1,8 +1,10 @@
 using Avalonia.Controls;
+using Avalonia;
 using Avalonia.Markup.Xaml;
 using CodeWF.AvaloniaControls.Controls;
 using CodeWF.Log.Core;
 using NexusDash.Services;
+using NexusDash.ViewModels;
 using System;
 using System.Linq;
 
@@ -18,6 +20,7 @@ namespace NexusDash
         ];
 
         private IUserPreferencesService? _userPreferencesService;
+        private bool _pausedRefreshWhileMinimized;
 
         public MainWindow()
         {
@@ -48,6 +51,34 @@ namespace NexusDash
             FlushOperationLogs();
 
             base.OnClosing(e);
+        }
+
+        protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
+
+            if (change.Property != WindowStateProperty ||
+                DataContext is not MainWindowViewModel viewModel)
+            {
+                return;
+            }
+
+            if (WindowState == WindowState.Minimized)
+            {
+                if (viewModel.IsRefreshRunning)
+                {
+                    _pausedRefreshWhileMinimized = true;
+                    viewModel.PauseRefresh();
+                }
+
+                return;
+            }
+
+            if (_pausedRefreshWhileMinimized)
+            {
+                _pausedRefreshWhileMinimized = false;
+                viewModel.ResumeRefresh();
+            }
         }
 
         private void ApplyWindowPreferences()

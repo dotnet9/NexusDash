@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 #if WINDOWS
@@ -17,15 +18,18 @@ namespace NexusDash.Services
 {
     public sealed class ProcessTelemetryService
     {
+        private static readonly TimeSpan StaticMetadataRefreshInterval = TimeSpan.FromMinutes(2);
         private readonly Dictionary<int, ProcessSample> _previousSamples = new();
+        private readonly Dictionary<int, PlatformProcessMetadata> _metadataCache = new();
         private readonly Dictionary<string, string?> _publisherCache = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, string?> _descriptionCache = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, byte[]?> _iconCache = new(StringComparer.OrdinalIgnoreCase);
-        private readonly IProcessCommandRunner _processCommandRunner;
+        private readonly PlatformProcessMetadataReader _metadataReader;
+        private DateTime _lastStaticMetadataRefreshUtc = DateTime.MinValue;
 
         public ProcessTelemetryService(IProcessCommandRunner processCommandRunner)
         {
-            _processCommandRunner = processCommandRunner;
+            _metadataReader = new PlatformProcessMetadataReader(processCommandRunner);
         }
 
         public Task<IReadOnlyList<ProcessMetrics>> GetProcessesAsync()
@@ -36,11 +40,24 @@ namespace NexusDash.Services
         private IReadOnlyList<ProcessMetrics> GetProcesses()
         {
             var now = DateTime.UtcNow;
-            var metadata = new PlatformProcessMetadataReader(_processCommandRunner).ReadAll();
+            var processes = Process.GetProcesses();
             var currentPids = new HashSet<int>();
-            var result = new List<ProcessMetrics>();
+            foreach (var process in processes)
+            {
+                try
+                {
+                    currentPids.Add(process.Id);
+                }
+                catch
+                {
+                    // The process exited while the snapshot was being prepared.
+                }
+            }
 
-            foreach (var process in Process.GetProcesses())
+            var metadata = RefreshPlatformMetadata(currentPids, now);
+            var result = new List<ProcessMetrics>(processes.Length);
+
+            foreach (var process in processes)
             {
                 using (process)
                 {
@@ -52,17 +69,25 @@ namespace NexusDash.Services
 
                         var totalProcessorTime = TryGetTotalProcessorTime(process);
                         var cpuPercent = CalculateCpuPercent(process.Id, totalProcessorTime, now);
-                        var readBytes = platform?.ReadTransferBytes;
-                        var writeBytes = platform?.WriteTransferBytes;
+                        var ioCounters = TryGetProcessIoCounters(process);
+                        var readBytes = ioCounters.ReadTransferBytes ?? platform?.ReadTransferBytes;
+                        var writeBytes = ioCounters.WriteTransferBytes ?? platform?.WriteTransferBytes;
                         var (readRate, writeRate) = CalculateDiskRates(process.Id, readBytes, writeBytes, now);
 
-                        var path = FirstNonEmpty(platform?.ExecutablePath, TryGetExecutablePath(process));
+                        var path = !string.IsNullOrWhiteSpace(platform?.ExecutablePath)
+                            ? platform.ExecutablePath
+                            : TryGetExecutablePath(process);
                         var commandLine = FirstNonEmpty(platform?.CommandLine, path, process.ProcessName);
                         var publisher = TryGetPublisher(path);
                         var rawName = FirstNonEmpty(process.ProcessName, platform?.Name, "Unknown")!;
-                        var displayName = FirstNonEmpty(platform?.ServiceDisplayName, TryGetFileDescription(path), rawName)!;
+                        var displayName = !string.IsNullOrWhiteSpace(platform?.ServiceDisplayName)
+                            ? platform.ServiceDisplayName
+                            : FirstNonEmpty(TryGetFileDescription(path), rawName)!;
                         var hasMainWindow = TryHasMainWindow(process);
                         var category = ClassifyProcess(platform, path, rawName, hasMainWindow);
+                        var iconBytes = category == ProcessCategory.Application
+                            ? TryGetProcessIconBytes(path)
+                            : null;
 
                         metrics = new ProcessMetrics
                         {
@@ -72,7 +97,7 @@ namespace NexusDash.Services
                             RawName = rawName,
                             Publisher = publisher,
                             Category = category,
-                            IconBytes = TryGetProcessIconBytes(path),
+                            IconBytes = iconBytes,
                             CpuPercent = cpuPercent,
                             WorkingSetBytes = TryGetWorkingSet(process),
                             DiskReadBytesPerSecond = readRate,
@@ -119,6 +144,50 @@ namespace NexusDash.Services
                 .ThenBy(static p => p.Name, StringComparer.CurrentCultureIgnoreCase)
                 .ThenBy(static p => p.Pid)
                 .ToList();
+        }
+
+        private IReadOnlyDictionary<int, PlatformProcessMetadata> RefreshPlatformMetadata(
+            IReadOnlyCollection<int> currentPids,
+            DateTime now)
+        {
+            var refreshStaticMetadata = ShouldRefreshStaticMetadata(now);
+            var latestMetadata = _metadataReader.ReadAll(refreshStaticMetadata);
+
+            if (refreshStaticMetadata)
+            {
+                foreach (var pid in currentPids)
+                {
+                    _metadataCache[pid] = latestMetadata.TryGetValue(pid, out var metadata)
+                        ? metadata
+                        : _metadataCache.TryGetValue(pid, out var cached)
+                            ? cached
+                            : new PlatformProcessMetadata();
+                }
+
+                _lastStaticMetadataRefreshUtc = now;
+            }
+            else
+            {
+                foreach (var (pid, metadata) in latestMetadata)
+                {
+                    _metadataCache[pid] = _metadataCache.TryGetValue(pid, out var cached)
+                        ? cached.WithSnapshotMetadata(metadata)
+                        : metadata;
+                }
+            }
+
+            foreach (var stalePid in _metadataCache.Keys.Where(pid => !currentPids.Contains(pid)).ToArray())
+            {
+                _metadataCache.Remove(stalePid);
+            }
+
+            return _metadataCache;
+        }
+
+        private bool ShouldRefreshStaticMetadata(DateTime now)
+        {
+            return _metadataCache.Count == 0 ||
+                   now - _lastStaticMetadataRefreshUtc >= StaticMetadataRefreshInterval;
         }
 
         public int EndProcess(int pid, bool entireProcessTree)
@@ -218,6 +287,25 @@ namespace NexusDash.Services
             {
                 return 0;
             }
+        }
+
+        private static (ulong? ReadTransferBytes, ulong? WriteTransferBytes) TryGetProcessIoCounters(Process process)
+        {
+#if WINDOWS
+            try
+            {
+                if (GetProcessIoCounters(process.Handle, out var counters))
+                {
+                    return (counters.ReadTransferCount, counters.WriteTransferCount);
+                }
+            }
+            catch
+            {
+                // Protected and short-lived processes may not expose IO counters.
+            }
+#endif
+
+            return (null, null);
         }
 
         private static DateTime? TryGetStartTime(Process process)
@@ -461,6 +549,22 @@ namespace NexusDash.Services
             return null;
         }
 
+#if WINDOWS
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GetProcessIoCounters(IntPtr processHandle, out IoCounters ioCounters);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct IoCounters
+        {
+            public ulong ReadOperationCount;
+            public ulong WriteOperationCount;
+            public ulong OtherOperationCount;
+            public ulong ReadTransferCount;
+            public ulong WriteTransferCount;
+            public ulong OtherTransferCount;
+        }
+#endif
+
         private readonly record struct ProcessSample(
             DateTime CpuTimestamp,
             DateTime IoTimestamp,
@@ -478,6 +582,21 @@ namespace NexusDash.Services
             public string? ExecutablePath { get; init; }
             public ulong? ReadTransferBytes { get; init; }
             public ulong? WriteTransferBytes { get; init; }
+
+            public PlatformProcessMetadata WithSnapshotMetadata(PlatformProcessMetadata snapshot)
+            {
+                return new PlatformProcessMetadata
+                {
+                    ParentPid = snapshot.ParentPid ?? ParentPid,
+                    Name = snapshot.Name ?? Name,
+                    ServiceDisplayName = ServiceDisplayName,
+                    ServiceGroupName = ServiceGroupName,
+                    CommandLine = CommandLine,
+                    ExecutablePath = ExecutablePath,
+                    ReadTransferBytes = snapshot.ReadTransferBytes ?? ReadTransferBytes,
+                    WriteTransferBytes = snapshot.WriteTransferBytes ?? WriteTransferBytes
+                };
+            }
         }
 
         private sealed class PlatformProcessMetadataReader
@@ -489,11 +608,11 @@ namespace NexusDash.Services
                 _processCommandRunner = processCommandRunner;
             }
 
-            public IReadOnlyDictionary<int, PlatformProcessMetadata> ReadAll()
+            public IReadOnlyDictionary<int, PlatformProcessMetadata> ReadAll(bool includeStaticMetadata)
             {
                 if (OperatingSystem.IsWindows())
                 {
-                    return ReadWindows();
+                    return ReadWindows(includeStaticMetadata);
                 }
 
                 if (OperatingSystem.IsLinux())
@@ -509,39 +628,17 @@ namespace NexusDash.Services
                 return new Dictionary<int, PlatformProcessMetadata>();
             }
 
-            private static IReadOnlyDictionary<int, PlatformProcessMetadata> ReadWindows()
+            private static IReadOnlyDictionary<int, PlatformProcessMetadata> ReadWindows(bool includeStaticMetadata)
             {
 #if WINDOWS
-                var result = new Dictionary<int, PlatformProcessMetadata>();
+                var result = ReadWindowsProcessSnapshot();
 
-                try
+                if (!includeStaticMetadata)
                 {
-                    using var searcher = new ManagementObjectSearcher(
-                        "SELECT ProcessId, ParentProcessId, Name, CommandLine, ExecutablePath, ReadTransferCount, WriteTransferCount FROM Win32_Process");
+                    return result;
+                }
 
-                    foreach (ManagementObject item in searcher.Get())
-                    {
-                        using (item)
-                        {
-                            var pid = Convert.ToInt32(item["ProcessId"], CultureInfo.InvariantCulture);
-                            var commandLine = item["CommandLine"] as string;
-                            result[pid] = new PlatformProcessMetadata
-                            {
-                                ParentPid = TryConvertInt32(item["ParentProcessId"]),
-                                Name = item["Name"] as string,
-                                ServiceGroupName = ExtractWindowsServiceGroupName(commandLine),
-                                CommandLine = commandLine,
-                                ExecutablePath = item["ExecutablePath"] as string,
-                                ReadTransferBytes = TryConvertUInt64(item["ReadTransferCount"]),
-                                WriteTransferBytes = TryConvertUInt64(item["WriteTransferCount"])
-                            };
-                        }
-                    }
-                }
-                catch
-                {
-                    // WMI can be disabled or unavailable.
-                }
+                ApplyWindowsStaticMetadata(result);
 
                 foreach (var serviceGroup in ReadWindowsServiceDisplayNames())
                 {
@@ -727,6 +824,86 @@ namespace NexusDash.Services
             }
 
 #if WINDOWS
+            private static Dictionary<int, PlatformProcessMetadata> ReadWindowsProcessSnapshot()
+            {
+                var result = new Dictionary<int, PlatformProcessMetadata>();
+                var snapshot = CreateToolhelp32Snapshot(SnapshotProcess, 0);
+                if (snapshot == InvalidHandleValue)
+                {
+                    return result;
+                }
+
+                try
+                {
+                    var entry = new ProcessEntry32
+                    {
+                        Size = (uint)Marshal.SizeOf<ProcessEntry32>()
+                    };
+
+                    if (!Process32First(snapshot, ref entry))
+                    {
+                        return result;
+                    }
+
+                    do
+                    {
+                        var pid = unchecked((int)entry.ProcessId);
+                        if (pid < 0)
+                        {
+                            continue;
+                        }
+
+                        result[pid] = new PlatformProcessMetadata
+                        {
+                            ParentPid = unchecked((int)entry.ParentProcessId),
+                            Name = string.IsNullOrWhiteSpace(entry.ExeFile)
+                                ? null
+                                : Path.GetFileNameWithoutExtension(entry.ExeFile)
+                        };
+                    }
+                    while (Process32Next(snapshot, ref entry));
+                }
+                finally
+                {
+                    CloseHandle(snapshot);
+                }
+
+                return result;
+            }
+
+            private static void ApplyWindowsStaticMetadata(IDictionary<int, PlatformProcessMetadata> result)
+            {
+                try
+                {
+                    using var searcher = new ManagementObjectSearcher(
+                        "SELECT ProcessId, CommandLine, ExecutablePath FROM Win32_Process");
+
+                    foreach (ManagementObject item in searcher.Get())
+                    {
+                        using (item)
+                        {
+                            var pid = Convert.ToInt32(item["ProcessId"], CultureInfo.InvariantCulture);
+                            var commandLine = item["CommandLine"] as string;
+                            result.TryGetValue(pid, out var processMetadata);
+                            result[pid] = new PlatformProcessMetadata
+                            {
+                                ParentPid = processMetadata?.ParentPid,
+                                Name = processMetadata?.Name,
+                                ServiceGroupName = ExtractWindowsServiceGroupName(commandLine),
+                                CommandLine = commandLine,
+                                ExecutablePath = item["ExecutablePath"] as string,
+                                ReadTransferBytes = processMetadata?.ReadTransferBytes,
+                                WriteTransferBytes = processMetadata?.WriteTransferBytes
+                            };
+                        }
+                    }
+                }
+                catch
+                {
+                    // WMI can be disabled or unavailable.
+                }
+            }
+
             private static IReadOnlyDictionary<int, IReadOnlyList<string>> ReadWindowsServiceDisplayNames()
             {
                 var result = new Dictionary<int, List<string>>();
@@ -828,16 +1005,37 @@ namespace NexusDash.Services
                 }
             }
 
-            private static ulong? TryConvertUInt64(object? value)
+            private const uint SnapshotProcess = 0x00000002;
+            private const int MaxPath = 260;
+            private static readonly IntPtr InvalidHandleValue = new(-1);
+
+            [DllImport("kernel32.dll", SetLastError = true)]
+            private static extern IntPtr CreateToolhelp32Snapshot(uint flags, uint processId);
+
+            [DllImport("kernel32.dll", SetLastError = true, EntryPoint = "Process32FirstW")]
+            private static extern bool Process32First(IntPtr snapshot, ref ProcessEntry32 entry);
+
+            [DllImport("kernel32.dll", SetLastError = true, EntryPoint = "Process32NextW")]
+            private static extern bool Process32Next(IntPtr snapshot, ref ProcessEntry32 entry);
+
+            [DllImport("kernel32.dll", SetLastError = true)]
+            private static extern bool CloseHandle(IntPtr handle);
+
+            [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+            private struct ProcessEntry32
             {
-                try
-                {
-                    return value is null ? null : Convert.ToUInt64(value, CultureInfo.InvariantCulture);
-                }
-                catch
-                {
-                    return null;
-                }
+                public uint Size;
+                public uint Usage;
+                public uint ProcessId;
+                public IntPtr DefaultHeapId;
+                public uint ModuleId;
+                public uint Threads;
+                public uint ParentProcessId;
+                public int PriorityClassBase;
+                public uint Flags;
+
+                [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MaxPath)]
+                public string ExeFile;
             }
 #endif
         }

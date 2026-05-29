@@ -4,6 +4,33 @@
 
 NexusDash 是一个 Avalonia 桌面仪表盘，用于本机系统监控。项目使用 `NexusDash.slnx`，并通过 `Directory.Packages.props` 启用 NuGet 中央包管理。
 
+## 性能与 UI 刷新优化（2026-05-29）
+
+本轮优化重点是降低 NexusDash 自身 CPU、内存和 UI 刷新开销，同时保持监控界面可用。
+
+主要改动：
+
+- 将实时指标曲线改为轻量 Avalonia 控件绘制，避免每次刷新生成图像，并移除应用中的 `ScottPlot.Avalonia` 依赖。
+- 按数据成本拆分刷新节奏：轻量系统指标约每 2 秒刷新；进程快照、进程树、Treemap 和网络连接约每 6 秒刷新。
+- Windows 进程采集改为 Toolhelp/native 快照与原生 IO counters，昂贵的静态元数据刷新延长到 2 分钟。
+- 移除当前总览 UI 未使用的每次磁盘枚举和活动 TCP 连接计数。
+- 增加进程图标解码缓存，并只对应用进程提取图标。
+- 将第三方日志查看器替换为轻量内置操作日志，日志区域配色与刷新成本由 NexusDash 控制。
+- 主窗口最小化时自动暂停监控刷新，恢复窗口时自动继续刷新。
+- 将主题相关界面统一收敛到 `AppBackgroundBrush`、`PanelBackgroundBrush`、`PanelAltBackgroundBrush`、`PanelBorderBrush`、`PrimaryTextBrush`、`SecondaryTextBrush`、`AccentBrush`、`RowHoverBrush`、`RowSelectedBrush` 等语义资源。
+- 已切换并截图检查 light、dark、aquatic、desert、dusk、night-sky 六套主题的总览界面。
+
+基于 Release `net11.0-windows` 构建的实测结果：
+
+| 测量项 | 结果 |
+| --- | --- |
+| 优化前进程采集基线 | 平均 `1458.7 ms`，p95 `1514.7 ms` |
+| 优化后进程采集 | 平均 `83.7 ms`，p95 `97.3 ms` |
+| 系统指标采集 | 平均 `15.8 ms`，p95 `18.8 ms` |
+| 网络连接采集 | 平均 `42.9 ms`，p95 `48.9 ms` |
+| 完整应用主动监控 45 秒采样 | 平均 CPU `5.34%`，p95 样本 `17.69%`，平均工作集 `210.4 MB`，最终工作集 `217.1 MB` |
+| 完整应用最小化 20 秒采样 | 平均 CPU `0.02%`，工作集 `131.4 MB`，私有内存 `46.8 MB` |
+
 ## 第三方开源组件审计（2026-05-20）
 
 检查方式：`dotnet restore NexusDash.slnx`、`dotnet list src/NexusDash/NexusDash.csproj package --include-transitive`、NuGet `.nuspec`、NuGet.org 与源码仓库信息。优先接受 MIT / Apache-2.0 / BSD；LGPL-3.0 等其它开源协议在源码与传递依赖均可追溯时单独标注。

@@ -60,7 +60,8 @@ namespace NexusDash.ViewModels
             IReadOnlyList<ProcessNetworkConnection> NetworkConnections,
             double CpuUsage,
             double DiskBytesPerSecond,
-            double NetworkBytesPerSecond);
+            double NetworkBytesPerSecond,
+            bool ProcessesUpdated);
 
         private readonly SystemMonitorService _systemMonitorService;
         private readonly ProcessTelemetryService _processTelemetryService;
@@ -74,12 +75,16 @@ namespace NexusDash.ViewModels
         private readonly HashSet<int> _expandedPids = new();
         private readonly HashSet<int> _collapsedPids = new();
         private readonly List<ProcessRowViewModel> _rootRows = new();
-        private readonly TimeSpan _treemapRefreshInterval = TimeSpan.FromSeconds(5);
+        private readonly TimeSpan _refreshInterval = TimeSpan.FromSeconds(2);
+        private readonly TimeSpan _processSnapshotRefreshInterval = TimeSpan.FromSeconds(6);
+        private readonly TimeSpan _processTreeRefreshInterval = TimeSpan.FromSeconds(6);
+        private readonly TimeSpan _treemapRefreshInterval = TimeSpan.FromSeconds(6);
         private readonly ProcessRowViewModel _applicationGroupRow;
         private readonly ProcessRowViewModel _backgroundGroupRow;
         private readonly ProcessRowViewModel _windowsGroupRow;
         private readonly Dictionary<string, double> _processColumnWidths = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, ProcessColumnOptionViewModel> _processColumnOptions = new(StringComparer.OrdinalIgnoreCase);
+        private readonly TimeSpan _networkConnectionRefreshInterval = TimeSpan.FromSeconds(6);
         private ToolMenuNode? _processManagerNode;
         private ToolMenuNode? _fileSearchNode;
         private ToolMenuNode? _hardwareInfoNode;
@@ -111,6 +116,7 @@ namespace NexusDash.ViewModels
         private string _topMemoryProcessText = "";
         private string _topDiskProcessText = "";
         private string _topNetworkProcessText = "";
+        private string _operationLogContent = "";
         private int _processTotalCount;
         private ProcessRowViewModel? _selectedProcess;
         private ToolMenuNode? _selectedToolNode;
@@ -130,6 +136,9 @@ namespace NexusDash.ViewModels
         private IReadOnlyList<double> _diskHistory = [];
         private IReadOnlyList<double> _networkHistory = [];
         private DateTime _lastTreemapRefreshUtc = DateTime.MinValue;
+        private DateTime _lastProcessSnapshotRefreshUtc = DateTime.MinValue;
+        private DateTime _lastProcessTreeRefreshUtc = DateTime.MinValue;
+        private DateTime _lastNetworkConnectionRefreshUtc = DateTime.MinValue;
         private bool _isRefreshPaused;
         private bool _isDisposed;
 
@@ -226,6 +235,11 @@ namespace NexusDash.ViewModels
         public string FileSearchToolText => T(NexusDashL.FileSearch);
         public string HardwareInfoToolText => T(NexusDashL.HardwareInfo);
         public string OperationLogText => T(NexusDashL.OperationLog);
+        public string OperationLogContent
+        {
+            get => _operationLogContent;
+            private set => SetField(ref _operationLogContent, value, nameof(OperationLogContent));
+        }
         public string ProcessOverviewText => T(NexusDashL.ProcessOverview);
         public string ThemeMenuText => T(NexusDashL.ThemeMenu);
         public string DarkThemeText => T(NexusDashL.DarkTheme);
@@ -1197,12 +1211,30 @@ namespace NexusDash.ViewModels
             };
         }
 
-        private static void LogOperation(string? message)
+        private void LogOperation(string? message)
         {
             if (!string.IsNullOrWhiteSpace(message))
             {
                 Logger.Info(message, message, log2Console: false);
+                AppendOperationLogMessage(message);
             }
+        }
+
+        private void AppendOperationLogMessage(string message)
+        {
+            const int maxLogLines = 120;
+
+            var line = $"{DateTime.Now:HH:mm:ss} [消息] {message}";
+            var nextLines = string.IsNullOrWhiteSpace(OperationLogContent)
+                ? [line]
+                : OperationLogContent
+                    .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
+                    .Append(line)
+                    .TakeLast(maxLogLines)
+                    .ToArray();
+
+            OperationLogContent = string.Join(Environment.NewLine, nextLines);
+            PublishOperationLogState();
         }
 
         private void PublishProcessListState()
@@ -1415,7 +1447,8 @@ namespace NexusDash.ViewModels
         {
             _eventBus.Publish(new OperationLogStateChangedCommand(new OperationLogState
             {
-                OperationLogText = OperationLogText
+                OperationLogText = OperationLogText,
+                OperationLogContent = OperationLogContent
             }));
         }
 
@@ -1683,7 +1716,7 @@ namespace NexusDash.ViewModels
                         await RefreshAsync(cancellationToken).ConfigureAwait(false);
                     }
 
-                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
+                    await Task.Delay(_refreshInterval, cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -1711,10 +1744,24 @@ namespace NexusDash.ViewModels
         private async Task RefreshAsync(CancellationToken cancellationToken)
         {
             var systemTask = _systemMonitorService.GetMetricsAsync();
-            var processTask = _processTelemetryService.GetProcessesAsync();
+            var refreshProcesses = ShouldRefreshProcessSnapshot(DateTime.UtcNow);
+            var processTask = refreshProcesses
+                ? _processTelemetryService.GetProcessesAsync()
+                : null;
             var networkConnections = GetLatestNetworkConnectionsSnapshot();
-            await Task.WhenAll(systemTask, processTask).ConfigureAwait(false);
-            var snapshot = PrepareRefreshSnapshot(systemTask.Result, processTask.Result, networkConnections);
+            var systemMetrics = await systemTask.ConfigureAwait(false);
+            var processes = _latestProcessSnapshot;
+            if (processTask is not null)
+            {
+                processes = await processTask.ConfigureAwait(false);
+                _lastProcessSnapshotRefreshUtc = DateTime.UtcNow;
+            }
+
+            var snapshot = PrepareRefreshSnapshot(
+                systemMetrics,
+                processes,
+                networkConnections,
+                processTask is not null);
 
             if (_isDisposed || cancellationToken.IsCancellationRequested)
             {
@@ -1730,15 +1777,26 @@ namespace NexusDash.ViewModels
             });
         }
 
+        private bool ShouldRefreshProcessSnapshot(DateTime now)
+        {
+            return _latestProcessSnapshot.Count == 0 ||
+                   (IsProcessToolSelected &&
+                    now - _lastProcessSnapshotRefreshUtc >= _processSnapshotRefreshInterval);
+        }
+
         private static RefreshSnapshot PrepareRefreshSnapshot(
             SystemMetrics systemMetrics,
             IReadOnlyList<ProcessMetrics> processes,
-            IReadOnlyList<ProcessNetworkConnection> networkConnections)
+            IReadOnlyList<ProcessNetworkConnection> networkConnections,
+            bool processesUpdated)
         {
             var processSnapshot = processes.ToArray();
             var enrichedNetworkConnections = EnrichNetworkConnections(networkConnections, processSnapshot);
             ApplyProcessNetworkCounts(processSnapshot, enrichedNetworkConnections);
-            var cpuUsage = Math.Min(100, processSnapshot.Sum(static process => process.CpuPercent));
+            var processCpuUsage = Math.Min(100, processSnapshot.Sum(static process => process.CpuPercent));
+            var cpuUsage = systemMetrics.Cpu.TotalUsage > 0 || !processesUpdated
+                ? systemMetrics.Cpu.TotalUsage
+                : processCpuUsage;
             var diskBytesPerSecond = processSnapshot.Sum(static process =>
                 process.DiskReadBytesPerSecond + process.DiskWriteBytesPerSecond);
             var networkBytesPerSecond = systemMetrics.Network.UploadSpeed + systemMetrics.Network.DownloadSpeed;
@@ -1749,7 +1807,8 @@ namespace NexusDash.ViewModels
                 enrichedNetworkConnections,
                 cpuUsage,
                 diskBytesPerSecond,
-                networkBytesPerSecond);
+                networkBytesPerSecond,
+                processesUpdated);
         }
 
         private IReadOnlyList<ProcessNetworkConnection> GetLatestNetworkConnectionsSnapshot()
@@ -1768,7 +1827,14 @@ namespace NexusDash.ViewModels
                 _networkRefreshTask = null;
             }
 
-            _networkRefreshTask ??= _processNetworkConnectionService.GetConnectionsAsync();
+            var now = DateTime.UtcNow;
+            if (_networkRefreshTask is null &&
+                now - _lastNetworkConnectionRefreshUtc >= _networkConnectionRefreshInterval)
+            {
+                _lastNetworkConnectionRefreshUtc = now;
+                _networkRefreshTask = _processNetworkConnectionService.GetConnectionsAsync();
+            }
+
             return _networkConnections;
         }
 
@@ -1781,7 +1847,6 @@ namespace NexusDash.ViewModels
             NetworkBytesPerSecond = snapshot.NetworkBytesPerSecond;
             MemoryUsedText = ProcessRowViewModel.FormatBytes(snapshot.SystemMetrics.Memory.UsedBytes);
             MemoryTotalText = ProcessRowViewModel.FormatBytes(snapshot.SystemMetrics.Memory.TotalBytes);
-            UpdateTopProcessInsights(processSnapshot);
 
             CpuHistory = AppendHistory(CpuHistory, snapshot.CpuUsage);
             MemoryHistory = AppendHistory(MemoryHistory, MemoryUsage);
@@ -1791,22 +1856,43 @@ namespace NexusDash.ViewModels
             _networkConnections = snapshot.NetworkConnections;
             RefreshSelectedNetworkConnections();
 
-            ProcessTotalCount = processSnapshot.Count;
-            _latestProcessSnapshot = processSnapshot;
+            if (snapshot.ProcessesUpdated)
+            {
+                UpdateTopProcessInsights(processSnapshot);
+                ProcessTotalCount = processSnapshot.Count;
+                _latestProcessSnapshot = processSnapshot;
+            }
+
             if (IsProcessToolSelected)
             {
-                RebuildProcessTree(processSnapshot);
-                _hasDeferredProcessTreeUpdate = false;
+                if (snapshot.ProcessesUpdated && ShouldRefreshProcessTree())
+                {
+                    RebuildProcessTree(processSnapshot);
+                    _lastProcessTreeRefreshUtc = DateTime.UtcNow;
+                    _hasDeferredProcessTreeUpdate = false;
+                }
+                else if (snapshot.ProcessesUpdated)
+                {
+                    _hasDeferredProcessTreeUpdate = true;
+                }
+
                 PublishProcessOverviewState();
-                PublishProcessExplorerState();
-                PublishProcessInspectorState();
             }
-            else
+            else if (snapshot.ProcessesUpdated)
             {
                 _hasDeferredProcessTreeUpdate = true;
             }
 
-            PublishStatusBarState();
+            if (snapshot.ProcessesUpdated)
+            {
+                PublishStatusBarState();
+            }
+        }
+
+        private bool ShouldRefreshProcessTree()
+        {
+            return !_hasBuiltProcessTree ||
+                   DateTime.UtcNow - _lastProcessTreeRefreshUtc >= _processTreeRefreshInterval;
         }
 
         private void QueueDeferredProcessTreeUpdate()
@@ -1830,6 +1916,7 @@ namespace NexusDash.ViewModels
             }
 
             RebuildProcessTree(_latestProcessSnapshot);
+            _lastProcessTreeRefreshUtc = DateTime.UtcNow;
             _hasDeferredProcessTreeUpdate = false;
             PublishProcessOverviewState();
             PublishProcessExplorerState();
@@ -1924,6 +2011,11 @@ namespace NexusDash.ViewModels
                 {
                     process.TcpConnectionCount = counts.Tcp;
                     process.UdpConnectionCount = counts.Udp;
+                }
+                else
+                {
+                    process.TcpConnectionCount = 0;
+                    process.UdpConnectionCount = 0;
                 }
             }
         }
@@ -2404,8 +2496,7 @@ namespace NexusDash.ViewModels
                 }
                 else if (!EqualityComparer<T>.Default.Equals(target[index], source[index]))
                 {
-                    target.RemoveAt(index);
-                    target.Insert(index, source[index]);
+                    target[index] = source[index];
                 }
 
                 index++;
@@ -2462,10 +2553,20 @@ namespace NexusDash.ViewModels
 
         private static IReadOnlyList<double> AppendHistory(IReadOnlyList<double> history, double value)
         {
-            return history
-                .Concat([Math.Clamp(value, 0, 100)])
-                .TakeLast(60)
-                .ToArray();
+            const int capacity = 60;
+            var nextValue = Math.Clamp(value, 0, 100);
+            var nextCount = Math.Min(history.Count + 1, capacity);
+            var next = new double[nextCount];
+            var sourceCount = nextCount - 1;
+            var sourceStart = Math.Max(history.Count - sourceCount, 0);
+
+            for (var index = 0; index < sourceCount; index++)
+            {
+                next[index] = history[sourceStart + index];
+            }
+
+            next[^1] = nextValue;
+            return next;
         }
 
         private void RaiseTerminationConfirmationProperties()

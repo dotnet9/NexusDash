@@ -33,8 +33,6 @@
   <assembly fullname="CodeWF.Markdown.Lite.Themes" preserve="all" />
 
   <assembly fullname="Irihi.Ursa.Themes.Semi" preserve="all" />
-  <assembly fullname="ScottPlot" preserve="all" />
-  <assembly fullname="ScottPlot.Avalonia" preserve="all" />
   <assembly fullname="Semi.Avalonia" preserve="all" />
 
   <assembly fullname="DryIoc" preserve="all" />

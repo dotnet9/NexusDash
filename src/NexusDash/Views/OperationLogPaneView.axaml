@@ -2,7 +2,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:log="https://codewf.com"
              xmlns:vm="using:NexusDash.ViewModels"
              mc:Ignorable="d"
              d:DesignWidth="900"
@@ -17,7 +16,12 @@
       </Border>
       <Border Grid.Row="1"
               Classes="logViewerContent">
-        <log:LogView />
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+          <SelectableTextBlock Text="{Binding OperationLogContent}"
+                               Foreground="{DynamicResource PrimaryTextBrush}"
+                               TextWrapping="Wrap" />
+        </ScrollViewer>
       </Border>
     </Grid>
   </Border>
