@@ -12,7 +12,7 @@
     <Grid RowDefinitions="Auto,*">
       <Border Classes="logViewerHeader">
         <TextBlock Text="{Binding OperationLogText}"
-                        Classes="sectionTitle" />
+                   Classes="columnHeader" />
       </Border>
       <Border Grid.Row="1"
               Classes="logViewerContent">
@@ -20,6 +20,7 @@
                       HorizontalScrollBarVisibility="Disabled">
           <SelectableTextBlock Text="{Binding OperationLogContent}"
                                Foreground="{DynamicResource PrimaryTextBrush}"
+                               FontSize="11"
                                TextWrapping="Wrap" />
         </ScrollViewer>
       </Border>

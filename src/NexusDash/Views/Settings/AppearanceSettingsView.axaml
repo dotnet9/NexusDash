@@ -8,13 +8,13 @@
              d:DesignHeight="420"
              x:Class="NexusDash.Views.Settings.AppearanceSettingsView"
              x:DataType="vm:AppearanceSettingsViewModel">
-  <Grid>
+  <Grid Margin="28,26">
     <Grid Classes="settingsPageContent"
           RowDefinitions="Auto,Auto,Auto"
           RowSpacing="18"
-          Width="620"
-          HorizontalAlignment="Center"
-          VerticalAlignment="Center">
+          MaxWidth="680"
+          HorizontalAlignment="Left"
+          VerticalAlignment="Top">
       <Grid ColumnDefinitions="118,*"
             ColumnSpacing="18">
         <TextBlock Text="{Binding ThemeLabel}"

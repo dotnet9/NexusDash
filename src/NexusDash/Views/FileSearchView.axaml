@@ -136,6 +136,8 @@
                   <DataTemplate x:DataType="vm:FileSearchResultViewModel" x:CompileBindings="False">
                     <TextBlock Text="{Binding SizeText}"
                                     Foreground="{DynamicResource PrimaryTextBrush}"
+                                    TextAlignment="Right"
+                                    Margin="0,0,10,0"
                                     VerticalAlignment="Center" />
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
@@ -150,6 +152,8 @@
                   <DataTemplate x:DataType="vm:FileSearchResultViewModel" x:CompileBindings="False">
                     <TextBlock Text="{Binding ModifiedText}"
                                     Foreground="{DynamicResource SecondaryTextBrush}"
+                                    TextAlignment="Right"
+                                    Margin="0,0,10,0"
                                     VerticalAlignment="Center" />
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>

@@ -10,12 +10,12 @@
              d:DesignHeight="420"
              x:Class="NexusDash.Views.Settings.AboutSettingsView"
              x:DataType="vm:AboutSettingsViewModel">
-  <Grid>
+  <Grid Margin="28,26">
     <StackPanel Classes="settingsPageContent"
                 Spacing="18"
-                Width="620"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center">
+                MaxWidth="720"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top">
       <Grid ColumnDefinitions="42,*"
             ColumnSpacing="14">
         <Image Source="/Assets/logo.png"
@@ -66,7 +66,7 @@
                    Classes="aboutLabel" />
         <Button Grid.Row="3"
                 Grid.Column="1"
-                Padding="0"
+                Padding="8,3"
                 HorizontalAlignment="Left"
                 HorizontalContentAlignment="Left"
                 VerticalAlignment="Center">

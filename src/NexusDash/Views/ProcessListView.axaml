@@ -72,7 +72,7 @@
           </i:Interaction.Behaviors>
           <DataGrid.Columns>
             <DataGridTemplateColumn Header="{Binding PidText}"
-                                         Width="74"
+                                         Width="78"
                                          CanUserSort="True"
                                          Tag="pid"
                                          CanUserResize="True">
@@ -81,13 +81,15 @@
                               x:CompileBindings="False">
                   <TextBlock Text="{Binding PidCellText}"
                                   Foreground="{DynamicResource PrimaryTextBrush}"
+                                  TextAlignment="Right"
+                                  Margin="0,0,10,0"
                                   VerticalAlignment="Center" />
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
 
             <DataGridTemplateColumn Header="{Binding ParentPidText}"
-                                         Width="84"
+                                         Width="92"
                                          CanUserSort="True"
                                          Tag="parentPid"
                                          CanUserResize="True">
@@ -96,6 +98,7 @@
                               x:CompileBindings="False">
                   <TextBlock Text="{Binding ParentPidText}"
                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                  TextTrimming="CharacterEllipsis"
                                   VerticalAlignment="Center" />
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
@@ -188,7 +191,9 @@
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
                   <TextBlock Text="{Binding CpuText}"
-                                  Foreground="{DynamicResource PrimaryTextBrush}" />
+                                  Foreground="{DynamicResource PrimaryTextBrush}"
+                                  TextAlignment="Right"
+                                  Margin="0,0,10,0" />
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
@@ -202,7 +207,9 @@
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
                   <TextBlock Text="{Binding MemoryText}"
-                                  Foreground="{DynamicResource PrimaryTextBrush}" />
+                                  Foreground="{DynamicResource PrimaryTextBrush}"
+                                  TextAlignment="Right"
+                                  Margin="0,0,10,0" />
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
@@ -216,7 +223,9 @@
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
                   <TextBlock Text="{Binding DiskText}"
-                                  Foreground="{DynamicResource PrimaryTextBrush}" />
+                                  Foreground="{DynamicResource PrimaryTextBrush}"
+                                  TextAlignment="Right"
+                                  Margin="0,0,10,0" />
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
@@ -230,7 +239,9 @@
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
                   <TextBlock Text="{Binding NetworkText}"
-                                  Foreground="{DynamicResource PrimaryTextBrush}" />
+                                  Foreground="{DynamicResource PrimaryTextBrush}"
+                                  TextAlignment="Right"
+                                  Margin="0,0,10,0" />
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
@@ -244,7 +255,9 @@
                 <DataTemplate x:DataType="vm:ProcessRowViewModel"
                               x:CompileBindings="False">
                   <TextBlock Text="{Binding GpuText}"
-                                  Foreground="{DynamicResource SecondaryTextBrush}" />
+                                  Foreground="{DynamicResource SecondaryTextBrush}"
+                                  TextAlignment="Right"
+                                  Margin="0,0,10,0" />
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>

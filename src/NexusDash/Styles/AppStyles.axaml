@@ -80,6 +80,14 @@
     <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
   </Style>
 
+  <Style Selector="DataGrid.compactDataGrid DataGridRow:pointerover">
+    <Setter Property="Background" Value="{DynamicResource RowHoverBrush}" />
+  </Style>
+
+  <Style Selector="DataGrid.compactDataGrid DataGridRow:selected">
+    <Setter Property="Background" Value="{DynamicResource RowSelectedBrush}" />
+  </Style>
+
   <Style Selector="DataGrid.compactDataGrid TextBlock">
     <Setter Property="FontSize" Value="{DynamicResource NexusDashDataGridCellFontSize}" />
     <Setter Property="FontWeight" Value="Regular" />
@@ -107,7 +115,7 @@
     <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="8" />
-    <Setter Property="BoxShadow" Value="0 6 18 0 #12000000" />
+    <Setter Property="BoxShadow" Value="0 4 14 0 #10000000" />
   </Style>
 
   <Style Selector="Border.toolSidebar">
@@ -123,14 +131,14 @@
   </Style>
 
   <Style Selector="Border.logViewerHeader">
-    <Setter Property="Padding" Value="14,7" />
+    <Setter Property="Padding" Value="14,5" />
     <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
     <Setter Property="BorderThickness" Value="0,0,0,1" />
   </Style>
 
   <Style Selector="Border.logViewerContent">
     <Setter Property="Background" Value="{DynamicResource PanelAltBackgroundBrush}" />
-    <Setter Property="Padding" Value="8,5" />
+    <Setter Property="Padding" Value="10,6" />
   </Style>
 
   <Style Selector="ListBox.toolNavMenu">
@@ -194,8 +202,8 @@
   </Style>
 
   <Style Selector="Border.metricPanel">
-    <Setter Property="MinHeight" Value="116" />
-    <Setter Property="Padding" Value="12" />
+    <Setter Property="MinHeight" Value="190" />
+    <Setter Property="Padding" Value="14" />
   </Style>
 
   <Style Selector="Border.metricBadge">
@@ -240,12 +248,13 @@
   </Style>
 
   <Style Selector="TextBlock.metricLabel">
-    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
   </Style>
 
   <Style Selector="TextBlock.metricValue">
-    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontSize" Value="18" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
     <Setter Property="TextTrimming" Value="CharacterEllipsis" />
@@ -292,7 +301,7 @@
   <Style Selector="Border.processFilterChip">
     <Setter Property="MinHeight" Value="24" />
     <Setter Property="Padding" Value="7,2" />
-    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="CornerRadius" Value="4" />
     <Setter Property="Background" Value="{DynamicResource PanelAltBackgroundBrush}" />
     <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
     <Setter Property="BorderThickness" Value="1" />
@@ -315,7 +324,7 @@
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="8" />
     <Setter Property="Padding" Value="0" />
-    <Setter Property="BoxShadow" Value="0 18 42 0 #22000000" />
+    <Setter Property="BoxShadow" Value="0 4 14 0 #10000000" />
   </Style>
 
   <Style Selector="ListBox.settingsNav">

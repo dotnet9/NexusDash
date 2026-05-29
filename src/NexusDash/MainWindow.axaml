@@ -46,7 +46,7 @@
                     HorizontalAlignment="Stretch"
                     Background="{DynamicResource PanelBorderBrush}" />
       <Grid Grid.Column="2"
-            RowDefinitions="*,5,180">
+            RowDefinitions="*,4,88">
         <views:ToolContentView Grid.Row="0"
                                DataContext="{Binding ToolContent}" />
         <GridSplitter Grid.Row="1"

@@ -26,7 +26,7 @@
   <Grid Classes="settingsChangelogContent"
         RowDefinitions="Auto,*"
         RowSpacing="12"
-        Margin="24"
+        Margin="28,22"
         HorizontalAlignment="Stretch"
         VerticalAlignment="Stretch">
     <StackPanel Orientation="Horizontal"

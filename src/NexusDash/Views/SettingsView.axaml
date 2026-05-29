@@ -22,13 +22,11 @@
   </UserControl.DataTemplates>
 
   <Grid Background="{DynamicResource AppBackgroundBrush}">
-    <Grid Margin="28">
+    <Grid Margin="18,14,18,10">
       <Border Classes="settingsInlineSurface"
-              Width="900"
-              MaxWidth="900"
-              HorizontalAlignment="Center"
-              VerticalAlignment="Center">
-        <Grid ColumnDefinitions="132,*">
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch">
+        <Grid ColumnDefinitions="150,*">
           <ListBox Classes="settingsNav"
                    ItemsSource="{Binding Pages}"
                    SelectedItem="{Binding SelectedPage, Mode=TwoWay}">
