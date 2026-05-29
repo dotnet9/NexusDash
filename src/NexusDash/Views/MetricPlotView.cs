@@ -10,6 +10,7 @@ namespace NexusDash.Views
     {
         private const int Capacity = 60;
         private const double StrokeThickness = 2;
+        private static readonly SolidColorBrush FallbackGuideBrush = new(Color.FromArgb(80, 127, 146, 173));
 
         public static readonly StyledProperty<IReadOnlyList<double>?> ValuesProperty =
             AvaloniaProperty.Register<MetricPlotView, IReadOnlyList<double>?>(nameof(Values));
@@ -69,6 +70,18 @@ namespace NexusDash.Views
 
             var strokeBrush = ResolveStrokeBrush(Stroke);
             var pen = new Pen(strokeBrush, StrokeThickness);
+            var guidePen = new Pen(ResolveGuideBrush(), 1);
+            for (var i = 1; i <= 3; i++)
+            {
+                var y = plotBounds.Y + plotBounds.Height * i / 4d;
+                context.DrawLine(guidePen, new Point(plotBounds.X, y), new Point(plotBounds.Right, y));
+            }
+
+            context.DrawLine(
+                guidePen,
+                new Point(plotBounds.X, plotBounds.Bottom),
+                new Point(plotBounds.Right, plotBounds.Bottom));
+
             Point? previousPoint = null;
             for (var sourceIndex = startIndex; sourceIndex < values.Count; sourceIndex++)
             {
@@ -100,6 +113,17 @@ namespace NexusDash.Views
             return brush is ISolidColorBrush
                 ? brush
                 : Brushes.DodgerBlue;
+        }
+
+        private IBrush ResolveGuideBrush()
+        {
+            if (TryGetResource("PanelBorderBrush", ActualThemeVariant, out var value) &&
+                value is ISolidColorBrush brush)
+            {
+                return new SolidColorBrush(Color.FromArgb(90, brush.Color.R, brush.Color.G, brush.Color.B));
+            }
+
+            return FallbackGuideBrush;
         }
     }
 }
