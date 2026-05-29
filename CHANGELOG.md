@@ -7,6 +7,7 @@
 - Added seven persisted theme options: System, Light, Dark, Aquatic, Desert, Dusk, and Night sky.
 - Replaced several text and hand-drawn icons with Ursa/Semi icon resources across the sidebar, status bar, process list, and confirmation dialog.
 - Improved language and tool switching responsiveness by deferring process-tree localization refresh and process-tree rebuild work for inactive pages.
+- Improved real-time refresh performance by preparing process snapshots off the UI thread and incrementally updating process rows, the process tree, and the status-bar export snapshot.
 - Updated the app logo with a simpler project mark and refreshed PNG, SVG, and ICO assets.
 
 ## 2026-05-21

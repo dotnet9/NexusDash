@@ -9,6 +9,15 @@ using System.IO;
 
 namespace NexusDash.ViewModels
 {
+    [Flags]
+    public enum ProcessRowUpdateFlags
+    {
+        None = 0,
+        Structure = 1,
+        StaticText = 2,
+        LiveMetrics = 4
+    }
+
     public sealed class ProcessRowViewModel : ReactiveObject
     {
         private readonly Action<ProcessRowViewModel, bool> _expandedChanged;
@@ -107,7 +116,14 @@ namespace NexusDash.ViewModels
 
         public void UpdateGroupHeader(string title, int count)
         {
-            _metrics.Name = string.Format(CultureInfo.CurrentCulture, "{0} ({1})", title, count);
+            var name = string.Format(CultureInfo.CurrentCulture, "{0} ({1})", title, count);
+            if (string.Equals(_metrics.Name, name, StringComparison.Ordinal) &&
+                string.Equals(_metrics.RawName, title, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _metrics.Name = name;
             _metrics.RawName = title;
             this.RaisePropertyChanged(nameof(Name));
             this.RaisePropertyChanged(nameof(RawName));
@@ -168,42 +184,159 @@ namespace NexusDash.ViewModels
             DisplayDepth = Math.Max(depth, 0);
         }
 
-        public void Update(ProcessMetrics metrics)
+        public ProcessRowUpdateFlags Update(ProcessMetrics metrics)
         {
+            var old = _metrics;
+            var oldCpuText = CpuText;
+            var oldMemoryText = MemoryText;
+            var oldDiskText = DiskText;
+            var oldNetworkText = NetworkText;
+            var oldGpuText = GpuText;
+            var oldPublisherText = PublisherText;
+            var oldStartTimeText = StartTimeText;
+            var parentChanged = old.ParentPid != metrics.ParentPid;
+            var nameChanged = !string.Equals(old.Name, metrics.Name, StringComparison.Ordinal);
+            var rawNameChanged = !string.Equals(old.RawName, metrics.RawName, StringComparison.Ordinal);
+            var publisherChanged = !string.Equals(old.Publisher, metrics.Publisher, StringComparison.Ordinal);
+            var categoryChanged = old.Category != metrics.Category;
+            var commandLineChanged = !string.Equals(old.CommandLine, metrics.CommandLine, StringComparison.Ordinal);
+            var executablePathChanged = !string.Equals(old.ExecutablePath, metrics.ExecutablePath, StringComparison.Ordinal);
+            var startTimeChanged = old.StartTime != metrics.StartTime;
+            var accessDeniedChanged = old.IsAccessDenied != metrics.IsAccessDenied;
+            var flags = ProcessRowUpdateFlags.None;
+
+            if (parentChanged || categoryChanged)
+            {
+                flags |= ProcessRowUpdateFlags.Structure;
+            }
+
+            if (parentChanged ||
+                nameChanged ||
+                rawNameChanged ||
+                publisherChanged ||
+                categoryChanged ||
+                commandLineChanged ||
+                executablePathChanged ||
+                startTimeChanged ||
+                accessDeniedChanged)
+            {
+                flags |= ProcessRowUpdateFlags.StaticText;
+            }
+
             _metrics = metrics;
-            this.RaisePropertyChanged(nameof(ParentPid));
-            this.RaisePropertyChanged(nameof(ParentPidText));
-            this.RaisePropertyChanged(nameof(Name));
-            this.RaisePropertyChanged(nameof(RawName));
-            this.RaisePropertyChanged(nameof(Publisher));
-            this.RaisePropertyChanged(nameof(PublisherText));
-            this.RaisePropertyChanged(nameof(Category));
-            this.RaisePropertyChanged(nameof(PidCellText));
+
+            if (parentChanged)
+            {
+                this.RaisePropertyChanged(nameof(ParentPid));
+                this.RaisePropertyChanged(nameof(ParentPidText));
+            }
+
+            if (nameChanged)
+            {
+                this.RaisePropertyChanged(nameof(Name));
+            }
+
+            if (rawNameChanged)
+            {
+                this.RaisePropertyChanged(nameof(RawName));
+            }
+
+            if (publisherChanged)
+            {
+                this.RaisePropertyChanged(nameof(Publisher));
+            }
+
+            if (categoryChanged)
+            {
+                this.RaisePropertyChanged(nameof(Category));
+            }
+
             UpdateIcon(metrics.IconBytes);
-            this.RaisePropertyChanged(nameof(CpuPercent));
-            this.RaisePropertyChanged(nameof(CpuText));
-            this.RaisePropertyChanged(nameof(WorkingSetBytes));
-            this.RaisePropertyChanged(nameof(MemoryText));
-            this.RaisePropertyChanged(nameof(DiskBytesPerSecond));
-            this.RaisePropertyChanged(nameof(GpuPercent));
-            this.RaisePropertyChanged(nameof(DiskText));
-            this.RaisePropertyChanged(nameof(TcpConnectionCount));
-            this.RaisePropertyChanged(nameof(UdpConnectionCount));
-            this.RaisePropertyChanged(nameof(NetworkConnectionCount));
-            this.RaisePropertyChanged(nameof(NetworkText));
-            this.RaisePropertyChanged(nameof(GpuText));
-            this.RaisePropertyChanged(nameof(ExecutablePath));
-            this.RaisePropertyChanged(nameof(CommandLine));
-            this.RaisePropertyChanged(nameof(StartTime));
-            this.RaisePropertyChanged(nameof(StartTimeText));
-            this.RaisePropertyChanged(nameof(IsAccessDenied));
+            if (categoryChanged)
+            {
+                RaiseCategoryIconProperties();
+            }
+
+            if (!string.Equals(oldCpuText, CpuText, StringComparison.Ordinal))
+            {
+                this.RaisePropertyChanged(nameof(CpuPercent));
+                this.RaisePropertyChanged(nameof(CpuText));
+                flags |= ProcessRowUpdateFlags.LiveMetrics;
+            }
+
+            if (!string.Equals(oldMemoryText, MemoryText, StringComparison.Ordinal))
+            {
+                this.RaisePropertyChanged(nameof(WorkingSetBytes));
+                this.RaisePropertyChanged(nameof(MemoryText));
+                flags |= ProcessRowUpdateFlags.LiveMetrics;
+            }
+
+            if (!string.Equals(oldDiskText, DiskText, StringComparison.Ordinal))
+            {
+                this.RaisePropertyChanged(nameof(DiskBytesPerSecond));
+                this.RaisePropertyChanged(nameof(DiskText));
+                flags |= ProcessRowUpdateFlags.LiveMetrics;
+            }
+
+            if (old.TcpConnectionCount != metrics.TcpConnectionCount ||
+                old.UdpConnectionCount != metrics.UdpConnectionCount ||
+                !string.Equals(oldNetworkText, NetworkText, StringComparison.Ordinal))
+            {
+                this.RaisePropertyChanged(nameof(TcpConnectionCount));
+                this.RaisePropertyChanged(nameof(UdpConnectionCount));
+                this.RaisePropertyChanged(nameof(NetworkConnectionCount));
+                this.RaisePropertyChanged(nameof(NetworkText));
+                flags |= ProcessRowUpdateFlags.LiveMetrics;
+            }
+
+            if (old.GpuPercent != metrics.GpuPercent ||
+                !string.Equals(oldGpuText, GpuText, StringComparison.Ordinal))
+            {
+                this.RaisePropertyChanged(nameof(GpuPercent));
+                this.RaisePropertyChanged(nameof(GpuText));
+                flags |= ProcessRowUpdateFlags.LiveMetrics;
+            }
+
+            if (publisherChanged ||
+                !string.Equals(oldPublisherText, PublisherText, StringComparison.Ordinal))
+            {
+                this.RaisePropertyChanged(nameof(PublisherText));
+            }
+
+            if (executablePathChanged)
+            {
+                this.RaisePropertyChanged(nameof(ExecutablePath));
+            }
+
+            if (commandLineChanged)
+            {
+                this.RaisePropertyChanged(nameof(CommandLine));
+            }
+
+            if (startTimeChanged ||
+                !string.Equals(oldStartTimeText, StartTimeText, StringComparison.Ordinal))
+            {
+                this.RaisePropertyChanged(nameof(StartTime));
+                this.RaisePropertyChanged(nameof(StartTimeText));
+            }
+
+            if (accessDeniedChanged)
+            {
+                this.RaisePropertyChanged(nameof(IsAccessDenied));
+            }
+
+            return flags;
         }
 
         public void RefreshLocalizedText(string unavailableText)
         {
+            if (string.Equals(_unavailableText, unavailableText, StringComparison.Ordinal))
+            {
+                return;
+            }
+
             _unavailableText = unavailableText;
             this.RaisePropertyChanged(nameof(PublisherText));
-            this.RaisePropertyChanged(nameof(NetworkText));
             this.RaisePropertyChanged(nameof(GpuText));
         }
 
@@ -238,6 +371,11 @@ namespace NexusDash.ViewModels
             _iconBytes = iconBytes;
             _icon = CreateBitmap(iconBytes);
             this.RaisePropertyChanged(nameof(Icon));
+            RaiseCategoryIconProperties();
+        }
+
+        private void RaiseCategoryIconProperties()
+        {
             this.RaisePropertyChanged(nameof(HasIcon));
             this.RaisePropertyChanged(nameof(HasCategoryIcon));
             this.RaisePropertyChanged(nameof(ShowsApplicationIcon));
