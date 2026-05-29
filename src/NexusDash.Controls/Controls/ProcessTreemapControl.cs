@@ -30,11 +30,9 @@ namespace NexusDash.Controls
             Color.Parse("#2f8cff"),
             Color.Parse("#3bb273"),
             Color.Parse("#d99a2b"),
-            Color.Parse("#7b61ff"),
-            Color.Parse("#e25555"),
-            Color.Parse("#16a3a3"),
-            Color.Parse("#c76dd8"),
-            Color.Parse("#607d8b")
+            Color.Parse("#6b7685"),
+            Color.Parse("#7a8491"),
+            Color.Parse("#8a93a0")
         ];
 
         public static readonly StyledProperty<IReadOnlyList<TreemapItem>?> ItemsProperty =
@@ -84,7 +82,7 @@ namespace NexusDash.Controls
                 level: 0,
                 tilePalette: ResolveTilePalette(),
                 tileBorderPen: new Pen(ResolveBrush("PanelBorderBrush", FallbackTileBorderBrush), 1),
-                tileTextBrush: ResolveBrush("PrimaryTextBrush", FallbackTileTextBrush));
+                tileTextBrush: FallbackTileTextBrush);
         }
 
         private static void RenderSlice(
@@ -130,7 +128,7 @@ namespace NexusDash.Controls
                     continue;
                 }
 
-                var color = PickColor(tilePalette, level + i);
+                var color = PickColor(tilePalette, i);
                 context.DrawRectangle(
                     new SolidColorBrush(color),
                     tileBorderPen,
@@ -169,9 +167,9 @@ namespace NexusDash.Controls
                 ResolveColor("AccentBrush", FallbackTilePalette[0]),
                 ResolveColor("SuccessBrush", FallbackTilePalette[1]),
                 ResolveColor("WarningBrush", FallbackTilePalette[2]),
-                ResolveColor("DangerBrush", FallbackTilePalette[4]),
-                ResolveColor("SecondaryTextBrush", FallbackTilePalette[7]),
-                ResolveColor("MutedTextBrush", FallbackTilePalette[5])
+                ResolveColor("SecondaryTextBrush", FallbackTilePalette[3]),
+                ResolveColor("MutedTextBrush", FallbackTilePalette[4]),
+                FallbackTilePalette[5]
             ];
         }
 
@@ -191,7 +189,12 @@ namespace NexusDash.Controls
 
         private static Color PickColor(IReadOnlyList<Color> tilePalette, int index)
         {
-            return tilePalette[index % tilePalette.Count];
+            if (index < Math.Min(3, tilePalette.Count))
+            {
+                return tilePalette[index];
+            }
+
+            return tilePalette[3 + ((index - 3) % Math.Max(tilePalette.Count - 3, 1))];
         }
     }
 }
