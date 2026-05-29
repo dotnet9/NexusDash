@@ -16,6 +16,7 @@ namespace NexusDash.ViewModels
         public bool IsProcessToolSelected { get; init; }
         public bool IsFileSearchToolSelected { get; init; }
         public bool IsHardwareInfoToolSelected { get; init; }
+        public bool IsSettingsToolSelected { get; init; }
     }
 
     public sealed class ProcessManagerState
@@ -99,7 +100,6 @@ namespace NexusDash.ViewModels
 
     public sealed class StatusBarState
     {
-        public string SettingsText { get; init; } = "";
         public string PauseText { get; init; } = "";
         public string ResumeText { get; init; } = "";
         public string ExportSnapshotText { get; init; } = "";
@@ -110,14 +110,12 @@ namespace NexusDash.ViewModels
         public string StatusSnapshotExportedText { get; init; } = "";
         public string StatusSnapshotExportFailedText { get; init; } = "";
         public string StatusSelectedProcessSnapshotExportedText { get; init; } = "";
-        public string RememberWindowSizeText { get; init; } = "";
         public string ActiveStatusMessage { get; init; } = "";
         public string ActiveCountText { get; init; } = "";
         public bool CanShowPauseRefresh { get; init; }
         public bool CanShowResumeRefresh { get; init; }
         public bool IsProcessToolSelected { get; init; }
         public bool HasSelectedProcess { get; init; }
-        public bool RememberWindowSize { get; init; }
         public int ProcessTotalCount { get; init; }
         public ProcessRowViewModel? SelectedProcess { get; init; }
         public IReadOnlyList<ProcessRowViewModel> VisibleProcesses { get; init; } = [];
@@ -187,10 +185,6 @@ namespace NexusDash.ViewModels
     public sealed class ToolSelectionRequestedCommand(string toolKey) : Command
     {
         public string ToolKey { get; } = toolKey;
-    }
-
-    public sealed class OpenSettingsWindowCommand : Command
-    {
     }
 
     public sealed class PauseRefreshRequestedCommand : Command

@@ -16,7 +16,29 @@
                HorizontalAlignment="Stretch">
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="vm:ToolMenuNode">
-            <TextBlock Text="{Binding Header}" />
+            <Grid ColumnDefinitions="20,*"
+                  ColumnSpacing="8"
+                  MinHeight="30">
+              <Grid Width="18"
+                    Height="18"
+                    VerticalAlignment="Center">
+                <PathIcon Classes="toolNavIcon"
+                          Data="{DynamicResource SemiIconActivity}"
+                          IsVisible="{Binding ShowsProcessManagerIcon}" />
+                <PathIcon Classes="toolNavIcon"
+                          Data="{DynamicResource SemiIconSearch}"
+                          IsVisible="{Binding ShowsFileSearchIcon}" />
+                <PathIcon Classes="toolNavIcon"
+                          Data="{DynamicResource SemiIconDesktop}"
+                          IsVisible="{Binding ShowsHardwareInfoIcon}" />
+                <PathIcon Classes="toolNavIcon"
+                          Data="{DynamicResource SemiIconSetting}"
+                          IsVisible="{Binding ShowsSettingsIcon}" />
+              </Grid>
+              <TextBlock Grid.Column="1"
+                         Text="{Binding Header}"
+                         VerticalAlignment="Center" />
+            </Grid>
           </DataTemplate>
         </ListBox.ItemTemplate>
       </ListBox>

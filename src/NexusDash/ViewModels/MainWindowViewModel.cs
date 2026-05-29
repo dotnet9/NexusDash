@@ -38,6 +38,7 @@ namespace NexusDash.ViewModels
         public const string ProcessManagerToolKey = "processManager";
         public const string FileSearchToolKey = "fileSearch";
         public const string HardwareInfoToolKey = "hardwareInfo";
+        public const string SettingsToolKey = "settings";
 
         private enum ProcessTerminationRequestKind
         {
@@ -73,10 +74,12 @@ namespace NexusDash.ViewModels
         private ToolMenuNode? _processManagerNode;
         private ToolMenuNode? _fileSearchNode;
         private ToolMenuNode? _hardwareInfoNode;
+        private ToolMenuNode? _settingsNode;
         private IReadOnlyList<ProcessTerminationCandidateViewModel> _pendingTerminationCandidates = [];
         private IReadOnlyList<ProcessRowViewModel> _selectedRows = [];
         private bool _isUpdatingLanguageOptions;
         private string _selectedCultureName = "";
+        private string _selectedThemeKey = ThemeResourceService.DarkThemeKey;
         private string _searchQuery = "";
         private string _processSortColumnKey = ProcessColumnName;
         private ListSortDirection _processSortDirection = ListSortDirection.Ascending;
@@ -84,7 +87,6 @@ namespace NexusDash.ViewModels
         private bool _filterHighCpu;
         private bool _filterUserProcesses;
         private bool _filterHideSystemProcesses;
-        private bool _isDarkTheme = true;
         private bool _rememberWindowSize;
         private ProcessTerminationRequestKind _pendingTerminationKind;
         private bool _pendingTerminationEntireProcessTree;
@@ -108,6 +110,9 @@ namespace NexusDash.ViewModels
         private IReadOnlyList<TreemapItem> _treemapProcesses = [];
         private IReadOnlyList<ProcessNetworkConnection> _networkConnections = [];
         private IReadOnlyList<ProcessNetworkConnection> _selectedProcessNetworkConnections = [];
+        private IReadOnlyList<ProcessMetrics> _latestProcessSnapshot = [];
+        private bool _hasDeferredProcessTreeUpdate;
+        private bool _hasDeferredProcessLocalizationRefresh;
         private Task<IReadOnlyList<ProcessNetworkConnection>>? _networkRefreshTask;
         private IReadOnlyList<double> _cpuHistory = [];
         private IReadOnlyList<double> _memoryHistory = [];
@@ -126,7 +131,8 @@ namespace NexusDash.ViewModels
             ProcessNetworkConnectionService processNetworkConnectionService,
             IUserPreferencesService userPreferencesService,
             IThemeResourceService themeResourceService,
-            IProcessSnapshotExportService processSnapshotExportService)
+            IProcessSnapshotExportService processSnapshotExportService,
+            SettingsViewModel settings)
         {
             _eventBus = eventBus;
             _systemMonitorService = systemMonitorService;
@@ -139,11 +145,10 @@ namespace NexusDash.ViewModels
             HardwareInfo = hardwareInfo;
             ProcessManager = new ProcessManagerViewModel(eventBus, processList);
             ToolTree = new ToolTreeViewModel(eventBus);
-            ToolContent = new ToolContentViewModel(eventBus, ProcessManager, fileSearch, hardwareInfo);
+            ToolContent = new ToolContentViewModel(eventBus, ProcessManager, fileSearch, hardwareInfo, settings);
             OperationLog = new OperationLogPaneViewModel(eventBus);
             StatusBar = new StatusBarViewModel(eventBus, processSnapshotExportService);
             EndProcessConfirmation = new EndProcessConfirmationViewModel(eventBus);
-            OpenSettingsWindow = new DelegateCommand(PublishOpenSettingsWindow);
             SelectProcessTool = new DelegateCommand(() => SelectTool(ProcessManagerToolKey));
             SelectFileSearchTool = new DelegateCommand(() => SelectTool(FileSearchToolKey));
             FileSearch.PropertyChanged += HandleFileSearchPropertyChanged;
@@ -151,10 +156,10 @@ namespace NexusDash.ViewModels
             _eventBus.Subscribe(this);
 
             var preferences = _userPreferencesService.Load();
-            _isDarkTheme = preferences.IsDarkTheme;
+            _selectedThemeKey = ThemeResourceService.ResolvePreferenceThemeKey(preferences.ThemeKey, preferences.IsDarkTheme);
             _rememberWindowSize = preferences.RememberWindowSize;
             InitializeProcessColumnWidths(preferences);
-            ApplyApplicationTheme(_isDarkTheme);
+            ApplyApplicationTheme(_selectedThemeKey);
             InitializeLanguageOptions();
             var unavailableText = T(NexusDashL.MetricUnavailable);
             _applicationGroupRow = ProcessRowViewModel.CreateGroupHeader(
@@ -195,7 +200,6 @@ namespace NexusDash.ViewModels
         public ObservableCollection<ProcessColumnOptionViewModel> ProcessColumns { get; } = new();
         public ObservableCollection<LanguageOption> Languages { get; } = new();
         public ObservableCollection<ToolMenuNode> ToolMenuItems { get; } = new();
-        public DelegateCommand OpenSettingsWindow { get; }
         public DelegateCommand SelectProcessTool { get; }
         public DelegateCommand SelectFileSearchTool { get; }
         public string ProcessSortColumnKey => _processSortColumnKey;
@@ -295,6 +299,8 @@ namespace NexusDash.ViewModels
             ? FileSearch.ResultCountText
             : IsHardwareInfoToolSelected
                 ? ""
+                : IsSettingsToolSelected
+                    ? ""
                 : SelectedCountText;
         public string CpuUsageText => $"{CpuUsage:F1}%";
         public string MemoryUsageText => $"{MemoryUsage:F1}%";
@@ -359,7 +365,8 @@ namespace NexusDash.ViewModels
         public bool IsProcessToolSelected => string.Equals(_selectedToolKey, ProcessManagerToolKey, StringComparison.Ordinal);
         public bool IsFileSearchToolSelected => string.Equals(_selectedToolKey, FileSearchToolKey, StringComparison.Ordinal);
         public bool IsHardwareInfoToolSelected => string.Equals(_selectedToolKey, HardwareInfoToolKey, StringComparison.Ordinal);
-        public bool IsSearchBoxVisible => !IsHardwareInfoToolSelected;
+        public bool IsSettingsToolSelected => string.Equals(_selectedToolKey, SettingsToolKey, StringComparison.Ordinal);
+        public bool IsSearchBoxVisible => !IsHardwareInfoToolSelected && !IsSettingsToolSelected;
         public bool CanShowPauseRefresh => IsProcessToolSelected && IsRefreshRunning;
         public bool CanShowResumeRefresh => IsProcessToolSelected && IsRefreshPaused;
         public bool IsProcessFilterActive => FilterHasNetworkConnections ||
@@ -375,7 +382,7 @@ namespace NexusDash.ViewModels
             get => _isEndProcessConfirmationVisible;
             private set => this.RaiseAndSetIfChanged(ref _isEndProcessConfirmationVisible, value);
         }
-        public bool IsLightTheme => !IsDarkTheme;
+        public bool IsLightTheme => string.Equals(_selectedThemeKey, ThemeResourceService.LightThemeKey, StringComparison.OrdinalIgnoreCase);
         public bool IsRefreshPaused
         {
             get => _isRefreshPaused;
@@ -464,17 +471,10 @@ namespace NexusDash.ViewModels
 
         public bool IsDarkTheme
         {
-            get => _isDarkTheme;
+            get => _themeResourceService.GetThemeOption(_selectedThemeKey).IsDark;
             set
             {
-                if (SetField(ref _isDarkTheme, value, nameof(IsDarkTheme)))
-                {
-                    ApplyApplicationTheme(value);
-                    _userPreferencesService.Update(preferences => preferences.IsDarkTheme = value);
-                    this.RaisePropertyChanged(nameof(IsLightTheme));
-                    PublishProcessListState();
-                    PublishSettingsState();
-                }
+                SetTheme(value ? ThemeResourceService.DarkThemeKey : ThemeResourceService.LightThemeKey);
             }
         }
 
@@ -698,19 +698,37 @@ namespace NexusDash.ViewModels
 
         public void SetDarkTheme()
         {
-            IsDarkTheme = true;
-            StatusMessage = string.Format(CultureInfo.CurrentCulture, T(NexusDashL.StatusThemeChanged), T(NexusDashL.DarkTheme));
-        }
-
-        private void PublishOpenSettingsWindow()
-        {
-            _eventBus.Publish(new OpenSettingsWindowCommand());
+            SetTheme(ThemeResourceService.DarkThemeKey);
         }
 
         public void SetLightTheme()
         {
-            IsDarkTheme = false;
-            StatusMessage = string.Format(CultureInfo.CurrentCulture, T(NexusDashL.StatusThemeChanged), T(NexusDashL.LightTheme));
+            SetTheme(ThemeResourceService.LightThemeKey);
+        }
+
+        private void SetTheme(string themeKey)
+        {
+            var theme = _themeResourceService.GetThemeOption(themeKey);
+            if (string.Equals(_selectedThemeKey, theme.Key, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            _selectedThemeKey = theme.Key;
+            this.RaisePropertyChanged(nameof(IsDarkTheme));
+            this.RaisePropertyChanged(nameof(IsLightTheme));
+            ApplyApplicationTheme(theme.Key);
+            _userPreferencesService.Update(preferences =>
+            {
+                preferences.ThemeKey = theme.Key;
+                preferences.IsDarkTheme = theme.IsDark;
+            });
+            PublishProcessListState();
+            PublishSettingsState();
+            StatusMessage = string.Format(
+                CultureInfo.CurrentCulture,
+                T(NexusDashL.StatusThemeChanged),
+                GetThemeDisplayName(theme.Key));
         }
 
         public void PauseRefresh()
@@ -785,13 +803,7 @@ namespace NexusDash.ViewModels
         [EventHandler]
         private void ApplyThemeChange(ThemeChangeRequestedCommand command)
         {
-            if (command.IsDarkTheme)
-            {
-                SetDarkTheme();
-                return;
-            }
-
-            SetLightTheme();
+            SetTheme(command.ThemeKey);
         }
 
         [EventHandler]
@@ -841,6 +853,7 @@ namespace NexusDash.ViewModels
             RememberWindowSize = command.IsEnabled;
             _userPreferencesService.Update(preferences => preferences.RememberWindowSize = command.IsEnabled);
             PublishStatusBarState();
+            PublishSettingsState();
             LogOperation($"{RememberWindowSizeText}: {(command.IsEnabled ? "On" : "Off")}");
         }
 
@@ -1050,13 +1063,15 @@ namespace NexusDash.ViewModels
 
         private void InitializeToolMenu()
         {
-            _processManagerNode = new ToolMenuNode(ProcessManagerText, ProcessManagerToolKey);
-            _fileSearchNode = new ToolMenuNode(FileSearchToolText, FileSearchToolKey);
-            _hardwareInfoNode = new ToolMenuNode(HardwareInfoToolText, HardwareInfoToolKey);
+            _processManagerNode = new ToolMenuNode(ProcessManagerText, ProcessManagerToolKey, ToolMenuIcon.ProcessManager);
+            _fileSearchNode = new ToolMenuNode(FileSearchToolText, FileSearchToolKey, ToolMenuIcon.FileSearch);
+            _hardwareInfoNode = new ToolMenuNode(HardwareInfoToolText, HardwareInfoToolKey, ToolMenuIcon.HardwareInfo);
+            _settingsNode = new ToolMenuNode(SettingsText, SettingsToolKey, ToolMenuIcon.Settings);
             ToolMenuItems.Clear();
             ToolMenuItems.Add(_processManagerNode);
             ToolMenuItems.Add(_fileSearchNode);
             ToolMenuItems.Add(_hardwareInfoNode);
+            ToolMenuItems.Add(_settingsNode);
             _selectedToolNode = _processManagerNode;
         }
 
@@ -1066,6 +1081,7 @@ namespace NexusDash.ViewModels
             {
                 FileSearchToolKey => _fileSearchNode ?? _selectedToolNode ?? ToolMenuItems.First(),
                 HardwareInfoToolKey => _hardwareInfoNode ?? _selectedToolNode ?? ToolMenuItems.First(),
+                SettingsToolKey => _settingsNode ?? _selectedToolNode ?? ToolMenuItems.First(),
                 _ => _processManagerNode ?? _selectedToolNode ?? ToolMenuItems.First()
             };
         }
@@ -1079,6 +1095,11 @@ namespace NexusDash.ViewModels
                 PublishActiveToolState();
                 PublishStatusBarState();
                 LogOperation($"切换工具：{GetToolDisplayName(toolKey)}");
+                if (IsProcessToolSelected)
+                {
+                    ApplyDeferredProcessLocalizationRefresh();
+                    QueueDeferredProcessTreeUpdate();
+                }
             }
         }
 
@@ -1093,6 +1114,12 @@ namespace NexusDash.ViewModels
             if (string.Equals(toolKey, HardwareInfoToolKey, StringComparison.Ordinal))
             {
                 normalizedToolKey = HardwareInfoToolKey;
+                return true;
+            }
+
+            if (string.Equals(toolKey, SettingsToolKey, StringComparison.Ordinal))
+            {
+                normalizedToolKey = SettingsToolKey;
                 return true;
             }
 
@@ -1123,6 +1150,11 @@ namespace NexusDash.ViewModels
                 _hardwareInfoNode.Header = HardwareInfoToolText;
             }
 
+            if (_settingsNode is not null)
+            {
+                _settingsNode.Header = SettingsText;
+            }
+
             PublishToolTreeState();
             PublishProcessManagerState();
         }
@@ -1132,6 +1164,7 @@ namespace NexusDash.ViewModels
             this.RaisePropertyChanged(nameof(IsProcessToolSelected));
             this.RaisePropertyChanged(nameof(IsFileSearchToolSelected));
             this.RaisePropertyChanged(nameof(IsHardwareInfoToolSelected));
+            this.RaisePropertyChanged(nameof(IsSettingsToolSelected));
             this.RaisePropertyChanged(nameof(IsSearchBoxVisible));
             this.RaisePropertyChanged(nameof(CanShowPauseRefresh));
             this.RaisePropertyChanged(nameof(CanShowResumeRefresh));
@@ -1147,6 +1180,7 @@ namespace NexusDash.ViewModels
             {
                 FileSearchToolKey => FileSearchToolText,
                 HardwareInfoToolKey => HardwareInfoToolText,
+                SettingsToolKey => SettingsText,
                 _ => ProcessManagerText
             };
         }
@@ -1229,7 +1263,8 @@ namespace NexusDash.ViewModels
             {
                 IsProcessToolSelected = IsProcessToolSelected,
                 IsFileSearchToolSelected = IsFileSearchToolSelected,
-                IsHardwareInfoToolSelected = IsHardwareInfoToolSelected
+                IsHardwareInfoToolSelected = IsHardwareInfoToolSelected,
+                IsSettingsToolSelected = IsSettingsToolSelected
             }));
         }
 
@@ -1328,7 +1363,6 @@ namespace NexusDash.ViewModels
         {
             _eventBus.Publish(new StatusBarStateChangedCommand(new StatusBarState
             {
-                SettingsText = SettingsText,
                 PauseText = PauseText,
                 ResumeText = ResumeText,
                 ExportSnapshotText = ExportSnapshotText,
@@ -1339,14 +1373,12 @@ namespace NexusDash.ViewModels
                 StatusSnapshotExportedText = StatusSnapshotExportedText,
                 StatusSnapshotExportFailedText = StatusSnapshotExportFailedText,
                 StatusSelectedProcessSnapshotExportedText = StatusSelectedProcessSnapshotExportedText,
-                RememberWindowSizeText = RememberWindowSizeText,
                 ActiveStatusMessage = ActiveStatusMessage,
                 ActiveCountText = ActiveCountText,
                 CanShowPauseRefresh = CanShowPauseRefresh,
                 CanShowResumeRefresh = CanShowResumeRefresh,
                 IsProcessToolSelected = IsProcessToolSelected,
                 HasSelectedProcess = HasSelectedProcess,
-                RememberWindowSize = RememberWindowSize,
                 ProcessTotalCount = ProcessTotalCount,
                 SelectedProcess = SelectedProcess,
                 VisibleProcesses = VisibleProcesses.Where(static row => row.IsProcessRow).ToArray()
@@ -1377,7 +1409,11 @@ namespace NexusDash.ViewModels
 
         private void PublishSettingsState()
         {
-            _eventBus.Publish(new SettingsStateChangedCommand(IsDarkTheme, _selectedCultureName));
+            _eventBus.Publish(new SettingsStateChangedCommand(
+                _selectedThemeKey,
+                IsDarkTheme,
+                RememberWindowSize,
+                _selectedCultureName));
         }
 
         private void RequestEndSelectedProcesses(bool entireProcessTree, bool includeAssociatedProcesses = false)
@@ -1701,11 +1737,84 @@ namespace NexusDash.ViewModels
             RefreshSelectedNetworkConnections();
 
             ProcessTotalCount = processSnapshot.Length;
-            RebuildProcessTree(processSnapshot);
+            _latestProcessSnapshot = processSnapshot;
+            if (IsProcessToolSelected)
+            {
+                RebuildProcessTree(processSnapshot);
+                _hasDeferredProcessTreeUpdate = false;
+                PublishProcessOverviewState();
+                PublishProcessExplorerState();
+                PublishProcessInspectorState();
+            }
+            else
+            {
+                _hasDeferredProcessTreeUpdate = true;
+            }
+
+            PublishStatusBarState();
+        }
+
+        private void QueueDeferredProcessTreeUpdate()
+        {
+            if (!_hasDeferredProcessTreeUpdate || _latestProcessSnapshot.Count == 0)
+            {
+                return;
+            }
+
+            Dispatcher.UIThread.Post(ApplyDeferredProcessTreeUpdate, DispatcherPriority.Background);
+        }
+
+        private void ApplyDeferredProcessTreeUpdate()
+        {
+            if (_isDisposed ||
+                !IsProcessToolSelected ||
+                !_hasDeferredProcessTreeUpdate ||
+                _latestProcessSnapshot.Count == 0)
+            {
+                return;
+            }
+
+            RebuildProcessTree(_latestProcessSnapshot);
+            _hasDeferredProcessTreeUpdate = false;
             PublishProcessOverviewState();
             PublishProcessExplorerState();
             PublishProcessInspectorState();
             PublishStatusBarState();
+        }
+
+        private void QueueDeferredProcessLocalizationRefresh()
+        {
+            _hasDeferredProcessLocalizationRefresh = true;
+            if (!IsProcessToolSelected)
+            {
+                return;
+            }
+
+            Dispatcher.UIThread.Post(ApplyDeferredProcessLocalizationRefresh, DispatcherPriority.Background);
+        }
+
+        private void ApplyDeferredProcessLocalizationRefresh()
+        {
+            if (_isDisposed || !_hasDeferredProcessLocalizationRefresh)
+            {
+                return;
+            }
+
+            var unavailableText = T(NexusDashL.MetricUnavailable);
+            foreach (var row in _rowCache.Values)
+            {
+                row.RefreshLocalizedText(unavailableText);
+            }
+
+            _applicationGroupRow.RefreshLocalizedText(unavailableText);
+            _backgroundGroupRow.RefreshLocalizedText(unavailableText);
+            _windowsGroupRow.RefreshLocalizedText(unavailableText);
+            _hasDeferredProcessLocalizationRefresh = false;
+
+            if (IsProcessToolSelected)
+            {
+                RebuildVisibleProcesses();
+            }
         }
 
         private static IReadOnlyList<ProcessNetworkConnection> EnrichNetworkConnections(
@@ -2361,16 +2470,7 @@ namespace NexusDash.ViewModels
             RefreshLanguageOptions();
             RefreshLocalizedProperties();
             PublishSettingsState();
-
-            foreach (var row in _rowCache.Values)
-            {
-                row.RefreshLocalizedText(T(NexusDashL.MetricUnavailable));
-            }
-
-            _applicationGroupRow.RefreshLocalizedText(T(NexusDashL.MetricUnavailable));
-            _backgroundGroupRow.RefreshLocalizedText(T(NexusDashL.MetricUnavailable));
-            _windowsGroupRow.RefreshLocalizedText(T(NexusDashL.MetricUnavailable));
-            RebuildVisibleProcesses();
+            QueueDeferredProcessLocalizationRefresh();
 
             if (showStatus)
             {
@@ -2534,14 +2634,29 @@ namespace NexusDash.ViewModels
             return App.NormalizeCulture(cultureName);
         }
 
+        private static string GetThemeDisplayName(string key)
+        {
+            return key switch
+            {
+                ThemeResourceService.SystemThemeKey => T(NexusDashL.ThemeSystem),
+                ThemeResourceService.LightThemeKey => T(NexusDashL.LightTheme),
+                ThemeResourceService.DarkThemeKey => T(NexusDashL.DarkTheme),
+                ThemeResourceService.AquaticThemeKey => T(NexusDashL.ThemeAquatic),
+                ThemeResourceService.DesertThemeKey => T(NexusDashL.ThemeDesert),
+                ThemeResourceService.DuskThemeKey => T(NexusDashL.ThemeDusk),
+                ThemeResourceService.NightSkyThemeKey => T(NexusDashL.ThemeNightSky),
+                _ => key
+            };
+        }
+
         private static string T(string key)
         {
             return I18nManager.Instance.GetResource(key) ?? key;
         }
 
-        private void ApplyApplicationTheme(bool isDarkTheme)
+        private void ApplyApplicationTheme(string themeKey)
         {
-            _themeResourceService.Apply(isDarkTheme);
+            _themeResourceService.Apply(themeKey);
         }
 
         private bool SetField<T>(ref T field, T value, string propertyName)

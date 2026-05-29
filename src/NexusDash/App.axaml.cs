@@ -7,16 +7,15 @@ using CodeWF.Log.Core;
 using DryIoc;
 using Lang.Avalonia;
 using Lang.Avalonia.Json;
-using NexusDash.Regions;
 using NexusDash.Services;
 using NexusDash.ViewModels;
 using NexusDash.ViewModels.Settings;
+using NexusDash.Views;
 using NexusDash.Views.Settings;
 using Prism.DryIoc;
 using Prism.Ioc;
 using Prism.Modularity;
 using Prism.Mvvm;
-using Prism.Regions;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -43,7 +42,8 @@ namespace NexusDash
             };
             I18nManager.Instance.Register(langPlugin, startupCulture, out _);
             ApplyThirdPartyCulture(startupCulture.Name);
-            RequestedThemeVariant = preferences.IsDarkTheme ? ThemeVariant.Dark : ThemeVariant.Light;
+            RequestedThemeVariant = ThemeResourceService.ResolveThemeVariant(
+                ThemeResourceService.ResolvePreferenceThemeKey(preferences.ThemeKey, preferences.IsDarkTheme));
             Logger.Info("NexusDash application initialized.", "NexusDash 已启动。", log2Console: false);
             base.Initialize();
         }
@@ -56,16 +56,7 @@ namespace NexusDash
 
         protected override AvaloniaObject CreateShell()
         {
-            Container.Resolve<ISettingsWindowService>();
             return Container.Resolve<MainWindow>();
-        }
-
-        protected override void ConfigureRegionAdapterMappings(RegionAdapterMappings regionAdapterMappings)
-        {
-            base.ConfigureRegionAdapterMappings(regionAdapterMappings);
-            regionAdapterMappings.RegisterMapping(
-                typeof(TabControl),
-                Container.Resolve<SettingsTabControlRegionAdapter>());
         }
 
         protected override void RegisterTypes(IContainerRegistry containerRegistry)
@@ -80,21 +71,18 @@ namespace NexusDash
             containerRegistry.RegisterSingleton<FileSearchService>();
             containerRegistry.RegisterSingleton<HardwareInfoService>();
             containerRegistry.RegisterSingleton<IProcessSnapshotExportService, ProcessSnapshotExportService>();
-            containerRegistry.RegisterSingleton<ISettingsWindowService, SettingsWindowService>();
-            containerRegistry.RegisterSingleton<SettingsTabControlRegionAdapter>();
             containerRegistry.RegisterSingleton<ProcessListViewModel>();
             containerRegistry.RegisterSingleton<FileSearchViewModel>();
             containerRegistry.RegisterSingleton<HardwareInfoViewModel>();
+            containerRegistry.RegisterSingleton<SettingsViewModel>();
             containerRegistry.RegisterSingleton<MainWindowViewModel>();
             containerRegistry.Register<AppearanceSettingsViewModel>();
             containerRegistry.Register<ChangelogSettingsViewModel>();
             containerRegistry.Register<AboutSettingsViewModel>();
-            containerRegistry.Register<SettingsWindowViewModel>();
             containerRegistry.Register<MainWindow>();
-            containerRegistry.Register<SettingsWindow>();
+            containerRegistry.Register<SettingsView>();
 
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
-            ViewModelLocationProvider.Register<SettingsWindow, SettingsWindowViewModel>();
             ViewModelLocationProvider.Register<AppearanceSettingsView, AppearanceSettingsViewModel>();
             ViewModelLocationProvider.Register<ChangelogSettingsView, ChangelogSettingsViewModel>();
             ViewModelLocationProvider.Register<AboutSettingsView, AboutSettingsViewModel>();

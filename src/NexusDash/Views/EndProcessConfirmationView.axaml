@@ -19,12 +19,12 @@
         <Grid ColumnDefinitions="Auto,*"
               ColumnSpacing="12">
           <Border Classes="dialogIcon">
-            <TextBlock Text="!"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            FontSize="15"
-                            FontWeight="SemiBold"
-                            Foreground="{DynamicResource WarningBrush}" />
+            <PathIcon Width="18"
+                      Height="18"
+                      Data="{DynamicResource SemiIconAlertTriangle}"
+                      Foreground="{DynamicResource WarningBrush}"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center" />
           </Border>
           <TextBlock Grid.Column="1"
                           Text="{Binding EndProcessConfirmationTitleText}"

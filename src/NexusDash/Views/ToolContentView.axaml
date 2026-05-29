@@ -4,20 +4,26 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:views="using:NexusDash.Views"
              xmlns:vm="using:NexusDash.ViewModels"
+             xmlns:settingsVm="using:NexusDash.ViewModels.Settings"
              mc:Ignorable="d"
              d:DesignWidth="1000"
              d:DesignHeight="640"
              x:Class="NexusDash.Views.ToolContentView"
              x:DataType="vm:ToolContentViewModel">
-  <Grid>
-    <ContentControl IsVisible="{Binding IsProcessToolSelected}">
-      <views:ProcessManagerView DataContext="{Binding ProcessManager}" />
-    </ContentControl>
-    <ContentControl IsVisible="{Binding IsFileSearchToolSelected}">
-      <views:FileSearchView DataContext="{Binding FileSearch}" />
-    </ContentControl>
-    <ContentControl IsVisible="{Binding IsHardwareInfoToolSelected}">
-      <views:HardwareInfoView DataContext="{Binding HardwareInfo}" />
-    </ContentControl>
-  </Grid>
+  <UserControl.DataTemplates>
+    <DataTemplate DataType="vm:ProcessManagerViewModel">
+      <views:ProcessManagerView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:FileSearchViewModel">
+      <views:FileSearchView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:HardwareInfoViewModel">
+      <views:HardwareInfoView />
+    </DataTemplate>
+    <DataTemplate DataType="settingsVm:SettingsViewModel">
+      <views:SettingsView />
+    </DataTemplate>
+  </UserControl.DataTemplates>
+
+  <ContentControl Content="{Binding ActiveTool}" />
 </UserControl>

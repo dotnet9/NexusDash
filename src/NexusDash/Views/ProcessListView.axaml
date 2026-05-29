@@ -117,9 +117,18 @@
                                  Height="18"
                                  Padding="0"
 
-                                 Content="{Binding ExpanderGlyph}"
                                  Command="{Binding ToggleExpanded}"
-                                 IsVisible="{Binding HasChildren}" />
+                                 IsVisible="{Binding HasChildren}">
+                      <Grid Width="14"
+                            Height="14">
+                        <PathIcon Classes="processExpanderIcon"
+                                  Data="{DynamicResource SemiIconTreeTriangleDown}"
+                                  IsVisible="{Binding IsExpanded}" />
+                        <PathIcon Classes="processExpanderIcon"
+                                  Data="{DynamicResource SemiIconTreeTriangleRight}"
+                                  IsVisible="{Binding !IsExpanded}" />
+                      </Grid>
+                    </Button>
                     <Grid Grid.Column="2"
                           Width="18"
                           Height="18"
@@ -129,15 +138,15 @@
                              Height="16"
                              Stretch="Uniform"
                              IsVisible="{Binding HasIcon}" />
-                      <TextBlock Classes="processCategoryIcon"
-                                 Text="A"
-                                 IsVisible="{Binding ShowsApplicationIcon}" />
-                      <TextBlock Classes="processCategoryIcon"
-                                 Text="B"
-                                 IsVisible="{Binding ShowsBackgroundIcon}" />
-                      <TextBlock Classes="processCategoryIcon"
-                                 Text="W"
-                                 IsVisible="{Binding ShowsWindowsIcon}" />
+                      <PathIcon Classes="processCategoryIcon"
+                                Data="{DynamicResource SemiIconApps}"
+                                IsVisible="{Binding ShowsApplicationIcon}" />
+                      <PathIcon Classes="processCategoryIcon"
+                                Data="{DynamicResource SemiIconServer}"
+                                IsVisible="{Binding ShowsBackgroundIcon}" />
+                      <PathIcon Classes="processCategoryIcon"
+                                Data="{DynamicResource SemiIconDesktop}"
+                                IsVisible="{Binding ShowsWindowsIcon}" />
                     </Grid>
                     <TextBlock Grid.Column="3"
                                     Text="{Binding Name}"

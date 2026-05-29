@@ -13,7 +13,6 @@ namespace NexusDash.ViewModels
     public sealed class StatusBarViewModel : EventBusViewModel
     {
         private readonly IProcessSnapshotExportService _snapshotExportService;
-        private string _settingsText = "";
         private string _pauseText = "";
         private string _resumeText = "";
         private string _exportSnapshotText = "";
@@ -24,14 +23,12 @@ namespace NexusDash.ViewModels
         private string _statusSnapshotExportedText = "";
         private string _statusSnapshotExportFailedText = "";
         private string _statusSelectedProcessSnapshotExportedText = "";
-        private string _rememberWindowSizeText = "";
         private string _activeStatusMessage = "";
         private string _activeCountText = "";
         private bool _canShowPauseRefresh;
         private bool _canShowResumeRefresh;
         private bool _isProcessToolSelected = true;
         private bool _hasSelectedProcess;
-        private bool _rememberWindowSize;
         private int _processTotalCount;
         private ProcessRowViewModel? _selectedProcess;
         private IReadOnlyList<ProcessRowViewModel> _visibleProcesses = [];
@@ -42,8 +39,6 @@ namespace NexusDash.ViewModels
             : base(eventBus)
         {
             _snapshotExportService = snapshotExportService;
-            OpenSettingsWindowCommand = new DelegateCommand(() => EventBus.Publish(new OpenSettingsWindowCommand()));
-            ToggleRememberWindowSizeCommand = new DelegateCommand(() => SetRememberWindowSize(!RememberWindowSize));
             PauseRefreshCommand = new DelegateCommand(() => EventBus.Publish(new PauseRefreshRequestedCommand()));
             ResumeRefreshCommand = new DelegateCommand(() => EventBus.Publish(new ResumeRefreshRequestedCommand()));
             ExportProcessListJsonCommand = new DelegateCommand(() =>
@@ -56,8 +51,6 @@ namespace NexusDash.ViewModels
                 _ = ExportProcessSnapshotAsync(ProcessSnapshotExportFormat.Csv, ProcessSnapshotExportScope.SelectedProcess));
         }
 
-        public DelegateCommand OpenSettingsWindowCommand { get; }
-        public DelegateCommand ToggleRememberWindowSizeCommand { get; }
         public DelegateCommand PauseRefreshCommand { get; }
         public DelegateCommand ResumeRefreshCommand { get; }
         public DelegateCommand ExportProcessListJsonCommand { get; }
@@ -65,7 +58,6 @@ namespace NexusDash.ViewModels
         public DelegateCommand ExportSelectedProcessJsonCommand { get; }
         public DelegateCommand ExportSelectedProcessCsvCommand { get; }
 
-        public string SettingsText { get => _settingsText; private set => SetField(ref _settingsText, value, nameof(SettingsText)); }
         public string PauseText { get => _pauseText; private set => SetField(ref _pauseText, value, nameof(PauseText)); }
         public string ResumeText { get => _resumeText; private set => SetField(ref _resumeText, value, nameof(ResumeText)); }
         public string ExportSnapshotText { get => _exportSnapshotText; private set => SetField(ref _exportSnapshotText, value, nameof(ExportSnapshotText)); }
@@ -76,22 +68,15 @@ namespace NexusDash.ViewModels
         public string StatusSnapshotExportedText { get => _statusSnapshotExportedText; private set => SetField(ref _statusSnapshotExportedText, value, nameof(StatusSnapshotExportedText)); }
         public string StatusSnapshotExportFailedText { get => _statusSnapshotExportFailedText; private set => SetField(ref _statusSnapshotExportFailedText, value, nameof(StatusSnapshotExportFailedText)); }
         public string StatusSelectedProcessSnapshotExportedText { get => _statusSelectedProcessSnapshotExportedText; private set => SetField(ref _statusSelectedProcessSnapshotExportedText, value, nameof(StatusSelectedProcessSnapshotExportedText)); }
-        public string RememberWindowSizeText { get => _rememberWindowSizeText; private set => SetField(ref _rememberWindowSizeText, value, nameof(RememberWindowSizeText)); }
         public string ActiveStatusMessage { get => _activeStatusMessage; private set => SetField(ref _activeStatusMessage, value, nameof(ActiveStatusMessage)); }
         public string ActiveCountText { get => _activeCountText; private set => SetField(ref _activeCountText, value, nameof(ActiveCountText)); }
         public bool CanShowPauseRefresh { get => _canShowPauseRefresh; private set => SetField(ref _canShowPauseRefresh, value, nameof(CanShowPauseRefresh)); }
         public bool CanShowResumeRefresh { get => _canShowResumeRefresh; private set => SetField(ref _canShowResumeRefresh, value, nameof(CanShowResumeRefresh)); }
         public bool IsProcessToolSelected { get => _isProcessToolSelected; private set => SetField(ref _isProcessToolSelected, value, nameof(IsProcessToolSelected)); }
         public bool HasSelectedProcess { get => _hasSelectedProcess; private set => SetField(ref _hasSelectedProcess, value, nameof(HasSelectedProcess)); }
-        public bool RememberWindowSize { get => _rememberWindowSize; private set => SetField(ref _rememberWindowSize, value, nameof(RememberWindowSize)); }
         public int ProcessTotalCount { get => _processTotalCount; private set => SetField(ref _processTotalCount, value, nameof(ProcessTotalCount)); }
         public ProcessRowViewModel? SelectedProcess { get => _selectedProcess; private set => SetField(ref _selectedProcess, value, nameof(SelectedProcess)); }
         public IReadOnlyList<ProcessRowViewModel> VisibleProcesses { get => _visibleProcesses; private set => SetField(ref _visibleProcesses, value, nameof(VisibleProcesses)); }
-
-        public void SetRememberWindowSize(bool isEnabled)
-        {
-            EventBus.Publish(new RememberWindowSizeChangedCommand(isEnabled));
-        }
 
         public void ReportStatus(string message)
         {
@@ -172,7 +157,6 @@ namespace NexusDash.ViewModels
         private void ApplyState(StatusBarStateChangedCommand command)
         {
             var state = command.State;
-            SettingsText = state.SettingsText;
             PauseText = state.PauseText;
             ResumeText = state.ResumeText;
             ExportSnapshotText = state.ExportSnapshotText;
@@ -183,14 +167,12 @@ namespace NexusDash.ViewModels
             StatusSnapshotExportedText = state.StatusSnapshotExportedText;
             StatusSnapshotExportFailedText = state.StatusSnapshotExportFailedText;
             StatusSelectedProcessSnapshotExportedText = state.StatusSelectedProcessSnapshotExportedText;
-            RememberWindowSizeText = state.RememberWindowSizeText;
             ActiveStatusMessage = state.ActiveStatusMessage;
             ActiveCountText = state.ActiveCountText;
             CanShowPauseRefresh = state.CanShowPauseRefresh;
             CanShowResumeRefresh = state.CanShowResumeRefresh;
             IsProcessToolSelected = state.IsProcessToolSelected;
             HasSelectedProcess = state.HasSelectedProcess;
-            RememberWindowSize = state.RememberWindowSize;
             ProcessTotalCount = state.ProcessTotalCount;
             SelectedProcess = state.SelectedProcess;
             VisibleProcesses = state.VisibleProcesses;

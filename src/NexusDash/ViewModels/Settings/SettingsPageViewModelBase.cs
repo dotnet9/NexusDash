@@ -12,13 +12,17 @@ namespace NexusDash.ViewModels.Settings
         private readonly IEventBus _eventBus;
         private bool _isDisposed;
         private bool _isDarkTheme = true;
+        private bool _rememberWindowSize;
+        private string _themeKey = ThemeResourceService.DarkThemeKey;
         private string _cultureName = "";
 
         protected SettingsPageViewModelBase(IEventBus eventBus, IUserPreferencesService userPreferencesService)
         {
             _eventBus = eventBus;
             var preferences = userPreferencesService.Load();
+            _themeKey = ThemeResourceService.ResolvePreferenceThemeKey(preferences.ThemeKey, preferences.IsDarkTheme);
             _isDarkTheme = preferences.IsDarkTheme;
+            _rememberWindowSize = preferences.RememberWindowSize;
             _cultureName = preferences.CultureName ??
                            I18nManager.Instance.Culture?.Name ??
                            CultureInfo.CurrentUICulture.Name;
@@ -27,6 +31,8 @@ namespace NexusDash.ViewModels.Settings
 
         protected IEventBus EventBus => _eventBus;
         protected bool IsDarkThemeState => _isDarkTheme;
+        protected bool RememberWindowSizeState => _rememberWindowSize;
+        protected string ThemeKeyState => _themeKey;
         protected string CultureNameState => _cultureName;
 
         public abstract string Header { get; }
@@ -54,7 +60,9 @@ namespace NexusDash.ViewModels.Settings
         [EventHandler]
         private void ApplySettingsState(SettingsStateChangedCommand command)
         {
+            _themeKey = command.ThemeKey;
             _isDarkTheme = command.IsDarkTheme;
+            _rememberWindowSize = command.RememberWindowSize;
             _cultureName = command.CultureName;
             RaiseLocalizedProperties();
         }

@@ -1,5 +1,14 @@
 # NexusDash Changelog
 
+## 2026-05-29
+
+- Changed the settings center into an embedded main-window tool page, removed the standalone settings window and Prism SettingsRegion registration path, and fixed crashes caused by duplicate settings region registration.
+- Improved settings page layout across Appearance, Changelog, and About, and removed the duplicate settings entry from the status bar.
+- Added seven persisted theme options: System, Light, Dark, Aquatic, Desert, Dusk, and Night sky.
+- Replaced several text and hand-drawn icons with Ursa/Semi icon resources across the sidebar, status bar, process list, and confirmation dialog.
+- Improved language and tool switching responsiveness by deferring process-tree localization refresh and process-tree rebuild work for inactive pages.
+- Updated the app logo with a simpler project mark and refreshed PNG, SVG, and ICO assets.
+
 ## 2026-05-21
 
 - Added real-time process tree monitoring with Apps, Background processes, and Windows processes groups.

@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:settingsViews="using:NexusDash.Views.Settings"
+             xmlns:vm="using:NexusDash.ViewModels.Settings"
+             mc:Ignorable="d"
+             d:DesignWidth="1000"
+             d:DesignHeight="640"
+             x:Class="NexusDash.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+  <UserControl.DataTemplates>
+    <DataTemplate DataType="vm:AppearanceSettingsViewModel">
+      <settingsViews:AppearanceSettingsView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:ChangelogSettingsViewModel">
+      <settingsViews:ChangelogSettingsView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:AboutSettingsViewModel">
+      <settingsViews:AboutSettingsView />
+    </DataTemplate>
+  </UserControl.DataTemplates>
+
+  <Grid Background="{DynamicResource AppBackgroundBrush}">
+    <Grid Margin="28">
+      <Border Classes="settingsInlineSurface"
+              Width="900"
+              MaxWidth="900"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center">
+        <Grid ColumnDefinitions="132,*">
+          <ListBox Classes="settingsNav"
+                   ItemsSource="{Binding Pages}"
+                   SelectedItem="{Binding SelectedPage, Mode=TwoWay}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:SettingsPageViewModelBase">
+                <TextBlock Text="{Binding Header}"
+                           TextTrimming="CharacterEllipsis" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+
+          <Border Grid.Column="1"
+                  BorderBrush="{DynamicResource PanelBorderBrush}"
+                  BorderThickness="1,0,0,0">
+            <ContentControl Content="{Binding SelectedPage}" />
+          </Border>
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

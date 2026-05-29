@@ -19,8 +19,13 @@ public static class NexusDashL
     public const string OperationLog = "NexusDash.NexusDashL.OperationLog";
     public const string ProcessOverview = "NexusDash.NexusDashL.ProcessOverview";
     public const string ThemeMenu = "NexusDash.NexusDashL.ThemeMenu";
+    public const string ThemeSystem = "NexusDash.NexusDashL.ThemeSystem";
     public const string DarkTheme = "NexusDash.NexusDashL.DarkTheme";
     public const string LightTheme = "NexusDash.NexusDashL.LightTheme";
+    public const string ThemeAquatic = "NexusDash.NexusDashL.ThemeAquatic";
+    public const string ThemeDesert = "NexusDash.NexusDashL.ThemeDesert";
+    public const string ThemeDusk = "NexusDash.NexusDashL.ThemeDusk";
+    public const string ThemeNightSky = "NexusDash.NexusDashL.ThemeNightSky";
     public const string LanguageMenu = "NexusDash.NexusDashL.LanguageMenu";
     public const string ActionMenu = "NexusDash.NexusDashL.ActionMenu";
     public const string SimplifiedChinese = "NexusDash.NexusDashL.SimplifiedChinese";

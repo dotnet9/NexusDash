@@ -2,15 +2,21 @@ using CodeWF.EventBus;
 
 namespace NexusDash.ViewModels.Settings
 {
-    public sealed class SettingsStateChangedCommand(bool isDarkTheme, string cultureName) : Command
+    public sealed class SettingsStateChangedCommand(
+        string themeKey,
+        bool isDarkTheme,
+        bool rememberWindowSize,
+        string cultureName) : Command
     {
+        public string ThemeKey { get; } = themeKey;
         public bool IsDarkTheme { get; } = isDarkTheme;
+        public bool RememberWindowSize { get; } = rememberWindowSize;
         public string CultureName { get; } = cultureName;
     }
 
-    public sealed class ThemeChangeRequestedCommand(bool isDarkTheme) : Command
+    public sealed class ThemeChangeRequestedCommand(string themeKey) : Command
     {
-        public bool IsDarkTheme { get; } = isDarkTheme;
+        public string ThemeKey { get; } = themeKey;
     }
 
     public sealed class LanguageChangeRequestedCommand(string cultureName) : Command

@@ -5,6 +5,7 @@ namespace NexusDash.Models
     public sealed class UserPreferences
     {
         public bool IsDarkTheme { get; set; } = true;
+        public string? ThemeKey { get; set; }
         public string? CultureName { get; set; }
         public bool RememberWindowSize { get; set; }
         public double WindowWidth { get; set; } = 1440;

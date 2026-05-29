@@ -94,7 +94,7 @@
   </Style>
 
   <Style Selector="Border.toolSidebar">
-    <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
+    <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
     <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
     <Setter Property="BorderThickness" Value="0,0,1,0" />
   </Style>
@@ -112,7 +112,7 @@
   </Style>
 
   <Style Selector="Border.logViewerContent">
-    <Setter Property="Background" Value="#FAFAFA" />
+    <Setter Property="Background" Value="{DynamicResource PanelAltBackgroundBrush}" />
     <Setter Property="Padding" Value="8,5" />
   </Style>
 
@@ -120,10 +120,23 @@
     <Setter Property="Background" Value="Transparent" />
   </Style>
 
+  <Style Selector="ListBox.toolNavMenu ListBoxItem">
+    <Setter Property="MinHeight" Value="34" />
+    <Setter Property="Padding" Value="8,5" />
+    <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
+
   <Style Selector="ListBox.toolNavMenu TextBlock">
     <Setter Property="FontSize" Value="12" />
     <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
     <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+  </Style>
+
+  <Style Selector="PathIcon.toolNavIcon">
+    <Setter Property="Width" Value="16" />
+    <Setter Property="Height" Value="16" />
+    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
   <Style Selector="Border.metricPanel">
@@ -157,6 +170,7 @@
     <Setter Property="MinHeight" Value="340" />
     <Setter Property="Padding" Value="22" />
     <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
     <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="BoxShadow" Value="0 22 48 0 #66000000" />
@@ -237,8 +251,57 @@
   </Style>
 
   <Style Selector="RadioButton.settingOption">
-    <Setter Property="MinHeight" Value="26" />
+    <Setter Property="MinHeight" Value="24" />
     <Setter Property="FontSize" Value="11" />
+  </Style>
+
+  <Style Selector="Border.settingsInlineSurface">
+    <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="BoxShadow" Value="0 18 42 0 #22000000" />
+  </Style>
+
+  <Style Selector="ListBox.settingsNav">
+    <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
+    <Setter Property="Padding" Value="12,14" />
+  </Style>
+
+  <Style Selector="ListBox.settingsNav ListBoxItem">
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="Padding" Value="10,5" />
+    <Setter Property="Margin" Value="0,0,0,3" />
+  </Style>
+
+  <Style Selector="ListBox.settingsNav TextBlock">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+  </Style>
+
+  <Style Selector="Border.settingsInlineSurface > Grid">
+    <Setter Property="MinHeight" Value="430" />
+  </Style>
+
+  <Style Selector="TextBlock.settingsFormLabel">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+  </Style>
+
+  <Style Selector="ComboBox.settingSelector">
+    <Setter Property="MinHeight" Value="30" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+
+  <Style Selector="Border.themeSwatch">
+    <Setter Property="Width" Value="12" />
+    <Setter Property="Height" Value="12" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
   </Style>
 
   <Style Selector="Button.statusBarButton">
@@ -256,6 +319,13 @@
     <Setter Property="MinHeight" Value="26" />
     <Setter Property="Padding" Value="10,0" />
     <Setter Property="FontSize" Value="11" />
+  </Style>
+
+  <Style Selector="Border.titleBarSeparator">
+    <Setter Property="Width" Value="1" />
+    <Setter Property="Height" Value="18" />
+    <Setter Property="Margin" Value="2,0" />
+    <Setter Property="Background" Value="{DynamicResource PanelBorderBrush}" />
   </Style>
 
   <Style Selector="TextBlock.aboutLabel">
@@ -277,6 +347,20 @@
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
     <Setter Property="TextAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="PathIcon.processCategoryIcon">
+    <Setter Property="Width" Value="16" />
+    <Setter Property="Height" Value="16" />
+    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="PathIcon.processExpanderIcon">
+    <Setter Property="Width" Value="14" />
+    <Setter Property="Height" Value="14" />
+    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 </Styles>

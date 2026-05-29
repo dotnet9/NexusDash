@@ -2,7 +2,15 @@ using ReactiveUI;
 
 namespace NexusDash.ViewModels
 {
-    public sealed class ToolMenuNode(string header, string toolKey) : ReactiveObject
+    public enum ToolMenuIcon
+    {
+        ProcessManager,
+        FileSearch,
+        HardwareInfo,
+        Settings
+    }
+
+    public sealed class ToolMenuNode(string header, string toolKey, ToolMenuIcon icon) : ReactiveObject
     {
         private string _header = header;
 
@@ -13,5 +21,10 @@ namespace NexusDash.ViewModels
         }
 
         public string ToolKey { get; } = toolKey;
+        public ToolMenuIcon Icon { get; } = icon;
+        public bool ShowsProcessManagerIcon => Icon == ToolMenuIcon.ProcessManager;
+        public bool ShowsFileSearchIcon => Icon == ToolMenuIcon.FileSearch;
+        public bool ShowsHardwareInfoIcon => Icon == ToolMenuIcon.HardwareInfo;
+        public bool ShowsSettingsIcon => Icon == ToolMenuIcon.Settings;
     }
 }
