@@ -24,14 +24,12 @@
           <ScrollViewer IsVisible="{Binding HasSelectedProcess}"
                         HorizontalScrollBarVisibility="Disabled"
                         VerticalScrollBarVisibility="Auto">
-            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
-                  RowSpacing="8">
+            <StackPanel Spacing="12">
               <TextBlock Text="{Binding SelectedProcess.Name}"
                               FontSize="16"
                               FontWeight="SemiBold"
                               TextTrimming="CharacterEllipsis" />
-              <Border Grid.Row="1"
-                      IsVisible="{Binding HasSelectedProcessAccessLimit}"
+              <Border IsVisible="{Binding HasSelectedProcessAccessLimit}"
                       Background="{DynamicResource PanelAltBackgroundBrush}"
                       BorderBrush="{DynamicResource WarningBrush}"
                       BorderThickness="1"
@@ -46,33 +44,53 @@
                                   Foreground="{DynamicResource SecondaryTextBrush}" />
                 </StackPanel>
               </Border>
-              <Grid Grid.Row="2" ColumnDefinitions="104,*">
-                <TextBlock Text="{Binding PidText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                <TextBlock Grid.Column="1" Text="{Binding SelectedProcess.Pid}" />
+
+              <Grid ColumnDefinitions="*,*"
+                    ColumnSpacing="8">
+                <Border Classes="metricBadge">
+                  <StackPanel Spacing="3">
+                    <TextBlock Text="{Binding CpuText}"
+                               Classes="metricLabel" />
+                    <TextBlock Text="{Binding SelectedProcess.CpuText}"
+                               Classes="metricValue" />
+                  </StackPanel>
+                </Border>
+                <Border Grid.Column="1"
+                        Classes="metricBadge">
+                  <StackPanel Spacing="3">
+                    <TextBlock Text="{Binding MemoryText}"
+                               Classes="metricLabel" />
+                    <TextBlock Text="{Binding SelectedProcess.MemoryText}"
+                               Classes="metricValue" />
+                  </StackPanel>
+                </Border>
               </Grid>
-              <Grid Grid.Row="3" ColumnDefinitions="104,*">
-                <TextBlock Text="{Binding PublisherText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                <TextBlock Grid.Column="1" Text="{Binding SelectedProcess.PublisherText}" TextWrapping="Wrap" />
-              </Grid>
-              <Grid Grid.Row="4" ColumnDefinitions="104,*">
-                <TextBlock Text="{Binding StartTimeText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                <TextBlock Grid.Column="1" Text="{Binding SelectedProcess.StartTimeText}" TextWrapping="Wrap" />
-              </Grid>
-              <Grid Grid.Row="5" ColumnDefinitions="104,*">
-                <TextBlock Text="{Binding CpuText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                <TextBlock Grid.Column="1" Text="{Binding SelectedProcess.CpuText}" />
-              </Grid>
-              <Grid Grid.Row="6" ColumnDefinitions="104,*">
-                <TextBlock Text="{Binding MemoryText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                <TextBlock Grid.Column="1" Text="{Binding SelectedProcess.MemoryText}" />
-              </Grid>
-              <Grid Grid.Row="7" ColumnDefinitions="104,*">
-                <TextBlock Text="{Binding PathText}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                <TextBlock Grid.Column="1"
-                                Text="{Binding SelectedProcess.ExecutablePath}"
-                                TextWrapping="Wrap" />
-              </Grid>
-              <Grid Grid.Row="8" RowDefinitions="Auto,Auto">
+
+              <Border Classes="hardwareInfoItem">
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto"
+                      RowSpacing="8">
+                  <Grid ColumnDefinitions="104,*">
+                    <TextBlock Text="{Binding PidText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                    <TextBlock Grid.Column="1" Text="{Binding SelectedProcess.Pid}" />
+                  </Grid>
+                  <Grid Grid.Row="1" ColumnDefinitions="104,*">
+                    <TextBlock Text="{Binding PublisherText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                    <TextBlock Grid.Column="1" Text="{Binding SelectedProcess.PublisherText}" TextWrapping="Wrap" />
+                  </Grid>
+                  <Grid Grid.Row="2" ColumnDefinitions="104,*">
+                    <TextBlock Text="{Binding StartTimeText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                    <TextBlock Grid.Column="1" Text="{Binding SelectedProcess.StartTimeText}" TextWrapping="Wrap" />
+                  </Grid>
+                  <Grid Grid.Row="3" ColumnDefinitions="104,*">
+                    <TextBlock Text="{Binding PathText}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding SelectedProcess.ExecutablePath}"
+                               TextWrapping="Wrap" />
+                  </Grid>
+                </Grid>
+              </Border>
+
+              <Grid RowDefinitions="Auto,Auto">
                 <TextBlock Text="{Binding CommandLineText}"
                                 Foreground="{DynamicResource SecondaryTextBrush}"
                                 Margin="0,4,0,6" />
@@ -83,7 +101,7 @@
                               AcceptsReturn="True"
                               TextWrapping="Wrap" />
               </Grid>
-            </Grid>
+            </StackPanel>
           </ScrollViewer>
         </Grid>
       </TabItem>
