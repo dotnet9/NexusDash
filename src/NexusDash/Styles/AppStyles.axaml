@@ -222,6 +222,14 @@
     <Setter Property="Padding" Value="14" />
   </Style>
 
+  <Style Selector="Border.hardwareInfoItem">
+    <Setter Property="Background" Value="{DynamicResource PanelAltBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="10,8" />
+  </Style>
+
   <Style Selector="Border.dialogMask">
     <Setter Property="Background" Value="{DynamicResource DialogMaskBrush}" />
   </Style>
@@ -284,6 +292,7 @@
   <Style Selector="SelectableTextBlock.hardwareInfoValue">
     <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
     <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
 
   <Style Selector="TextBlock.metricHint">

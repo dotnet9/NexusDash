@@ -61,14 +61,17 @@
                   </ItemsControl.ItemsPanel>
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:HardwareInfoItemViewModel">
-                      <Grid ColumnDefinitions="180,*"
-                            ColumnSpacing="12">
-                        <TextBlock Classes="hardwareInfoName"
-                                   Text="{Binding Name}" />
-                        <SelectableTextBlock Grid.Column="1"
-                                             Classes="hardwareInfoValue"
-                                             Text="{Binding Value}" />
-                      </Grid>
+                      <Border Classes="hardwareInfoItem">
+                        <Grid ColumnDefinitions="170,*"
+                              ColumnSpacing="14">
+                          <TextBlock Classes="hardwareInfoName"
+                                     Text="{Binding Name}"
+                                     VerticalAlignment="Top" />
+                          <SelectableTextBlock Grid.Column="1"
+                                               Classes="hardwareInfoValue"
+                                               Text="{Binding Value}" />
+                        </Grid>
+                      </Border>
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>

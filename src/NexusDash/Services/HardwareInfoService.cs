@@ -366,7 +366,7 @@ namespace NexusDash.Services
             }
             else if (OperatingSystem.IsWindows())
             {
-                AddCommandOutput(items, "wmic", "wmic", "baseboard get product,Manufacturer /value");
+                return;
             }
 
             if (items.Count > 0)
