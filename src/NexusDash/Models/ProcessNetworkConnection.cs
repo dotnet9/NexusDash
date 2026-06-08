@@ -36,7 +36,7 @@ namespace NexusDash.Models
             }
 
             if (normalizedAddress.Contains(':', StringComparison.Ordinal) &&
-                !normalizedAddress.StartsWith('[', StringComparison.Ordinal))
+                !normalizedAddress.StartsWith("[", StringComparison.Ordinal))
             {
                 return $"[{normalizedAddress}]:{port}";
             }

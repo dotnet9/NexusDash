@@ -11,8 +11,8 @@ namespace NexusDash.ViewModels.Settings
 {
     public sealed class ChangelogSettingsViewModel : SettingsPageViewModelBase
     {
-        private const string ChineseChangelogFileName = "CHANGELOG.zh-CN.md";
-        private const string EnglishChangelogFileName = "CHANGELOG.md";
+        private const string ChineseChangelogFileName = "UpdateLog.md";
+        private const string EnglishChangelogFileName = "UpdateLog.md";
 
         private string _markdown = "";
 

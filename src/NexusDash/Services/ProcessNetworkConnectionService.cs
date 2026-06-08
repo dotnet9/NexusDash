@@ -328,7 +328,7 @@ namespace NexusDash.Services
 
             value = value.Trim();
             string portText;
-            if (value.StartsWith('[', StringComparison.Ordinal))
+            if (value.StartsWith("[", StringComparison.Ordinal))
             {
                 var endBracket = value.LastIndexOf(']');
                 if (endBracket < 0)
