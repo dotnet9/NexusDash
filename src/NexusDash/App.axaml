@@ -12,8 +12,8 @@
     <FluentTheme />
     <semi:SemiTheme />
     <semi:UrsaSemiTheme />
-    <codewf:CodeWFTheme />
-    <codewf:CodeWFProDataGridTheme />
+    <codewf:ACSemiTheme />
+    <codewf:DataGridSemiTheme />
     <themes:NexusDashControlsThemes />
     <StyleInclude Source="Styles/AppStyles.axaml" />
     <markdownThemes:MarkdownThemes />

@@ -6,6 +6,7 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.VisualTree;
 using CodeWF.AvaloniaControls;
+using CodeWF.AvaloniaControls.ProDataGrid;
 using CodeWF.Log.Core;
 using NexusDash.ViewModels;
 using System.Diagnostics;
