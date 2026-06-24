@@ -7,15 +7,15 @@
     <PackageVersion Include="Avalonia" Version="12.0.5" />
     <PackageVersion Include="Avalonia.Desktop" Version="12.0.5" />
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.0.5" />
-    <PackageVersion Include="CodeWF.AvaloniaControls" Version="12.0.4.12" />
-    <PackageVersion Include="CodeWF.AvaloniaControls.Themes" Version="12.0.4.12" />
-    <PackageVersion Include="CodeWF.AvaloniaControls.ProDataGrid" Version="12.0.4.3" />
-    <PackageVersion Include="CodeWF.AvaloniaControls.ProDataGrid.Themes" Version="12.0.4.3" />
-    <PackageVersion Include="CodeWF.Log.Core" Version="12.0.4.2" />
-    <PackageVersion Include="CodeWF.Markdown.Lite.Themes" Version="12.0.4.3" />
-    <PackageVersion Include="CodeWF.EventBus" Version="3.4.5.8" />
+    <PackageVersion Include="CodeWF.AvaloniaControls" Version="12.0.5.2" />
+    <PackageVersion Include="CodeWF.AvaloniaControls.Themes" Version="12.0.5.2" />
+    <PackageVersion Include="CodeWF.AvaloniaControls.ProDataGrid" Version="12.0.5.2" />
+    <PackageVersion Include="CodeWF.AvaloniaControls.ProDataGrid.Themes" Version="12.0.5.2" />
+    <PackageVersion Include="CodeWF.Log.Core" Version="12.0.5.2" />
+    <PackageVersion Include="CodeWF.Markdown.Lite.Themes" Version="12.0.5.2" />
+    <PackageVersion Include="CodeWF.EventBus" Version="3.4.5.10" />
     <PackageVersion Include="Irihi.Ursa.Themes.Semi" Version="2.0.1" />
-    <PackageVersion Include="Lang.Avalonia.Json" Version="12.0.4.1" />
+    <PackageVersion Include="Lang.Avalonia.Json" Version="12.0.5.2" />
     <PackageVersion Include="Prism.Avalonia" Version="8.1.97.11073" />
     <PackageVersion Include="Prism.DryIoc.Avalonia" Version="8.1.97.11073" />
     <PackageVersion Include="ReactiveUI.Avalonia" Version="12.0.3" />
