@@ -101,8 +101,7 @@ namespace NexusDash.ViewModels
 
                 Logger.Info(
                     $"Exported process snapshot: scope={scope}, format={format}, rows={result.RowCount}, path={result.FilePath}",
-                    $"Exported process snapshot: {result.RowCount} rows, {result.FilePath}",
-                    log2Console: false);
+                    $"Exported process snapshot: {result.RowCount} rows, {result.FilePath}");
             }
             catch (Exception exception)
             {
@@ -114,8 +113,7 @@ namespace NexusDash.ViewModels
                 Logger.Error(
                     "Process snapshot export failed.",
                     exception,
-                    statusMessage,
-                    log2Console: false);
+                    statusMessage);
             }
         }
 

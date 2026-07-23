@@ -99,8 +99,7 @@ namespace NexusDash.ViewModels
                 Logger.Error(
                     "Hardware information refresh failed.",
                     exception,
-                    StatusMessage,
-                    log2Console: false);
+                    StatusMessage);
             }
             finally
             {
@@ -157,7 +156,7 @@ namespace NexusDash.ViewModels
             {
                 if (SetField(ref _statusMessage, value, nameof(StatusText)))
                 {
-                    Logger.Info(value, value, log2Console: false);
+                    Logger.Info(value);
                 }
             }
         }

@@ -2,6 +2,7 @@
 using Avalonia.Media;
 using System;
 using System.IO;
+using CodeWF.Log.Core;
 using ReactiveUI.Avalonia;
 
 namespace NexusDash;
@@ -11,8 +12,11 @@ class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        var loggerInitialized = false;
         try
         {
+            ConfigureLogger();
+            loggerInitialized = true;
             BuildAvaloniaApp()
                 .With(new FontManagerOptions
                 {
@@ -25,8 +29,23 @@ class Program
         }
         catch (Exception ex)
         {
-            LogException(ex);
+            if (loggerInitialized)
+            {
+                Logger.FatalToFile("NexusDash application terminated unexpectedly.", ex);
+            }
+            else
+            {
+                LogException(ex);
+            }
+
             throw;
+        }
+        finally
+        {
+            if (loggerInitialized)
+            {
+                Logger.ShutdownAsync().GetAwaiter().GetResult();
+            }
         }
     }
 
@@ -37,6 +56,25 @@ class Program
             .UsePlatformDetect()
             .With(new Win32PlatformOptions())
             .LogToTrace();
+
+    private static void ConfigureLogger()
+    {
+        Logger.Initialize(new LoggerOptions
+        {
+            MinimumLevel = LogType.Debug,
+            EnableConsole = false,
+            RecentUserLogCapacity = 200,
+            File = new FileLogOptions
+            {
+                DirectoryPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "NexusDash"),
+                BatchSize = 40,
+                MaxFileSizeBytes = 20L * 1024 * 1024,
+                TimestampFormat = "HH:mm:ss"
+            }
+        });
+    }
 
     private static void LogException(Exception ex)
     {

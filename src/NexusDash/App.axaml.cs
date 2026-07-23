@@ -27,7 +27,6 @@ namespace NexusDash
     {
         public override void Initialize()
         {
-            ConfigureOperationLogger();
             AvaloniaXamlLoader.Load(this);
             var preferences = new UserPreferencesService().Load();
             var startupCulture = ResolveStartupCulture(preferences.CultureName);
@@ -44,7 +43,7 @@ namespace NexusDash
             ApplyThirdPartyCulture(startupCulture.Name);
             RequestedThemeVariant = ThemeResourceService.ResolveThemeVariant(
                 ThemeResourceService.ResolvePreferenceThemeKey(preferences.ThemeKey, preferences.IsDarkTheme));
-            Logger.Info("NexusDash application initialized.", "NexusDash 已启动。", log2Console: false);
+            Logger.Info("NexusDash application initialized.", "NexusDash 已启动。");
             base.Initialize();
         }
 
@@ -86,20 +85,6 @@ namespace NexusDash
             ViewModelLocationProvider.Register<AppearanceSettingsView, AppearanceSettingsViewModel>();
             ViewModelLocationProvider.Register<ChangelogSettingsView, ChangelogSettingsViewModel>();
             ViewModelLocationProvider.Register<AboutSettingsView, AboutSettingsViewModel>();
-        }
-
-        private static void ConfigureOperationLogger()
-        {
-            Logger.Level = LogType.Debug;
-            Logger.LogDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "NexusDash");
-            Logger.BatchProcessSize = 40;
-            Logger.LogUIDuration = 2000;
-            Logger.MaxUIDisplayCount = 200;
-            Logger.MaxLogFileSizeMB = 20;
-            Logger.TimeFormat = "HH:mm:ss";
-            Logger.EnableConsoleOutput = false;
         }
 
         internal static CultureInfo ResolveStartupCulture(string? configuredCultureName)

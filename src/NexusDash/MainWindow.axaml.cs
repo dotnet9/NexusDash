@@ -47,8 +47,7 @@ namespace NexusDash
                 disposable.Dispose();
             }
 
-            Logger.Info("NexusDash application closing.", "NexusDash application closing.", log2Console: false);
-            FlushOperationLogs();
+            Logger.Info("NexusDash application closing.", "NexusDash application closing.");
 
             base.OnClosing(e);
         }
@@ -136,15 +135,5 @@ namespace NexusDash
                 size.Height.Equals(height));
         }
 
-        private static void FlushOperationLogs()
-        {
-            try
-            {
-                Logger.FlushAsync().Wait(TimeSpan.FromMilliseconds(500));
-            }
-            catch
-            {
-            }
-        }
     }
 }

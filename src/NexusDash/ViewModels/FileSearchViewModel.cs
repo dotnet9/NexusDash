@@ -195,8 +195,7 @@ namespace NexusDash.ViewModels
                 query);
             Logger.Info(
                 $"File search started: query={query}; roots={string.Join("; ", roots)}; maxResults={MaxResults}",
-                $"文件搜索开始：{query}，位置：{string.Join("; ", roots)}",
-                log2Console: false);
+                $"文件搜索开始：{query}，位置：{string.Join("; ", roots)}");
 
             try
             {
@@ -224,8 +223,7 @@ namespace NexusDash.ViewModels
                     query);
                 Logger.Info(
                     $"File search completed: query={query}; results={resultCount}",
-                    $"文件搜索完成：{query}，找到 {resultCount} 个结果",
-                    log2Console: false);
+                    $"文件搜索完成：{query}，找到 {resultCount} 个结果");
             }
             catch (OperationCanceledException)
             {
@@ -245,8 +243,7 @@ namespace NexusDash.ViewModels
                 Logger.Error(
                     $"File search failed: query={query}; roots={string.Join("; ", roots)}",
                     exception,
-                    StatusMessage,
-                    log2Console: false);
+                    StatusMessage);
             }
             finally
             {
@@ -283,8 +280,7 @@ namespace NexusDash.ViewModels
             StatusMessage = T(NexusDashL.FileSearchStatusCancelled);
             Logger.Warn(
                 $"File search cancelled: query={query}",
-                $"文件搜索已取消：{query}",
-                log2Console: false);
+                $"文件搜索已取消：{query}");
         }
 
         private void QueueSearchResult(
@@ -362,7 +358,7 @@ namespace NexusDash.ViewModels
         {
             if (!string.IsNullOrWhiteSpace(message))
             {
-                Logger.Info(message, message, log2Console: false);
+                Logger.Info(message);
             }
         }
     }

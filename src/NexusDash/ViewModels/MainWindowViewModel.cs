@@ -1215,7 +1215,7 @@ namespace NexusDash.ViewModels
         {
             if (!string.IsNullOrWhiteSpace(message))
             {
-                Logger.Info(message, message, log2Console: false);
+                Logger.Info(message);
                 AppendOperationLogMessage(message);
             }
         }
@@ -1493,8 +1493,7 @@ namespace NexusDash.ViewModels
             RaiseTerminationConfirmationProperties();
             Logger.Warn(
                 $"Process termination confirmation requested: kind={_pendingTerminationKind}; candidates={candidates.Length}; pids={string.Join(", ", candidates.Select(static candidate => candidate.Pid))}",
-                $"请求结束进程确认：{candidates.Length} 个候选进程",
-                log2Console: false);
+                $"请求结束进程确认：{candidates.Length} 个候选进程");
         }
 
         private ProcessTerminationCandidateViewModel[] CreateProcessTerminationCandidates(
@@ -2524,8 +2523,7 @@ namespace NexusDash.ViewModels
             {
                 Logger.Warn(
                     $"Ending processes: entireProcessTree={entireProcessTree}; pids={string.Join(", ", pids)}",
-                    $"开始结束进程：{string.Join(", ", pids)}",
-                    log2Console: false);
+                    $"开始结束进程：{string.Join(", ", pids)}");
                 await Task.Run(() =>
                 {
                     foreach (var pid in pids)
@@ -2537,8 +2535,7 @@ namespace NexusDash.ViewModels
                 StatusMessage = string.Format(CultureInfo.CurrentCulture, T(NexusDashL.StatusEnded), pids.Length);
                 Logger.Info(
                     $"End process request completed: pids={string.Join(", ", pids)}",
-                    $"结束进程请求已完成：{string.Join(", ", pids)}",
-                    log2Console: false);
+                    $"结束进程请求已完成：{string.Join(", ", pids)}");
             }
             catch (Exception exception)
             {
@@ -2546,8 +2543,7 @@ namespace NexusDash.ViewModels
                 Logger.Error(
                     $"End process request failed: pids={string.Join(", ", pids)}",
                     exception,
-                    StatusMessage,
-                    log2Console: false);
+                    StatusMessage);
             }
         }
 

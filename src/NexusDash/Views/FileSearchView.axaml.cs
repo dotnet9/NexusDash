@@ -95,8 +95,7 @@ namespace NexusDash.Views
             {
                 Logger.Info(
                     $"Open containing directory: {path}",
-                    $"打开文件所在目录：{path}",
-                    log2Console: false);
+                    $"打开文件所在目录：{path}");
                 Process.Start(new ProcessStartInfo("explorer.exe", arguments)
                 {
                     UseShellExecute = true
@@ -107,8 +106,7 @@ namespace NexusDash.Views
                 Logger.Error(
                     $"Open containing directory failed: {path}",
                     exception,
-                    $"打开文件所在目录失败：{path}",
-                    log2Console: false);
+                    $"打开文件所在目录失败：{path}");
             }
         }
 
