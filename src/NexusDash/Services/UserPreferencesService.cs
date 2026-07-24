@@ -2,6 +2,7 @@ using NexusDash.Models;
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace NexusDash.Services
 {
@@ -13,11 +14,6 @@ namespace NexusDash.Services
 
     public sealed class UserPreferencesService : IUserPreferencesService
     {
-        private static readonly JsonSerializerOptions SerializerOptions = new()
-        {
-            WriteIndented = true
-        };
-
         private readonly string _preferencesPath;
 
         public UserPreferencesService()
@@ -43,7 +39,8 @@ namespace NexusDash.Services
                 }
 
                 var json = File.ReadAllText(_preferencesPath);
-                return JsonSerializer.Deserialize<UserPreferences>(json) ?? new UserPreferences();
+                return JsonSerializer.Deserialize(json, UserPreferencesJsonSerializerContext.Default.UserPreferences)
+                    ?? new UserPreferences();
             }
             catch
             {
@@ -55,13 +52,28 @@ namespace NexusDash.Services
         {
             var preferences = Load();
             update(preferences);
-            Save(preferences);
+            try
+            {
+                Save(preferences);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                // Preferences are non-critical and must not terminate the application.
+            }
         }
 
         private void Save(UserPreferences preferences)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_preferencesPath)!);
-            File.WriteAllText(_preferencesPath, JsonSerializer.Serialize(preferences, SerializerOptions));
+            File.WriteAllText(
+                _preferencesPath,
+                JsonSerializer.Serialize(preferences, UserPreferencesJsonSerializerContext.Default.UserPreferences));
         }
+    }
+
+    [JsonSourceGenerationOptions(WriteIndented = true)]
+    [JsonSerializable(typeof(UserPreferences))]
+    internal sealed partial class UserPreferencesJsonSerializerContext : JsonSerializerContext
+    {
     }
 }
