@@ -3,6 +3,7 @@ using Avalonia.Media;
 using System;
 using System.IO;
 using CodeWF.Log.Core;
+using Microsoft.Extensions.Logging;
 using ReactiveUI.Avalonia;
 
 namespace NexusDash;
@@ -61,9 +62,9 @@ class Program
     {
         Logger.Initialize(new LoggerOptions
         {
-            MinimumLevel = LogType.Debug,
+            MinimumLevel = LogLevel.Debug,
             EnableConsole = false,
-            RecentUserLogCapacity = 200,
+            RecentEventCapacity = 200,
             File = new FileLogOptions
             {
                 DirectoryPath = Path.Combine(

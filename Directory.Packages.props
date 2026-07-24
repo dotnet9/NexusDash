@@ -11,7 +11,7 @@
     <PackageVersion Include="CodeWF.AvaloniaControls.Themes" Version="12.1.0.1" />
     <PackageVersion Include="CodeWF.AvaloniaControls.ProDataGrid" Version="12.1.0.1" />
     <PackageVersion Include="CodeWF.AvaloniaControls.ProDataGrid.Themes" Version="12.1.0.1" />
-    <PackageVersion Include="CodeWF.Log.Core" Version="12.1.0.16" />
+    <PackageVersion Include="CodeWF.Log.Core" Version="12.1.0.18" />
     <PackageVersion Include="CodeWF.Markdown.Lite.Themes" Version="12.1.0.1" />
     <PackageVersion Include="CodeWF.EventBus" Version="3.4.5.11" />
     <PackageVersion Include="Irihi.Ursa.Themes.Semi" Version="2.1.0" />
