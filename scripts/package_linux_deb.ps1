@@ -1,4 +1,4 @@
-# 打包 Linux .deb 安装包（dpkg-deb，在 ubuntu runner 上运行）。
+﻿# 打包 Linux .deb 安装包（dpkg-deb，在 ubuntu runner 上运行）。
 # 用法：pwsh scripts/package_linux_deb.ps1 -RuntimeIdentifier linux-x64 -Version 1.2.3
 param(
     [Parameter(Mandatory = $true)]
@@ -60,7 +60,7 @@ Section: utils
 Priority: optional
 Description: NexusDash 桌面系统监控仪表盘
 "@
-Set-Content -LiteralPath (Join-Path $staging "DEBIAN/control") -Value $control -Encoding UTF8 -NoNewline
+Set-Content -LiteralPath (Join-Path $staging "DEBIAN/control") -Value ($control + [Environment]::NewLine) -Encoding UTF8
 
 # dpkg-deb 需要 posix 权限语义；control 文件权限固定 644
 if ($IsLinux) {
