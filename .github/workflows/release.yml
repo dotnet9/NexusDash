@@ -28,15 +28,19 @@ jobs:
           - rid: win-x64
             tfm: net11.0-windows
             os: windows-latest
+            strip: 'true'
           - rid: linux-x64
             tfm: net11.0
             os: ubuntu-latest
+            strip: 'true'
           - rid: osx-x64
             tfm: net11.0
             os: macos-14
+            strip: 'false'
           - rid: osx-arm64
             tfm: net11.0
             os: macos-14
+            strip: 'false'
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -73,6 +77,7 @@ jobs:
           -p:PublishProfile=FolderProfile_${{ matrix.rid }}
           -p:PublishAot=true -p:PublishTrimmed=true -p:PublishSingleFile=false
           -p:IlcGenerateCompleteTypeMetadata=true -p:IlcTrimMetadata=false -p:IlcSingleThreaded=true
+          -p:StripSymbols=${{ matrix.strip }}
           -p:Version=$env:APP_VERSION
 
       - name: Package (zip + SHA-256)
