@@ -1,4 +1,4 @@
-using NexusDash.Models;
+﻿using NexusDash.Models;
 using System;
 using System.IO;
 using System.Text.Json;
@@ -17,11 +17,35 @@ namespace NexusDash.Services
         private readonly string _preferencesPath;
 
         public UserPreferencesService()
-            : this(Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "NexusDash",
-                "settings.json"))
+            : this(ResolveDefaultPreferencesPath())
         {
+        }
+
+        /// <summary>旧版偏好在 Roaming（%APPDATA% 下），首次升级一次性迁到 Local（应用数据标准位置），旧文件保留作备份。</summary>
+        private static string ResolveDefaultPreferencesPath()
+        {
+            var path = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "NexusDash",
+                "settings.json");
+            try
+            {
+                var legacy = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "NexusDash",
+                    "settings.json");
+                if (File.Exists(legacy) && !File.Exists(path))
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                    File.Copy(legacy, path, overwrite: false);
+                }
+            }
+            catch
+            {
+                // 迁移失败不阻塞启动，按默认偏好处理
+            }
+
+            return path;
         }
 
         internal UserPreferencesService(string preferencesPath)

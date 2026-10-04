@@ -79,7 +79,7 @@ class Program
 
     private static void LogException(Exception ex)
     {
-        var homeDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var homeDirectory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
         var logDirectory = Path.Combine(homeDirectory, Path.Combine("NexusDash", "AppCrashLogs"));
         Directory.CreateDirectory(logDirectory);
