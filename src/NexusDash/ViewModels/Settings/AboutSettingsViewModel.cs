@@ -1,4 +1,4 @@
-using NexusDash;
+﻿using NexusDash;
 using CodeWF.EventBus;
 using NexusDash.Services;
 using Prism.Commands;
@@ -9,6 +9,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace NexusDash.ViewModels.Settings
 {
@@ -18,10 +19,25 @@ namespace NexusDash.ViewModels.Settings
         : SettingsPageViewModelBase(eventBus, userPreferencesService)
     {
         private static readonly Assembly AppAssembly = typeof(AboutSettingsViewModel).Assembly;
+        private static readonly UpdateChecker UpdateChecker = new("dotnet9", "NexusDash");
+        private bool _isCheckingUpdate;
+        private string _checkUpdateResult = string.Empty;
 
         public override string Header => T(NexusDashL.SettingsAbout);
         public override int Order => 30;
         public DelegateCommand OpenRepositoryCommand { get; } = new(OpenRepository);
+
+        /// <summary>懒初始化：字段初始化器不能引用实例方法。</summary>
+        public DelegateCommand CheckUpdateCommand => _checkUpdateCommand ??= new(async () => await CheckUpdateAsync());
+
+        private DelegateCommand? _checkUpdateCommand;
+
+        public string CheckUpdateLabel => T(NexusDashL.AboutCheckUpdate);
+        public string CheckUpdateResult
+        {
+            get => _checkUpdateResult;
+            private set => this.RaiseAndSetIfChanged(ref _checkUpdateResult, value);
+        }
         public string AppName => T(NexusDashL.AppName);
         public string Description => T(NexusDashL.AboutDescription);
         public string VersionLabel => T(NexusDashL.AboutVersion);
@@ -40,6 +56,45 @@ namespace NexusDash.ViewModels.Settings
             ?? $"Copyright (c) {DateTime.Now.Year} {Author}";
         public Uri RepositoryUri => new(RepositoryUrl);
 
+        private async Task CheckUpdateAsync()
+        {
+            if (_isCheckingUpdate)
+            {
+                return;
+            }
+
+            _isCheckingUpdate = true;
+            try
+            {
+                CheckUpdateResult = T(NexusDashL.AboutCheckingUpdate);
+                Version? current = UpdateVersion.Parse(GetInformationalVersion());
+                UpdateCheckResult result = await UpdateChecker.CheckAsync(current ?? new Version(0, 0, 0));
+                if (!result.Succeeded)
+                {
+                    CheckUpdateResult = string.Format(T(NexusDashL.AboutUpdateFailed), result.Error);
+                    return;
+                }
+
+                if (result.Update is { } update)
+                {
+                    // 仅提醒不自动下载：提示并打开发布页
+                    CheckUpdateResult = string.Format(T(NexusDashL.AboutUpdateAvailable), update.Tag);
+                    Process.Start(new ProcessStartInfo(update.PageUrl) { UseShellExecute = true });
+                    return;
+                }
+
+                CheckUpdateResult = T(NexusDashL.AboutUpToDate);
+            }
+            catch (Exception exception)
+            {
+                CheckUpdateResult = string.Format(T(NexusDashL.AboutUpdateFailed), exception.Message);
+            }
+            finally
+            {
+                _isCheckingUpdate = false;
+            }
+        }
+
         private static void OpenRepository()
         {
             var repositoryUrl = GetAssemblyMetadata("ProjectUrl", "https://codewf.com");
@@ -52,6 +107,7 @@ namespace NexusDash.ViewModels.Settings
         protected override void RaiseLocalizedProperties()
         {
             this.RaisePropertyChanged(nameof(Header));
+            this.RaisePropertyChanged(nameof(CheckUpdateLabel));
             this.RaisePropertyChanged(nameof(AppName));
             this.RaisePropertyChanged(nameof(Description));
             this.RaisePropertyChanged(nameof(VersionLabel));

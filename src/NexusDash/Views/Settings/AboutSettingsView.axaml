@@ -37,7 +37,7 @@
       </Grid>
 
       <Grid ColumnDefinitions="110,*"
-            RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+            RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
             RowSpacing="9">
         <TextBlock Text="{Binding VersionLabel}"
                    Classes="aboutLabel" />
@@ -94,6 +94,25 @@
                              Grid.Column="1"
                              Text="{Binding Copyright}"
                              Classes="aboutValue" />
+
+        <TextBlock Grid.Row="6"
+                   Text="{Binding CheckUpdateLabel}"
+                   Classes="aboutLabel" />
+        <StackPanel Grid.Row="6"
+                    Grid.Column="1"
+                    Spacing="6">
+          <Button Padding="8,3"
+                  HorizontalAlignment="Left"
+                  HorizontalContentAlignment="Left"
+                  VerticalAlignment="Center"
+                  Command="{Binding CheckUpdateCommand}">
+            <TextBlock Text="{Binding CheckUpdateLabel}"
+                       TextWrapping="Wrap" />
+          </Button>
+          <TextBlock Text="{Binding CheckUpdateResult}"
+                     Foreground="{DynamicResource SecondaryTextBrush}"
+                     TextWrapping="Wrap" />
+        </StackPanel>
       </Grid>
     </StackPanel>
   </Grid>

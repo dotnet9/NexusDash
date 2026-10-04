@@ -193,7 +193,12 @@
       "TerminationRelationSelected": "目標程序",
       "TerminationRelationParent": "啟動它的程序",
       "TerminationRelationChild": "子程序",
-      "MetricUnavailable": "不可用"
+      "MetricUnavailable": "不可用",
+      "AboutCheckUpdate": "檢查更新",
+      "AboutCheckingUpdate": "正在檢查更新…",
+      "AboutUpToDate": "目前已是最新版本",
+      "AboutUpdateAvailable": "發現新版本 {0}，已打開發布頁",
+      "AboutUpdateFailed": "檢查更新失敗：{0}"
     }
   }
 }

@@ -193,7 +193,12 @@
       "TerminationRelationSelected": "Target process",
       "TerminationRelationParent": "Launcher process",
       "TerminationRelationChild": "Child process",
-      "MetricUnavailable": "N/A"
+      "MetricUnavailable": "N/A",
+      "AboutCheckUpdate": "Check for updates",
+      "AboutCheckingUpdate": "Checking for updates…",
+      "AboutUpToDate": "You are already on the latest version",
+      "AboutUpdateAvailable": "New version found: {0}. Release page opened.",
+      "AboutUpdateFailed": "Update check failed: {0}"
     }
   }
 }

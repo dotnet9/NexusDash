@@ -193,7 +193,12 @@
       "TerminationRelationSelected": "目标进程",
       "TerminationRelationParent": "启动它的进程",
       "TerminationRelationChild": "子进程",
-      "MetricUnavailable": "不可用"
+      "MetricUnavailable": "不可用",
+      "AboutCheckUpdate": "检查更新",
+      "AboutCheckingUpdate": "正在检查更新…",
+      "AboutUpToDate": "当前已是最新版本",
+      "AboutUpdateAvailable": "发现新版本 {0}，已打开发布页",
+      "AboutUpdateFailed": "检查更新失败：{0}"
     }
   }
 }

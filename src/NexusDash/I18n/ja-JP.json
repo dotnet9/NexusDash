@@ -193,7 +193,12 @@
       "TerminationRelationSelected": "対象プロセス",
       "TerminationRelationParent": "起動元プロセス",
       "TerminationRelationChild": "子プロセス",
-      "MetricUnavailable": "N/A"
+      "MetricUnavailable": "N/A",
+      "AboutCheckUpdate": "更新を確認",
+      "AboutCheckingUpdate": "更新を確認中…",
+      "AboutUpToDate": "すでに最新版です",
+      "AboutUpdateAvailable": "新しいバージョン {0} が見つかりました。リリースページを開きました。",
+      "AboutUpdateFailed": "更新の確認に失敗しました: {0}"
     }
   }
 }
