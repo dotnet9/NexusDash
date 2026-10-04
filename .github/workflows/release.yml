@@ -26,21 +26,20 @@ jobs:
       matrix:
         include:
           - rid: win-x64
-            tfm: net11.0-windows
+            tfm: net10.0-windows
             os: windows-latest
-            aot: 'true'
           - rid: linux-x64
-            tfm: net11.0
+            tfm: net10.0
             os: ubuntu-latest
-            aot: 'true'
+          - rid: linux-arm64
+            tfm: net10.0
+            os: ubuntu-24.04-arm
           - rid: osx-x64
-            tfm: net11.0
+            tfm: net10.0
             os: macos-14
-            aot: 'false'
           - rid: osx-arm64
-            tfm: net11.0
+            tfm: net10.0
             os: macos-14
-            aot: 'false'
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -53,7 +52,7 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '11.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Compute version
         shell: pwsh
@@ -69,17 +68,18 @@ jobs:
           "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           Write-Host "Version: $version"
 
-      # NativeAOT on win/linux；macOS 在 .NET 11 rc.1 上有 swift auto-link 工具链 bug（GA 后恢复），保持自包含单文件
-      - name: Publish
+      - name: Publish (NativeAOT with full reflection metadata)
         shell: pwsh
         run: >
           dotnet publish src/NexusDash/NexusDash.csproj -c Release
           -f ${{ matrix.tfm }} -r ${{ matrix.rid }}
           -p:PublishProfile=FolderProfile_${{ matrix.rid }}
-          ${{ matrix.aot == 'true' && '-p:PublishAot=true -p:PublishTrimmed=true -p:PublishSingleFile=false -p:IlcGenerateCompleteTypeMetadata=true -p:IlcTrimMetadata=false -p:IlcSingleThreaded=true' || '' }}
+          -p:PublishAot=true -p:PublishTrimmed=true -p:PublishSingleFile=false
+          -p:IlcGenerateCompleteTypeMetadata=true -p:IlcTrimMetadata=false -p:IlcSingleThreaded=true
           -p:Version=$env:APP_VERSION
 
-      - name: Package (zip + SHA-256)
+      - name: Package (Windows zip + SHA-256)
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $out = "artifacts/release"
@@ -96,6 +96,16 @@ jobs:
           }
           $sha = (Get-FileHash -LiteralPath "$out/$name.zip" -Algorithm SHA256).Hash.ToLowerInvariant()
           "$sha  $name.zip" | Set-Content -LiteralPath "$out/$name.zip.sha256" -Encoding ASCII
+
+      - name: 打包 Linux deb 安装包
+        if: runner.os == 'Linux'
+        shell: pwsh
+        run: pwsh scripts/package_linux_deb.ps1 -RuntimeIdentifier '${{ matrix.rid }}' -Version $env:APP_VERSION -Force
+
+      - name: 打包 macOS dmg 安装镜像
+        if: runner.os == 'MacOSX'
+        shell: bash
+        run: chmod +x scripts/package_macos_dmg.sh && ./scripts/package_macos_dmg.sh '${{ matrix.rid }}' "$APP_VERSION"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -162,4 +172,6 @@ jobs:
           generate_release_notes: true
           files: |
             artifacts/release/*.zip
+            artifacts/release/*.deb
+            artifacts/release/*.dmg
             artifacts/release/*.sha256
