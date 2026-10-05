@@ -14,7 +14,7 @@
 #endif
 
 [Setup]
-AppId={{{C9D8E7F6-A5B4-4C3D-8E2F-1A0B9C8D7E6F}}
+AppId={{C9D8E7F6-A5B4-4C3D-8E2F-1A0B9C8D7E6F}}
 AppName=NexusDash
 AppVersion={#AppVersion}
 AppPublisher=Dotnet9
