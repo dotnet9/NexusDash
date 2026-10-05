@@ -1,6 +1,7 @@
 ﻿using NexusDash;
 using CodeWF.EventBus;
 using NexusDash.Services;
+using CodeWF.Tools.UpdateChecking;
 using Prism.Commands;
 using ReactiveUI;
 using System;
@@ -67,7 +68,7 @@ namespace NexusDash.ViewModels.Settings
             try
             {
                 CheckUpdateResult = T(NexusDashL.AboutCheckingUpdate);
-                Version? current = UpdateVersion.Parse(GetInformationalVersion());
+                Version? current = VersionUtil.Parse(GetInformationalVersion());
                 UpdateCheckResult result = await UpdateChecker.CheckAsync(current ?? new Version(0, 0, 0));
                 if (!result.Succeeded)
                 {
