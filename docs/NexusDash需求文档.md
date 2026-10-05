@@ -13,7 +13,7 @@
 - 网络连接：选中进程后展示 TCP/UDP、本地端点、远端端点、状态、最后采样时间。
 - 进程处置：结束进程、结束进程树、关联进程确认弹窗。
 - 热点视图：Treemap 展示内存占用较高进程。
-- 设置：深色/浅色主题、zh-CN、zh-Hant、en-US、ja-JP。
+- 设置：7 套主题（跟随系统/Light/Dark/Aquatic/Desert/Dusk/NightSky）、zh-CN、zh-Hant、en-US、ja-JP。
 - 持久化：主题、语言、窗口尺寸、进程列可见性。
 
 ## 近期功能

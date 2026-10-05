@@ -4,7 +4,7 @@ NexusDash 是一个 Avalonia 桌面仪表盘，用于本机系统监控。项目
 
 ## 仓库规范
 
-- 当前版本：`0.1.8`，版本号统一维护在根目录 `Directory.Build.props` 的 `<Version>` 节点。
+- 当前版本：`0.1.9`，版本号统一维护在根目录 `Directory.Build.props` 的 `<Version>` 节点。
 - NuGet 包项目统一支持 `net8.0;net10.0`；Demo、App、测试与内部应用项目统一使用 `net10.0` / `net10.0-windows`。
 - 根目录 `logo.svg`、`logo.png`、`logo.ico` 是唯一图标源，子工程只通过 MSBuild `Link` 引用，不维护图标副本。
 - 运行时帮助、Markdown 示例、内置备忘录、设计说明等业务文档按功能保留；仓库级入口文档使用根目录 `README.md` 和 `UpdateLog.md`。
@@ -23,7 +23,7 @@ NexusDash 是一个 Avalonia 桌面仪表盘，用于本机系统监控。项目
 - 将第三方日志查看器替换为轻量内置操作日志，日志区域配色与刷新成本由 NexusDash 控制。
 - 主窗口最小化时自动暂停监控刷新，恢复窗口时自动继续刷新。
 - 将主题相关界面统一收敛到 `AppBackgroundBrush`、`PanelBackgroundBrush`、`PanelAltBackgroundBrush`、`PanelBorderBrush`、`PrimaryTextBrush`、`SecondaryTextBrush`、`AccentBrush`、`RowHoverBrush`、`RowSelectedBrush` 等语义资源。
-- 已切换并截图检查 light、dark、aquatic、desert、dusk、night-sky 六套主题的总览界面。
+- 已切换并截图检查 light、dark、aquatic、desert、dusk、night-sky 六套主题（另有 system 跟随系统，现共七项）的总览界面。
 
 基于 Release `net10.0-windows` 构建的实测结果：
 
