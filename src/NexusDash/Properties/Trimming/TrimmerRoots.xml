@@ -20,21 +20,14 @@
   <assembly fullname="Avalonia.Skia" preserve="all" />
   <assembly fullname="Avalonia.Win32" preserve="all" />
   <assembly fullname="Avalonia.X11" preserve="all" />
-
-  <assembly fullname="Lang.Avalonia" preserve="all" />
-  <assembly fullname="Lang.Avalonia.Json" preserve="all" />
-
-  <assembly fullname="CodeWF.EventBus" preserve="all" />
-  <assembly fullname="CodeWF.AvaloniaControls" preserve="all" />
-  <assembly fullname="CodeWF.AvaloniaControls.Themes" preserve="all" />
-  <assembly fullname="CodeWF.AvaloniaControls.ProDataGrid" preserve="all" />
-  <assembly fullname="CodeWF.AvaloniaControls.ProDataGrid.Themes" preserve="all" />
-  <assembly fullname="CodeWF.Markdown.Lite" preserve="all" />
-  <assembly fullname="CodeWF.Markdown.Lite.Themes" preserve="all" />
-
+  <assembly fullname="CodeWF.Avalonia.Lang" preserve="all" />
+  <assembly fullname="CodeWF.Toolkit.EventBus" preserve="all" />
+  <assembly fullname="CodeWF.Avalonia.Controls" preserve="all" />
+  <assembly fullname="CodeWF.Avalonia.Controls.ProDataGrid" preserve="all" />
+  <assembly fullname="CodeWF.Avalonia.Controls.ProDataGrid.Themes" preserve="all" />
+  <assembly fullname="CodeWF.Avalonia.Markdown.Lite" preserve="all" />
   <assembly fullname="Irihi.Ursa.Themes.Semi" preserve="all" />
   <assembly fullname="Semi.Avalonia" preserve="all" />
-
   <assembly fullname="DryIoc" preserve="all" />
   <assembly fullname="Prism" preserve="all" />
   <assembly fullname="Prism.Avalonia" preserve="all" />
