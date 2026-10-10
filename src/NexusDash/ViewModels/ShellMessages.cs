@@ -1,4 +1,4 @@
-using CodeWF.EventBus;
+using CodeWF.Toolkit.EventBus;
 using NexusDash.Controls.Models;
 using NexusDash.Models;
 using System.Collections.Generic;

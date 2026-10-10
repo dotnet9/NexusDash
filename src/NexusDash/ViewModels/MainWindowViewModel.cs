@@ -1,8 +1,8 @@
 using Avalonia;
 using Avalonia.Threading;
-using CodeWF.EventBus;
-using CodeWF.Log.Core;
-using Lang.Avalonia;
+using CodeWF.Toolkit.EventBus;
+using CodeWF.Toolkit.Logging;
+using CodeWF.Avalonia.Lang;
 using NexusDash.Controls.Models;
 using NexusDash.Models;
 using NexusDash.Services;

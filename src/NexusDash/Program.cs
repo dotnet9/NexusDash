@@ -2,7 +2,7 @@
 using Avalonia.Media;
 using System;
 using System.IO;
-using CodeWF.Log.Core;
+using CodeWF.Toolkit.Logging;
 using Microsoft.Extensions.Logging;
 using ReactiveUI.Avalonia;
 

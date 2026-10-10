@@ -1,5 +1,5 @@
 using NexusDash;
-using CodeWF.EventBus;
+using CodeWF.Toolkit.EventBus;
 using NexusDash.Services;
 using ReactiveUI;
 using System;

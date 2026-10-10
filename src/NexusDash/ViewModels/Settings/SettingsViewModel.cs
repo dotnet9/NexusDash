@@ -1,4 +1,4 @@
-using CodeWF.EventBus;
+using CodeWF.Toolkit.EventBus;
 using NexusDash.ViewModels;
 using ReactiveUI;
 using System.Collections.ObjectModel;

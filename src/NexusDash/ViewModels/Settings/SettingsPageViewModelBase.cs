@@ -1,5 +1,5 @@
-using Lang.Avalonia;
-using CodeWF.EventBus;
+using CodeWF.Avalonia.Lang;
+using CodeWF.Toolkit.EventBus;
 using NexusDash.Services;
 using ReactiveUI;
 using System;

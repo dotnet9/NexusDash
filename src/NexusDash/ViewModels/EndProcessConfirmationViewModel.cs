@@ -1,4 +1,4 @@
-using CodeWF.EventBus;
+using CodeWF.Toolkit.EventBus;
 using Prism.Commands;
 using System.Collections.Generic;
 

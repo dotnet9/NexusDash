@@ -1,5 +1,5 @@
-using CodeWF.EventBus;
-using CodeWF.Log.Core;
+using CodeWF.Toolkit.EventBus;
+using CodeWF.Toolkit.Logging;
 using NexusDash.Services;
 using Prism.Commands;
 using System;

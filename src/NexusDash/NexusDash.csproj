@@ -10,7 +10,7 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CodeWF.Tools.UpdateChecking" />
+    <PackageReference Include="CodeWF.Toolkit.Core" />
     <AvaloniaResource Include="Assets\**" />
     <AvaloniaResource Include="..\..\logo.ico" Link="Assets\logo.ico" />
     <AvaloniaResource Include="..\..\logo.png" Link="Assets\logo.png" />
@@ -21,15 +21,14 @@
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Desktop" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
-    <PackageReference Include="CodeWF.AvaloniaControls" />
-    <PackageReference Include="CodeWF.AvaloniaControls.Themes" />
-    <PackageReference Include="CodeWF.AvaloniaControls.ProDataGrid" />
-    <PackageReference Include="CodeWF.AvaloniaControls.ProDataGrid.Themes" />
-    <PackageReference Include="CodeWF.EventBus" />
-    <PackageReference Include="CodeWF.Log.Core" />
-    <PackageReference Include="CodeWF.Markdown.Lite.Themes" />
+    <PackageReference Include="CodeWF.Avalonia.Controls" />
+    <PackageReference Include="CodeWF.Avalonia.Controls" />
+    <PackageReference Include="CodeWF.Avalonia.DataGrid" />
+    <PackageReference Include="CodeWF.Toolkit.EventBus" />
+    <PackageReference Include="CodeWF.Toolkit.Logging" />
+    <PackageReference Include="CodeWF.Avalonia.Markdown.Lite" />
     <PackageReference Include="Irihi.Ursa.Themes.Semi" />
-    <PackageReference Include="Lang.Avalonia.Json" />
+    <PackageReference Include="CodeWF.Avalonia.Lang" />
     <PackageReference Include="Prism.DryIoc.Avalonia" />
     <PackageReference Include="ReactiveUI.Avalonia" />
     <PackageReference Include="Semi.Avalonia" />

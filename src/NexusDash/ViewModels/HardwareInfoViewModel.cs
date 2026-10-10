@@ -1,5 +1,5 @@
-using CodeWF.Log.Core;
-using Lang.Avalonia;
+using CodeWF.Toolkit.Logging;
+using CodeWF.Avalonia.Lang;
 using NexusDash.Services;
 using Prism.Commands;
 using ReactiveUI;

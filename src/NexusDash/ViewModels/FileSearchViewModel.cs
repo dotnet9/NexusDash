@@ -1,6 +1,6 @@
-using Lang.Avalonia;
+using CodeWF.Avalonia.Lang;
 using Avalonia.Threading;
-using CodeWF.Log.Core;
+using CodeWF.Toolkit.Logging;
 using NexusDash.Models;
 using NexusDash.Services;
 using Prism.Commands;

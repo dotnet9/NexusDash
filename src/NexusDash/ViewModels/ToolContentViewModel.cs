@@ -1,4 +1,4 @@
-using CodeWF.EventBus;
+using CodeWF.Toolkit.EventBus;
 using NexusDash.ViewModels.Settings;
 
 namespace NexusDash.ViewModels

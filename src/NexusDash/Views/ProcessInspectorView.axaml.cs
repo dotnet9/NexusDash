@@ -1,7 +1,7 @@
+using CodeWF.Avalonia.DataGrid;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
-using CodeWF.AvaloniaControls;
-using CodeWF.AvaloniaControls.ProDataGrid;
+using CodeWF.Avalonia.Controls;
 
 namespace NexusDash.Views
 {

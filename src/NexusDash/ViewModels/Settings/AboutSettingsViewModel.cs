@@ -1,7 +1,7 @@
 ﻿using NexusDash;
-using CodeWF.EventBus;
+using CodeWF.Toolkit.EventBus;
 using NexusDash.Services;
-using CodeWF.Tools.UpdateChecking;
+using CodeWF.Toolkit.Core.UpdateChecking;
 using Prism.Commands;
 using ReactiveUI;
 using System;

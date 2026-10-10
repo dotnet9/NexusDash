@@ -1,8 +1,8 @@
 using Avalonia.Controls;
 using Avalonia;
 using Avalonia.Markup.Xaml;
-using CodeWF.AvaloniaControls.Controls;
-using CodeWF.Log.Core;
+using CodeWF.Avalonia.Controls.Controls;
+using CodeWF.Toolkit.Logging;
 using NexusDash.Services;
 using NexusDash.ViewModels;
 using System;

@@ -1,3 +1,4 @@
+using CodeWF.Avalonia.DataGrid;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -5,8 +6,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.VisualTree;
-using CodeWF.AvaloniaControls;
-using CodeWF.AvaloniaControls.ProDataGrid;
+using CodeWF.Avalonia.Controls;
 using NexusDash.ViewModels;
 using System;
 using System.Collections.Specialized;
