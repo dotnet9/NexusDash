@@ -4,19 +4,19 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="CodeWF.Toolkit.Core" Version="1.0.0.0-preview.1" />
+    <PackageVersion Include="CodeWF.Toolkit.Core" Version="1.0.0.1" />
     <PackageVersion Include="Avalonia" Version="12.1.4" />
     <PackageVersion Include="Avalonia.Desktop" Version="12.1.4" />
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.4" />
-    <PackageVersion Include="CodeWF.Avalonia.Controls" Version="12.1.4.0-preview.3" />
-    <PackageVersion Include="CodeWF.Avalonia.Controls" Version="12.1.4.0-preview.3" />
-    <PackageVersion Include="CodeWF.Avalonia.DataGrid" Version="12.1.4.0-preview.3" />
+    <PackageVersion Include="CodeWF.Avalonia.Controls" Version="12.1.4.1" />
+    <PackageVersion Include="CodeWF.Avalonia.Controls" Version="12.1.4.1" />
+    <PackageVersion Include="CodeWF.Avalonia.DataGrid" Version="12.1.4.1" />
 
-    <PackageVersion Include="CodeWF.Toolkit.Logging" Version="1.0.0.0-preview.1" />
-    <PackageVersion Include="CodeWF.Avalonia.Markdown.Lite" Version="12.1.4.0-preview.3" />
-    <PackageVersion Include="CodeWF.Toolkit.EventBus" Version="1.0.0.0-preview.1" />
+    <PackageVersion Include="CodeWF.Toolkit.Logging" Version="1.0.0.1" />
+    <PackageVersion Include="CodeWF.Avalonia.Markdown.Lite" Version="12.1.4.1" />
+    <PackageVersion Include="CodeWF.Toolkit.EventBus" Version="1.0.0.1" />
     <PackageVersion Include="Irihi.Ursa.Themes.Semi" Version="2.2.0" />
-    <PackageVersion Include="CodeWF.Avalonia.Lang" Version="12.1.4.0-preview.3" />
+    <PackageVersion Include="CodeWF.Avalonia.Lang" Version="12.1.4.1" />
     <PackageVersion Include="Prism.Avalonia" Version="8.1.97.11073" />
     <PackageVersion Include="Prism.DryIoc.Avalonia" Version="8.1.97.11073" />
     <PackageVersion Include="ReactiveUI.Avalonia" Version="12.1.4" />
