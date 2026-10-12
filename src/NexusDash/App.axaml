@@ -9,7 +9,6 @@
                          Name="NexusDash"
                          RequestedThemeVariant="Dark">
   <prism:PrismApplication.Styles>
-    <FluentTheme />
     <semi:SemiTheme />
     <semi:UrsaSemiTheme />
     <codewf:ACSemiTheme />
