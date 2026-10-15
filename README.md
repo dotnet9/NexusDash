@@ -81,4 +81,4 @@ XML 文件统一使用两个空格缩进。`Directory.Packages.props` 统一承�
 
 ![原生主窗口](docs/media/nexusdash-native-dark.png)
 
-0.1.13 使用官方 NuGet 独立缓存完成 Windows NativeAOT 发布、正式 EXE 自检、253 项原生界面检查、60 张截图及 Windows 安装器生成；最小窗口覆盖四语与全部入口。五平台只发布 EXE、DEB、DMG 安装器和 SHA256。详见 [验收记录](docs/UI-VERIFICATION.md) 与 [产品原型](design/index.html)。
+0.1.14 使用官方 NuGet 独立缓存完成 Windows NativeAOT 发布、正式 EXE 自检、258 项原生界面检查、60 张截图及 Windows 安装器生成；最小窗口覆盖四语与全部入口。当前截图来源与 SHA-256 见[媒体复核记录](docs/recheck24-native-media.md)。五平台只发布 EXE、DEB、DMG 安装器和 SHA256。详见 [验收记录](docs/UI-VERIFICATION.md) 与 [产品原型](design/index.html)。
