@@ -15,6 +15,9 @@ const fs = require('node:fs');
     await page.goto(standalone.url);
     check(await page.locator('.window').evaluate(el=>el.getBoundingClientRect().x===18&&parseFloat(getComputedStyle(el).borderTopWidth)>0),'Desktop window frame');
     check(await page.locator('.captions button').count()===3,'Caption controls');
+    check(await page.locator('#title-swatches button').count()===8,'Eight title swatches');check(await page.locator('.titlebar select').count()===0,'No duplicate title selectors');
+    await page.locator('#language-button').click();check(await page.locator('#title-language-menu').isVisible(),'Real language menu');await page.locator('#title-language-menu [data-culture="en-US"]').click();check(await page.locator('html').getAttribute('lang')==='en-US','Title language selection');
+    for(let index=0;index<3;index++)await page.locator('#theme-cycle').click();check(await page.locator('html').getAttribute('data-mode')==='system','Three-state title cycle');
     await page.goto(standalone.url+'?capture=window');
     for (const route of ['process','files','hardware','settings']) {
       await page.click(`[data-route="${route}"]`);
