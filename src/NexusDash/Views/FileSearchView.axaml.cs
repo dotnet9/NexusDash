@@ -1,3 +1,5 @@
+﻿using CodeWF.Avalonia.Lang;
+using System.Globalization;
 using CodeWF.Avalonia.DataGrid;
 using Avalonia;
 using Avalonia.Controls;
@@ -95,7 +97,7 @@ namespace NexusDash.Views
             {
                 Logger.Info(
                     $"Open containing directory: {path}",
-                    $"打开文件所在目录：{path}");
+                    string.Format(CultureInfo.CurrentCulture, I18nManager.Instance.GetResource(NexusDashL.LogOpenDirectory) ?? NexusDashL.LogOpenDirectory, path));
                 Process.Start(new ProcessStartInfo("explorer.exe", arguments)
                 {
                     UseShellExecute = true
@@ -106,7 +108,7 @@ namespace NexusDash.Views
                 Logger.Error(
                     $"Open containing directory failed: {path}",
                     exception,
-                    $"打开文件所在目录失败：{path}");
+                    string.Format(CultureInfo.CurrentCulture, I18nManager.Instance.GetResource(NexusDashL.LogOpenDirectoryFailed) ?? NexusDashL.LogOpenDirectoryFailed, path));
             }
         }
 

@@ -2,6 +2,8 @@
 using CodeWF.Toolkit.EventBus;
 using NexusDash.Services;
 using CodeWF.Toolkit.Core.UpdateChecking;
+using CodeWF.Toolkit.Core.Extensions;
+using System.Runtime.InteropServices;
 using Prism.Commands;
 using ReactiveUI;
 using System;
@@ -20,25 +22,12 @@ namespace NexusDash.ViewModels.Settings
         : SettingsPageViewModelBase(eventBus, userPreferencesService)
     {
         private static readonly Assembly AppAssembly = typeof(AboutSettingsViewModel).Assembly;
-        private static readonly UpdateChecker UpdateChecker = new("dotnet9", "NexusDash");
-        private bool _isCheckingUpdate;
-        private string _checkUpdateResult = string.Empty;
+        public UpdateViewModel Update { get; } = new();
 
         public override string Header => T(NexusDashL.SettingsAbout);
         public override int Order => 30;
         public DelegateCommand OpenRepositoryCommand { get; } = new(OpenRepository);
 
-        /// <summary>懒初始化：字段初始化器不能引用实例方法。</summary>
-        public DelegateCommand CheckUpdateCommand => _checkUpdateCommand ??= new(async () => await CheckUpdateAsync());
-
-        private DelegateCommand? _checkUpdateCommand;
-
-        public string CheckUpdateLabel => T(NexusDashL.AboutCheckUpdate);
-        public string CheckUpdateResult
-        {
-            get => _checkUpdateResult;
-            private set => this.RaiseAndSetIfChanged(ref _checkUpdateResult, value);
-        }
         public string AppName => T(NexusDashL.AppName);
         public string Description => T(NexusDashL.AboutDescription);
         public string VersionLabel => T(NexusDashL.AboutVersion);
@@ -47,58 +36,21 @@ namespace NexusDash.ViewModels.Settings
         public string RepositoryLabel => T(NexusDashL.AboutRepository);
         public string LicenseLabel => T(NexusDashL.AboutLicense);
         public string CopyrightLabel => T(NexusDashL.AboutCopyright);
-        public string Version => GetInformationalVersion();
-        public string CompileTime => GetCompileTime();
-        public string Author => GetAssemblyMetadata("Author", "沙漠尽头的狼");
-        public string RepositoryUrl => GetAssemblyMetadata("ProjectUrl", "https://codewf.com");
+        public string Version => UpdateVersion.Display(AppAssembly);
+        public string PlatformLabel => T(NexusDashL.AboutPlatform);
+        public string Platform => $"{RuntimeInformation.FrameworkDescription} · Avalonia {typeof(Avalonia.Application).Assembly.GetName().Version}";
+        public string CompileTime => AppAssembly.CompileTime()?.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) ?? "—";
+        public string Author => T(NexusDashL.AboutAuthorName);
+        public string RepositoryUrl => "https://github.com/dotnet9/NexusDash";
         public string License => GetAssemblyMetadata("License", "MIT");
         public string Copyright =>
             AppAssembly.GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright
             ?? $"Copyright (c) {DateTime.Now.Year} {Author}";
         public Uri RepositoryUri => new(RepositoryUrl);
 
-        private async Task CheckUpdateAsync()
-        {
-            if (_isCheckingUpdate)
-            {
-                return;
-            }
-
-            _isCheckingUpdate = true;
-            try
-            {
-                CheckUpdateResult = T(NexusDashL.AboutCheckingUpdate);
-                Version? current = VersionUtil.Parse(GetInformationalVersion());
-                UpdateCheckResult result = await UpdateChecker.CheckAsync(current ?? new Version(0, 0, 0));
-                if (!result.Succeeded)
-                {
-                    CheckUpdateResult = string.Format(T(NexusDashL.AboutUpdateFailed), result.Error);
-                    return;
-                }
-
-                if (result.Update is { } update)
-                {
-                    // 仅提醒不自动下载：提示并打开发布页
-                    CheckUpdateResult = string.Format(T(NexusDashL.AboutUpdateAvailable), update.Tag);
-                    Process.Start(new ProcessStartInfo(update.PageUrl) { UseShellExecute = true });
-                    return;
-                }
-
-                CheckUpdateResult = T(NexusDashL.AboutUpToDate);
-            }
-            catch (Exception exception)
-            {
-                CheckUpdateResult = string.Format(T(NexusDashL.AboutUpdateFailed), exception.Message);
-            }
-            finally
-            {
-                _isCheckingUpdate = false;
-            }
-        }
-
         private static void OpenRepository()
         {
-            var repositoryUrl = GetAssemblyMetadata("ProjectUrl", "https://codewf.com");
+            var repositoryUrl = "https://github.com/dotnet9/NexusDash";
             Process.Start(new ProcessStartInfo(repositoryUrl)
             {
                 UseShellExecute = true
@@ -108,7 +60,8 @@ namespace NexusDash.ViewModels.Settings
         protected override void RaiseLocalizedProperties()
         {
             this.RaisePropertyChanged(nameof(Header));
-            this.RaisePropertyChanged(nameof(CheckUpdateLabel));
+            this.RaisePropertyChanged(nameof(PlatformLabel));
+            this.RaisePropertyChanged(nameof(Author));
             this.RaisePropertyChanged(nameof(AppName));
             this.RaisePropertyChanged(nameof(Description));
             this.RaisePropertyChanged(nameof(VersionLabel));
@@ -119,14 +72,10 @@ namespace NexusDash.ViewModels.Settings
             this.RaisePropertyChanged(nameof(CopyrightLabel));
         }
 
-        private static string GetInformationalVersion()
+        public override void Dispose()
         {
-            var informationalVersion = AppAssembly
-                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-                ?.InformationalVersion;
-            return string.IsNullOrWhiteSpace(informationalVersion)
-                ? AppAssembly.GetName().Version?.ToString() ?? ""
-                : informationalVersion;
+            Update.Dispose();
+            base.Dispose();
         }
 
         private static string GetAssemblyMetadata(string key, string fallback)
@@ -138,19 +87,5 @@ namespace NexusDash.ViewModels.Settings
             return string.IsNullOrWhiteSpace(value) ? fallback : value;
         }
 
-        private static string GetCompileTime()
-        {
-            try
-            {
-                var location = AppAssembly.Location;
-                return string.IsNullOrWhiteSpace(location)
-                    ? ""
-                    : File.GetLastWriteTime(location).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-            }
-            catch
-            {
-                return "";
-            }
-        }
     }
 }

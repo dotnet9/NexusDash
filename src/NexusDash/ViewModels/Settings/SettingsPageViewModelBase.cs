@@ -1,4 +1,4 @@
-using CodeWF.Avalonia.Lang;
+﻿using CodeWF.Avalonia.Lang;
 using CodeWF.Toolkit.EventBus;
 using NexusDash.Services;
 using ReactiveUI;
@@ -15,12 +15,14 @@ namespace NexusDash.ViewModels.Settings
         private bool _rememberWindowSize;
         private string _themeKey = ThemeResourceService.DarkThemeKey;
         private string _cultureName = "";
+        private string _paletteKey = "dotnet";
 
         protected SettingsPageViewModelBase(IEventBus eventBus, IUserPreferencesService userPreferencesService)
         {
             _eventBus = eventBus;
             var preferences = userPreferencesService.Load();
             _themeKey = ThemeResourceService.ResolvePreferenceThemeKey(preferences.ThemeKey, preferences.IsDarkTheme);
+            _paletteKey = ThemeResourceService.ResolvePreferencePaletteKey(preferences.PaletteKey, preferences.ThemeKey);
             _isDarkTheme = preferences.IsDarkTheme;
             _rememberWindowSize = preferences.RememberWindowSize;
             _cultureName = preferences.CultureName ??
@@ -33,6 +35,7 @@ namespace NexusDash.ViewModels.Settings
         protected bool IsDarkThemeState => _isDarkTheme;
         protected bool RememberWindowSizeState => _rememberWindowSize;
         protected string ThemeKeyState => _themeKey;
+        protected string PaletteKeyState => _paletteKey;
         protected string CultureNameState => _cultureName;
 
         public abstract string Header { get; }
@@ -58,9 +61,10 @@ namespace NexusDash.ViewModels.Settings
         protected abstract void RaiseLocalizedProperties();
 
         [EventHandler]
-        private void ApplySettingsState(SettingsStateChangedCommand command)
+        protected void ApplySettingsState(SettingsStateChangedCommand command)
         {
             _themeKey = command.ThemeKey;
+            _paletteKey = command.PaletteKey;
             _isDarkTheme = command.IsDarkTheme;
             _rememberWindowSize = command.RememberWindowSize;
             _cultureName = command.CultureName;

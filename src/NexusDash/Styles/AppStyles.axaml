@@ -1,4 +1,4 @@
-<Styles
+﻿<Styles
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:codewf="https://codewf.com">
@@ -10,11 +10,13 @@
     <x:Double x:Key="NexusDashDataGridHeaderHeight">32</x:Double>
   </Styles.Resources>
 
-  <Style Selector="Window">
+  <Style Selector=":is(Window)">
+    <Setter Property="FontFamily" Value="{DynamicResource DefaultFontFamily}" />
     <Setter Property="FontSize" Value="{DynamicResource NexusDashAppFontSize}" />
   </Style>
 
   <Style Selector="codewf|CodeWFWindow">
+    <Setter Property="CaptionButtonWidth" Value="34" />
     <Setter Property="TitleBarBackground" Value="{DynamicResource PanelBackgroundBrush}" />
     <Setter Property="TitleBarBorderBrush" Value="{DynamicResource PanelBorderBrush}" />
     <Setter Property="TitleBarForeground" Value="{DynamicResource PrimaryTextBrush}" />
@@ -30,7 +32,7 @@
     <Setter Property="TitleBarHeight" Value="40" />
   </Style>
 
-  <Style Selector="Window.mainShell">
+  <Style Selector="codewf|CodeWFWindow.mainShell">
     <Setter Property="Width" Value="1440" />
     <Setter Property="Height" Value="760" />
     <Setter Property="MinWidth" Value="1180" />
@@ -41,7 +43,7 @@
     <Setter Property="TitleBarHeight" Value="38" />
   </Style>
 
-  <Style Selector="Window.settingsShell">
+  <Style Selector="codewf|CodeWFWindow.settingsShell">
     <Setter Property="Width" Value="600" />
     <Setter Property="Height" Value="427" />
     <Setter Property="MinWidth" Value="560" />
@@ -394,6 +396,7 @@
   </Style>
 
   <Style Selector="TextBlock.settingsFormLabel">
+    <Setter Property="TextWrapping" Value="Wrap" />
     <Setter Property="FontSize" Value="12" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />

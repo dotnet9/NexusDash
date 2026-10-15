@@ -1,4 +1,4 @@
-using NexusDash;
+﻿using NexusDash;
 using CodeWF.Toolkit.EventBus;
 using NexusDash.Services;
 using ReactiveUI;
@@ -12,6 +12,7 @@ namespace NexusDash.ViewModels.Settings
     {
         private bool _isApplyingSettingsState;
         private ThemeOptionViewModel? _selectedTheme;
+        private ThemeOptionViewModel? _selectedPalette;
 
         public AppearanceSettingsViewModel(
             IEventBus eventBus,
@@ -24,13 +25,27 @@ namespace NexusDash.ViewModels.Settings
                     .Select(theme => new ThemeOptionViewModel(
                         theme.Key,
                         GetThemeDisplayName(theme.Key),
-                        theme.AccentColor)));
+                        theme.AccentBrush)));
             _selectedTheme = FindTheme(ThemeKeyState);
+            PaletteOptions = new ObservableCollection<ThemeOptionViewModel>(themeResourceService.GetPaletteOptions().Select(palette => new ThemeOptionViewModel(palette.Key, GetPaletteDisplayName(palette.Key), palette.AccentBrush)));
+            _selectedPalette = PaletteOptions.FirstOrDefault(option => option.Key == PaletteKeyState);
         }
 
         public override string Header => T(NexusDashL.SettingsAppearance);
         public override int Order => 10;
         public string ThemeLabel => T(NexusDashL.ThemeMenu);
+        public string PaletteLabel => T(NexusDashL.PaletteLabel);
+        public ObservableCollection<ThemeOptionViewModel> PaletteOptions { get; }
+        public ThemeOptionViewModel? SelectedPalette
+        {
+            get => _selectedPalette;
+            set
+            {
+                if (ReferenceEquals(_selectedPalette, value)) return;
+                this.RaiseAndSetIfChanged(ref _selectedPalette, value);
+                if (value is not null && !_isApplyingSettingsState) EventBus.Publish(new PaletteChangeRequestedCommand(value.Key));
+            }
+        }
         public string DarkThemeText => T(NexusDashL.DarkTheme);
         public string LightThemeText => T(NexusDashL.LightTheme);
         public string LanguageLabel => T(NexusDashL.LanguageMenu);
@@ -115,6 +130,8 @@ namespace NexusDash.ViewModels.Settings
         {
             this.RaisePropertyChanged(nameof(Header));
             this.RaisePropertyChanged(nameof(ThemeLabel));
+            this.RaisePropertyChanged(nameof(PaletteLabel));
+            foreach (var option in PaletteOptions) option.DisplayName = GetPaletteDisplayName(option.Key);
             this.RaisePropertyChanged(nameof(DarkThemeText));
             this.RaisePropertyChanged(nameof(LightThemeText));
             RefreshThemeOptionLabels();
@@ -148,6 +165,7 @@ namespace NexusDash.ViewModels.Settings
             try
             {
                 SelectedTheme = FindTheme(ThemeKeyState);
+                SelectedPalette = PaletteOptions.FirstOrDefault(option => option.Key == PaletteKeyState);
             }
             finally
             {
@@ -161,6 +179,19 @@ namespace NexusDash.ViewModels.Settings
                        string.Equals(theme.Key, key, StringComparison.OrdinalIgnoreCase))
                    ?? ThemeOptions.FirstOrDefault();
         }
+
+        private static string GetPaletteDisplayName(string key) => T(key switch
+        {
+            "dotnet" => NexusDashL.PaletteDotNet,
+            "aurora" => NexusDashL.PaletteAurora,
+            "ember" => NexusDashL.PaletteEmber,
+            "default" => NexusDashL.PaletteDefault,
+            "aquatic" => NexusDashL.ThemeAquatic,
+            "desert" => NexusDashL.ThemeDesert,
+            "dusk" => NexusDashL.ThemeDusk,
+            "night-sky" => NexusDashL.ThemeNightSky,
+            _ => NexusDashL.PaletteDotNet
+        });
 
         private static string GetThemeDisplayName(string key)
         {

@@ -1,4 +1,4 @@
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Threading;
 using CodeWF.Toolkit.EventBus;
 using CodeWF.Toolkit.Logging;
@@ -94,6 +94,7 @@ namespace NexusDash.ViewModels
         private bool _isUpdatingLanguageOptions;
         private string _selectedCultureName = "";
         private string _selectedThemeKey = ThemeResourceService.DarkThemeKey;
+        private string _selectedPaletteKey = "dotnet";
         private string _searchQuery = "";
         private string _processSortColumnKey = ProcessColumnName;
         private ListSortDirection _processSortDirection = ListSortDirection.Ascending;
@@ -178,6 +179,8 @@ namespace NexusDash.ViewModels
 
             var preferences = _userPreferencesService.Load();
             _selectedThemeKey = ThemeResourceService.ResolvePreferenceThemeKey(preferences.ThemeKey, preferences.IsDarkTheme);
+            _selectedPaletteKey = ThemeResourceService.ResolvePreferencePaletteKey(preferences.PaletteKey, preferences.ThemeKey);
+            _themeResourceService.ApplyPalette(_selectedPaletteKey);
             _rememberWindowSize = preferences.RememberWindowSize;
             InitializeProcessColumnWidths(preferences);
             ApplyApplicationTheme(_selectedThemeKey);
@@ -206,6 +209,7 @@ namespace NexusDash.ViewModels
             PublishShellState();
             PublishSettingsState();
             _refreshLoopTask = RefreshLoopAsync(_refreshCancellation.Token);
+            if (Application.Current is { } app) app.ActualThemeVariantChanged += HandleHostThemeChanged;
         }
 
         public ProcessListViewModel ProcessList { get; }
@@ -497,7 +501,7 @@ namespace NexusDash.ViewModels
 
         public bool IsDarkTheme
         {
-            get => _themeResourceService.GetThemeOption(_selectedThemeKey).IsDark;
+            get => _themeResourceService.IsEffectiveDark;
             set
             {
                 SetTheme(value ? ThemeResourceService.DarkThemeKey : ThemeResourceService.LightThemeKey);
@@ -732,6 +736,15 @@ namespace NexusDash.ViewModels
             SetTheme(ThemeResourceService.LightThemeKey);
         }
 
+        [EventHandler]
+        private void ApplyPaletteChange(PaletteChangeRequestedCommand command)
+        {
+            _selectedPaletteKey = ThemeResourceService.ResolvePreferencePaletteKey(command.PaletteKey, null);
+            _themeResourceService.ApplyPalette(_selectedPaletteKey);
+            _userPreferencesService.Update(preferences => preferences.PaletteKey = _selectedPaletteKey);
+            PublishSettingsState();
+        }
+
         private void SetTheme(string themeKey)
         {
             var theme = _themeResourceService.GetThemeOption(themeKey);
@@ -795,14 +808,14 @@ namespace NexusDash.ViewModels
             {
                 if (FileSearch.SearchFiles.CanExecute())
                 {
-                    LogOperation($"执行文件搜索：{FileSearch.SearchQuery}");
+                    LogOperation(string.Format(CultureInfo.CurrentCulture, I18nManager.Instance.GetResource(NexusDashL.LogFileSearchRequested) ?? NexusDashL.LogFileSearchRequested, FileSearch.SearchQuery));
                     FileSearch.SearchFiles.Execute();
                 }
 
                 return;
             }
 
-            LogOperation($"执行进程筛选：{SearchQuery}");
+            LogOperation(string.Format(CultureInfo.CurrentCulture, I18nManager.Instance.GetResource(NexusDashL.LogProcessFilterRequested) ?? NexusDashL.LogProcessFilterRequested, SearchQuery));
             RebuildVisibleProcesses();
         }
 
@@ -1120,7 +1133,7 @@ namespace NexusDash.ViewModels
                 PublishToolTreeState();
                 PublishActiveToolState();
                 PublishStatusBarState();
-                LogOperation($"切换工具：{GetToolDisplayName(toolKey)}");
+                LogOperation(string.Format(CultureInfo.CurrentCulture, I18nManager.Instance.GetResource(NexusDashL.LogToolSelected) ?? NexusDashL.LogToolSelected, GetToolDisplayName(toolKey)));
                 if (IsProcessToolSelected)
                 {
                     ApplyDeferredProcessLocalizationRefresh();
@@ -1224,7 +1237,7 @@ namespace NexusDash.ViewModels
         {
             const int maxLogLines = 120;
 
-            var line = $"{DateTime.Now:HH:mm:ss} [消息] {message}";
+            var line = string.Format(CultureInfo.CurrentCulture, I18nManager.Instance.GetResource(NexusDashL.LogMessage) ?? NexusDashL.LogMessage, DateTime.Now.ToString("HH:mm:ss"), message);
             var nextLines = string.IsNullOrWhiteSpace(OperationLogContent)
                 ? [line]
                 : OperationLogContent
@@ -1458,7 +1471,8 @@ namespace NexusDash.ViewModels
                 _selectedThemeKey,
                 IsDarkTheme,
                 RememberWindowSize,
-                _selectedCultureName));
+                _selectedCultureName,
+                _selectedPaletteKey));
         }
 
         private void RequestEndSelectedProcesses(bool entireProcessTree, bool includeAssociatedProcesses = false)
@@ -1493,7 +1507,7 @@ namespace NexusDash.ViewModels
             RaiseTerminationConfirmationProperties();
             Logger.Warn(
                 $"Process termination confirmation requested: kind={_pendingTerminationKind}; candidates={candidates.Length}; pids={string.Join(", ", candidates.Select(static candidate => candidate.Pid))}",
-                $"请求结束进程确认：{candidates.Length} 个候选进程");
+                string.Format(CultureInfo.CurrentCulture, I18nManager.Instance.GetResource(NexusDashL.LogTerminationConfirmation) ?? NexusDashL.LogTerminationConfirmation, candidates.Length));
         }
 
         private ProcessTerminationCandidateViewModel[] CreateProcessTerminationCandidates(
@@ -2523,7 +2537,7 @@ namespace NexusDash.ViewModels
             {
                 Logger.Warn(
                     $"Ending processes: entireProcessTree={entireProcessTree}; pids={string.Join(", ", pids)}",
-                    $"开始结束进程：{string.Join(", ", pids)}");
+                    string.Format(CultureInfo.CurrentCulture, I18nManager.Instance.GetResource(NexusDashL.LogTerminationStarted) ?? NexusDashL.LogTerminationStarted, string.Join(", ", pids)));
                 await Task.Run(() =>
                 {
                     foreach (var pid in pids)
@@ -2535,7 +2549,7 @@ namespace NexusDash.ViewModels
                 StatusMessage = string.Format(CultureInfo.CurrentCulture, T(NexusDashL.StatusEnded), pids.Length);
                 Logger.Info(
                     $"End process request completed: pids={string.Join(", ", pids)}",
-                    $"结束进程请求已完成：{string.Join(", ", pids)}");
+                    string.Format(CultureInfo.CurrentCulture, I18nManager.Instance.GetResource(NexusDashL.LogTerminationCompleted) ?? NexusDashL.LogTerminationCompleted, string.Join(", ", pids)));
             }
             catch (Exception exception)
             {
@@ -2886,6 +2900,13 @@ namespace NexusDash.ViewModels
             return I18nManager.Instance.GetResource(key) ?? key;
         }
 
+        private void HandleHostThemeChanged(object? sender, EventArgs args)
+        {
+            this.RaisePropertyChanged(nameof(IsDarkTheme));
+            PublishProcessListState();
+            PublishSettingsState();
+        }
+
         private void ApplyApplicationTheme(string themeKey)
         {
             _themeResourceService.Apply(themeKey);
@@ -2925,6 +2946,7 @@ namespace NexusDash.ViewModels
             _isDisposed = true;
             _refreshCancellation.Cancel();
             _eventBus.Unsubscribe(this);
+            if (Application.Current is { } app) app.ActualThemeVariantChanged -= HandleHostThemeChanged;
             FileSearch.PropertyChanged -= HandleFileSearchPropertyChanged;
             HardwareInfo.PropertyChanged -= HandleHardwareInfoPropertyChanged;
             ToolTree.Dispose();
@@ -2951,6 +2973,7 @@ namespace NexusDash.ViewModels
             }
 
             _refreshCancellation.Dispose();
+            _themeResourceService.Dispose();
         }
     }
 }

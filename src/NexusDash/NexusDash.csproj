@@ -21,7 +21,6 @@
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Desktop" />
     <PackageReference Include="CodeWF.Avalonia.Controls" />
-    <PackageReference Include="CodeWF.Avalonia.Controls" />
     <PackageReference Include="CodeWF.Avalonia.DataGrid" />
     <PackageReference Include="CodeWF.Toolkit.EventBus" />
     <PackageReference Include="CodeWF.Toolkit.Logging" />

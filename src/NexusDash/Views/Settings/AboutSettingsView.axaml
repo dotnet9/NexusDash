@@ -5,11 +5,14 @@
              xmlns:i="using:Avalonia.Xaml.Interactivity"
              xmlns:ia="using:Avalonia.Xaml.Interactions.Core"
              xmlns:vm="using:NexusDash.ViewModels.Settings"
+             xmlns:lang="https://codewf.com"
+             xmlns:l="using:NexusDash"
              mc:Ignorable="d"
              d:DesignWidth="540"
              d:DesignHeight="420"
              x:Class="NexusDash.Views.Settings.AboutSettingsView"
              x:DataType="vm:AboutSettingsViewModel">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
   <Grid Margin="28,26">
     <StackPanel Classes="settingsPageContent"
                 Spacing="18"
@@ -37,7 +40,7 @@
       </Grid>
 
       <Grid ColumnDefinitions="110,*"
-            RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+            RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
             RowSpacing="9">
         <TextBlock Text="{Binding VersionLabel}"
                    Classes="aboutLabel" />
@@ -95,25 +98,24 @@
                              Text="{Binding Copyright}"
                              Classes="aboutValue" />
 
-        <TextBlock Grid.Row="6"
-                   Text="{Binding CheckUpdateLabel}"
-                   Classes="aboutLabel" />
-        <StackPanel Grid.Row="6"
-                    Grid.Column="1"
-                    Spacing="6">
-          <Button Padding="8,3"
-                  HorizontalAlignment="Left"
-                  HorizontalContentAlignment="Left"
-                  VerticalAlignment="Center"
-                  Command="{Binding CheckUpdateCommand}">
-            <TextBlock Text="{Binding CheckUpdateLabel}"
-                       TextWrapping="Wrap" />
-          </Button>
-          <TextBlock Text="{Binding CheckUpdateResult}"
-                     Foreground="{DynamicResource SecondaryTextBrush}"
-                     TextWrapping="Wrap" />
-        </StackPanel>
+        <TextBlock Grid.Row="6" Text="{Binding PlatformLabel}" Classes="aboutLabel" />
+        <SelectableTextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Platform}" Classes="aboutValue" />
+        <Border Grid.Row="7" Grid.ColumnSpan="2" Padding="14,12" Margin="0,10,0,0"
+                CornerRadius="8" Background="{DynamicResource StudioRaised}" DataContext="{Binding Update}">
+          <StackPanel Spacing="8" x:DataType="vm:UpdateViewModel">
+            <TextBlock Text="{lang:I18n {x:Static l:NexusDashL.UpdateCheck}}" FontWeight="SemiBold" />
+            <TextBlock Text="{lang:I18n {x:Static l:NexusDashL.AboutUpdateDescription}}" TextWrapping="Wrap" />
+            <WrapPanel>
+              <Button Command="{Binding ActionCommand}" Content="{Binding ActionText}" IsEnabled="{Binding !IsBusy}" Margin="0,0,8,4" />
+              <Button Command="{Binding CheckCommand}" Content="{lang:I18n {x:Static l:NexusDashL.AboutRecheck}}" IsVisible="{Binding CanRecheck}" Margin="0,0,8,4" />
+              <Button Command="{Binding CancelCommand}" Content="{lang:I18n {x:Static l:NexusDashL.AboutCancel}}" IsVisible="{Binding IsBusy}" Margin="0,0,8,4" />
+            </WrapPanel>
+            <ProgressBar Height="6" Maximum="100" Value="{Binding Progress}" IsVisible="{Binding IsDownloading}" IsIndeterminate="{Binding IsIndeterminate}" />
+            <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" Foreground="{DynamicResource StudioMuted}" />
+          </StackPanel>
+        </Border>
       </Grid>
     </StackPanel>
   </Grid>
+  </ScrollViewer>
 </UserControl>

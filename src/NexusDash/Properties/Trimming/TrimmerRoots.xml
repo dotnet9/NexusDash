@@ -1,4 +1,4 @@
-<linker>
+﻿<linker>
   <!-- XAML, localization and theme resources use reflection/resource lookup under trimmed publish. -->
   <assembly fullname="NexusDash" preserve="all" />
   <assembly fullname="NexusDash.Controls" preserve="all" />
@@ -23,8 +23,7 @@
   <assembly fullname="CodeWF.Avalonia.Lang" preserve="all" />
   <assembly fullname="CodeWF.Toolkit.EventBus" preserve="all" />
   <assembly fullname="CodeWF.Avalonia.Controls" preserve="all" />
-  <assembly fullname="CodeWF.Avalonia.Controls.ProDataGrid" preserve="all" />
-  <assembly fullname="CodeWF.Avalonia.Controls.ProDataGrid.Themes" preserve="all" />
+  <assembly fullname="CodeWF.Avalonia.DataGrid" preserve="all" />
   <assembly fullname="CodeWF.Avalonia.Markdown.Lite" preserve="all" />
   <assembly fullname="Irihi.Ursa.Themes.Semi" preserve="all" />
   <assembly fullname="Semi.Avalonia" preserve="all" />

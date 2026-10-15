@@ -1,4 +1,4 @@
-using CodeWF.Toolkit.EventBus;
+﻿using CodeWF.Toolkit.EventBus;
 
 namespace NexusDash.ViewModels.Settings
 {
@@ -6,17 +6,24 @@ namespace NexusDash.ViewModels.Settings
         string themeKey,
         bool isDarkTheme,
         bool rememberWindowSize,
-        string cultureName) : Command
+        string cultureName,
+        string paletteKey) : Command
     {
         public string ThemeKey { get; } = themeKey;
         public bool IsDarkTheme { get; } = isDarkTheme;
         public bool RememberWindowSize { get; } = rememberWindowSize;
         public string CultureName { get; } = cultureName;
+        public string PaletteKey { get; } = paletteKey;
     }
 
     public sealed class ThemeChangeRequestedCommand(string themeKey) : Command
     {
         public string ThemeKey { get; } = themeKey;
+    }
+
+    public sealed class PaletteChangeRequestedCommand(string paletteKey) : Command
+    {
+        public string PaletteKey { get; } = paletteKey;
     }
 
     public sealed class LanguageChangeRequestedCommand(string cultureName) : Command

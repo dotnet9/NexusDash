@@ -1,4 +1,5 @@
-using Avalonia;
+﻿using Avalonia;
+using CodeWF.Avalonia.Controls.Themes;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
@@ -25,10 +26,15 @@ namespace NexusDash
 {
     public partial class App : PrismApplication
     {
+        public static StudioThemeController? ThemeController { get; private set; }
+        private IUserPreferencesService? _preferences;
+        protected virtual IUserPreferencesService CreatePreferencesService() => new UserPreferencesService();
+
         public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
-            var preferences = new UserPreferencesService().Load();
+            _preferences = CreatePreferencesService();
+            var preferences = _preferences.Load();
             var startupCulture = ResolveStartupCulture(preferences.CultureName);
             CultureInfo.CurrentCulture = startupCulture;
             CultureInfo.CurrentUICulture = startupCulture;
@@ -41,9 +47,12 @@ namespace NexusDash
             };
             I18nManager.Instance.Register(langPlugin, startupCulture, out _);
             ApplyThirdPartyCulture(startupCulture.Name);
-            RequestedThemeVariant = ThemeResourceService.ResolveThemeVariant(
-                ThemeResourceService.ResolvePreferenceThemeKey(preferences.ThemeKey, preferences.IsDarkTheme));
-            Logger.Info("NexusDash application initialized.", "NexusDash 已启动。");
+            ThemeController = new StudioThemeController(this)
+            {
+                Palette = ThemeResourceService.ResolvePalette(ThemeResourceService.ResolvePreferencePaletteKey(preferences.PaletteKey, preferences.ThemeKey)),
+                Mode = ThemeResourceService.ResolveMode(ThemeResourceService.ResolvePreferenceThemeKey(preferences.ThemeKey, preferences.IsDarkTheme))
+            };
+            Logger.Info("NexusDash application initialized.", I18nManager.Instance.GetResource(NexusDashL.LogApplicationStarted));
             base.Initialize();
         }
 
@@ -61,7 +70,7 @@ namespace NexusDash
         protected override void RegisterTypes(IContainerRegistry containerRegistry)
         {
             containerRegistry.RegisterInstance<IEventBus>(EventBus.Default);
-            containerRegistry.RegisterSingleton<IUserPreferencesService, UserPreferencesService>();
+            containerRegistry.RegisterInstance<IUserPreferencesService>(_preferences!);
             containerRegistry.RegisterSingleton<IProcessCommandRunner, ProcessCommandRunner>();
             containerRegistry.RegisterSingleton<IThemeResourceService, ThemeResourceService>();
             containerRegistry.RegisterSingleton<SystemMonitorService>();

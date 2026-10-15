@@ -10,12 +10,12 @@
              x:DataType="vm:AppearanceSettingsViewModel">
   <Grid Margin="28,26">
     <Grid Classes="settingsPageContent"
-          RowDefinitions="Auto,Auto,Auto"
+          RowDefinitions="Auto,Auto,Auto,Auto"
           RowSpacing="18"
           MaxWidth="680"
-          HorizontalAlignment="Left"
+          HorizontalAlignment="Stretch"
           VerticalAlignment="Top">
-      <Grid ColumnDefinitions="118,*"
+      <Grid ColumnDefinitions="160,*"
             ColumnSpacing="18">
         <TextBlock Text="{Binding ThemeLabel}"
                    Classes="settingsFormLabel"
@@ -24,24 +24,31 @@
                   Classes="settingSelector"
                   ItemsSource="{Binding ThemeOptions}"
                   SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
-                  HorizontalAlignment="Stretch">
+                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
           <ComboBox.ItemTemplate>
             <DataTemplate x:DataType="vm:ThemeOptionViewModel">
-              <Grid ColumnDefinitions="16,*"
-                    ColumnSpacing="8">
-                <Border Classes="themeSwatch"
-                        Background="{Binding AccentBrush}" />
-                <TextBlock Grid.Column="1"
-                           Text="{Binding DisplayName}"
-                           VerticalAlignment="Center" />
-              </Grid>
+              <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" />
             </DataTemplate>
           </ComboBox.ItemTemplate>
         </ComboBox>
       </Grid>
 
-      <Grid Grid.Row="1"
-            ColumnDefinitions="118,*"
+      <Grid Grid.Row="1" ColumnDefinitions="160,*" ColumnSpacing="18">
+        <TextBlock Text="{Binding PaletteLabel}" Classes="settingsFormLabel" VerticalAlignment="Center" />
+        <ComboBox Grid.Column="1" Classes="settingSelector" ItemsSource="{Binding PaletteOptions}" SelectedItem="{Binding SelectedPalette, Mode=TwoWay}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:ThemeOptionViewModel">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Border Classes="themeSwatch" Background="{Binding AccentBrush}" />
+                <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" />
+              </StackPanel>
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+      </Grid>
+
+      <Grid Grid.Row="2"
+            ColumnDefinitions="160,*"
             ColumnSpacing="18">
         <TextBlock Text="{Binding LanguageLabel}"
                    Classes="settingsFormLabel"
@@ -79,7 +86,7 @@
         </Grid>
       </Grid>
 
-      <Grid Grid.Row="2"
+      <Grid Grid.Row="3"
             ColumnDefinitions="118,*"
             ColumnSpacing="18">
         <TextBlock Text="{Binding RememberWindowSizeText}"

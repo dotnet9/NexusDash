@@ -1,11 +1,6 @@
-using Avalonia.Styling;
+﻿using Avalonia.Media;
 
 namespace NexusDash.Models
 {
-    public sealed record ThemeOption(
-        string Key,
-        string Name,
-        ThemeVariant ThemeVariant,
-        string AccentColor,
-        bool IsDark);
+    public sealed record ThemeOption(string Key, string Name, IBrush AccentBrush, bool IsDark);
 }

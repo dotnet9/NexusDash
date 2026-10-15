@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace NexusDash.Models
 {
@@ -6,6 +6,7 @@ namespace NexusDash.Models
     {
         public bool IsDarkTheme { get; set; } = true;
         public string? ThemeKey { get; set; }
+        public string? PaletteKey { get; set; }
         public string? CultureName { get; set; }
         public bool RememberWindowSize { get; set; }
         public double WindowWidth { get; set; } = 1440;

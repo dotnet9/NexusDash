@@ -18,15 +18,7 @@ class Program
         {
             ConfigureLogger();
             loggerInitialized = true;
-            BuildAvaloniaApp()
-                .With(new FontManagerOptions
-                {
-                    FontFallbacks = [new FontFallback
-                    {
-                        FontFamily = new FontFamily("Microsoft YaHei")
-                    }]
-                })
-                .StartWithClassicDesktopLifetime(args);
+            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }
         catch (Exception ex)
         {
@@ -50,12 +42,21 @@ class Program
         }
     }
 
-    // Avalonia configuration, don't remove; also used by visual designer.
+    // 运行入口与设计器共用字体回退配置。
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UseReactiveUI(builder => builder.WithAvalonia())
             .UsePlatformDetect()
             .With(new Win32PlatformOptions())
+            .With(new FontManagerOptions
+            {
+                FontFallbacks =
+                [
+                    new FontFallback { FontFamily = new FontFamily("Microsoft YaHei UI") },
+                    new FontFallback { FontFamily = new FontFamily("PingFang SC") },
+                    new FontFallback { FontFamily = new FontFamily("Noto Sans CJK SC") }
+                ]
+            })
             .LogToTrace();
 
     private static void ConfigureLogger()

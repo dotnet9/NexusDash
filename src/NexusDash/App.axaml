@@ -8,10 +8,14 @@
                          x:Class="NexusDash.App"
                          Name="NexusDash"
                          RequestedThemeVariant="Dark">
+  <Application.Resources>
+    <FontFamily x:Key="DefaultFontFamily">Segoe UI, Microsoft YaHei UI, PingFang SC, Noto Sans CJK SC, sans-serif</FontFamily>
+  </Application.Resources>
   <prism:PrismApplication.Styles>
     <semi:SemiTheme />
     <semi:UrsaSemiTheme />
     <codewf:ACSemiTheme />
+    <codewf:StudioTheme />
     <codewf:DataGridSemiTheme />
     <themes:NexusDashControlsThemes />
     <StyleInclude Source="Styles/AppStyles.axaml" />

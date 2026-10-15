@@ -1,4 +1,4 @@
-using CodeWF.Avalonia.Lang;
+﻿using CodeWF.Avalonia.Lang;
 using Avalonia.Threading;
 using CodeWF.Toolkit.Logging;
 using NexusDash.Models;
@@ -195,7 +195,7 @@ namespace NexusDash.ViewModels
                 query);
             Logger.Info(
                 $"File search started: query={query}; roots={string.Join("; ", roots)}; maxResults={MaxResults}",
-                $"文件搜索开始：{query}，位置：{string.Join("; ", roots)}");
+                string.Format(CultureInfo.CurrentCulture, I18nManager.Instance.GetResource(NexusDashL.LogSearchStarted) ?? NexusDashL.LogSearchStarted, query, string.Join("; ", roots)));
 
             try
             {
@@ -223,7 +223,7 @@ namespace NexusDash.ViewModels
                     query);
                 Logger.Info(
                     $"File search completed: query={query}; results={resultCount}",
-                    $"文件搜索完成：{query}，找到 {resultCount} 个结果");
+                    string.Format(CultureInfo.CurrentCulture, I18nManager.Instance.GetResource(NexusDashL.LogSearchCompleted) ?? NexusDashL.LogSearchCompleted, query, resultCount));
             }
             catch (OperationCanceledException)
             {
@@ -280,7 +280,7 @@ namespace NexusDash.ViewModels
             StatusMessage = T(NexusDashL.FileSearchStatusCancelled);
             Logger.Warn(
                 $"File search cancelled: query={query}",
-                $"文件搜索已取消：{query}");
+                string.Format(CultureInfo.CurrentCulture, I18nManager.Instance.GetResource(NexusDashL.LogSearchCanceled) ?? NexusDashL.LogSearchCanceled, query));
         }
 
         private void QueueSearchResult(
