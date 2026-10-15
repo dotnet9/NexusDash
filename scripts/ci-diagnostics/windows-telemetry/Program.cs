@@ -174,6 +174,43 @@ sealed class DiagnosticCommandRunner(Evidence evidence) : IProcessCommandRunner
         var error = errorTask.GetAwaiter().GetResult();
         var result = outputTask.GetAwaiter().GetResult();
         evidence.Write("command-exit", new { command, elapsedMilliseconds = elapsed.ElapsedMilliseconds, exitCode = process.ExitCode, stdoutLength = result.Length, stderrLength = error.Length });
+        if (evidence.Stage == "processes" && process.ExitCode == 0)
+        {
+            // 只统计原始 JSON 的结构，区分 CIM 无结果与产品解析、合并过程丢失数据。
+            try
+            {
+                using var document = JsonDocument.Parse(result);
+                var root = document.RootElement;
+                var rows = root.TryGetProperty("Services", out var services) && services.ValueKind == JsonValueKind.Array
+                    ? services.EnumerateArray().ToArray() : [];
+                var processes = root.TryGetProperty("Processes", out var processRows) && processRows.ValueKind == JsonValueKind.Array
+                    ? processRows.EnumerateArray().ToArray() : [];
+                var processPids = processes.Select(ReadPid).Where(pid => pid > 0).ToHashSet();
+                evidence.Write("metadata-json-counts", new
+                {
+                    processRows = processes.Length,
+                    serviceRows = rows.Length,
+                    servicesWithPositivePid = rows.Count(row => ReadPid(row) > 0),
+                    servicesMatchingProcessPid = rows.Count(row => processPids.Contains(ReadPid(row))),
+                    servicesWithDisplayName = rows.Count(row => HasText(row, "DisplayName")),
+                    servicesWithName = rows.Count(row => HasText(row, "Name"))
+                });
+            }
+            catch (Exception exception)
+            {
+                evidence.Write("metadata-json-invalid", new { exceptionType = exception.GetType().FullName });
+            }
+        }
         return process.ExitCode == 0 ? result : "";
     }
+
+    private static int ReadPid(JsonElement row)
+    {
+        if (!row.TryGetProperty("ProcessId", out var value)) return -1;
+        if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var number)) return number;
+        return value.ValueKind == JsonValueKind.String && int.TryParse(value.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out number) ? number : -1;
+    }
+
+    private static bool HasText(JsonElement row, string property)
+        => row.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(value.GetString());
 }
