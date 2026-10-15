@@ -15,7 +15,13 @@ class Program
     {
         if (args is ["--verify-runtime", var directory])
         {
-            RuntimeVerification.Run(directory);
+            try { RuntimeVerification.Run(directory); }
+            catch
+            {
+                // 自检失败正常返回非零码；脱敏阶段证据仅写入显式传入的独立目录。
+                Environment.ExitCode = 1;
+                Console.Error.WriteLine("Runtime verification failed; inspect runtime-diagnostics.txt in the supplied directory.");
+            }
             return;
         }
         var loggerInitialized = false;

@@ -21,6 +21,13 @@ using NexusDash.Views;
 using NexusDash.Views.Settings;
 using Prism.Ioc;
 
+TelemetryRegression.Run(Check);
+if (args.Contains("--telemetry-regression-only"))
+{
+    Console.WriteLine("NexusDash isolated telemetry regression passed.");
+    return;
+}
+
 var output = Path.GetFullPath(args.FirstOrDefault() ?? "artifacts/ui-verification");
 Directory.CreateDirectory(output);
 Logger.Initialize(new LoggerOptions { EnableConsole = false });

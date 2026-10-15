@@ -891,7 +891,7 @@ namespace NexusDash.Services
                     var output = _processCommandRunner.ReadOutput("powershell.exe",
                         "-NoLogo -NoProfile -NonInteractive -EncodedCommand " + encoded,
                         timeoutMilliseconds: 10000, cancellationToken: cancellationToken);
-                    if (string.IsNullOrWhiteSpace(output)) return new Dictionary<int, IReadOnlyList<string>>();
+                    if (string.IsNullOrWhiteSpace(output)) return RetryWindowsServiceDisplayNames(cancellationToken);
                     using var document = JsonDocument.Parse(output);
                     if (document.RootElement.TryGetProperty("Processes", out var processes) && processes.ValueKind == JsonValueKind.Array)
                     {
@@ -916,12 +916,46 @@ namespace NexusDash.Services
                         }
                     }
                     if (document.RootElement.TryGetProperty("Services", out var services))
-                        return ReadWindowsServiceDisplayNames(services);
+                    {
+                        var names = ReadWindowsServiceDisplayNames(services);
+                        if (names.Count > 0) return names;
+                    }
                 }
                 catch (OperationCanceledException) { throw; }
                 catch
                 {
                     // CIM 可能被禁用、不可用或受到权限限制。
+                }
+                return RetryWindowsServiceDisplayNames(cancellationToken);
+            }
+
+            private IReadOnlyDictionary<int, IReadOnlyList<string>> RetryWindowsServiceDisplayNames(CancellationToken cancellationToken)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                try
+                {
+                    // 服务 CIM 可瞬态返回空结果；最多独立补采一次，沿用原取消令牌和明确的命令预算。
+                    const string script = """
+                        $ErrorActionPreference='Stop'; $ProgressPreference='SilentlyContinue'
+                        [Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)
+                        $services=@(Get-CimInstance Win32_Service -Filter 'ProcessId <> 0' -OperationTimeoutSec 3 -ErrorAction Stop | Select-Object ProcessId,Name,DisplayName)
+                        ConvertTo-Json -InputObject $services -Depth 3 -Compress
+                        """;
+                    var encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));
+                    var output = _processCommandRunner.ReadOutput("powershell.exe",
+                        "-NoLogo -NoProfile -NonInteractive -EncodedCommand " + encoded,
+                        timeoutMilliseconds: 5000, cancellationToken: cancellationToken);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (!string.IsNullOrWhiteSpace(output))
+                    {
+                        using var document = JsonDocument.Parse(output);
+                        return ReadWindowsServiceDisplayNames(document.RootElement);
+                    }
+                }
+                catch (OperationCanceledException) { throw; }
+                catch
+                {
+                    // 持续不可用时保留无服务元数据的真实结果，不生成替代数据。
                 }
                 return new Dictionary<int, IReadOnlyList<string>>();
             }
