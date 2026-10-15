@@ -1,8 +1,8 @@
 ﻿name: release
 
-# Pushing a v* (or bare numeric) tag publishes: NativeAOT self-contained
-# win-x64 plus self-contained linux-x64 / osx-x64 / osx-arm64 builds, zipped
-# with SHA-256 checksums, followed by a GitHub Release.
+# 推送版本标签发布五平台 NativeAOT 安装包：win-x64、linux-x64、linux-arm64、osx-x64、osx-arm64。
+# 仅提供 EXE / DEB / DMG 与 SHA-256，不提供便携压缩包。
+# 安装包与校验文件汇总后创建 GitHub Release。
 on:
   push:
     tags:
@@ -78,6 +78,23 @@ jobs:
           -p:IlcGenerateCompleteTypeMetadata=true -p:IlcTrimMetadata=false -p:IlcSingleThreaded=true
           -p:Version=$env:APP_VERSION
 
+      - name: 验证正式 Windows 原生产物
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $directory = Join-Path $env:RUNNER_TEMP ('nexus-runtime-' + [guid]::NewGuid().ToString('N'))
+          $start = [Diagnostics.ProcessStartInfo]::new((Resolve-Path './artifacts/publish/win-x64/NexusDash/NexusDash.exe').Path)
+          $start.UseShellExecute = $false
+          $start.CreateNoWindow = $true
+          $start.ArgumentList.Add('--verify-runtime')
+          $start.ArgumentList.Add($directory)
+          $process = [Diagnostics.Process]::Start($start)
+          if (-not $process.WaitForExit(30000)) { throw 'Native runtime verification timed out.' }
+          if ($process.ExitCode -ne 0) { throw "Native runtime verification failed: $($process.ExitCode)" }
+          $result = Get-Content -LiteralPath (Join-Path $directory 'runtime-verification.txt') -Raw
+          if ($result -notmatch '^NativeAOT runtime verification passed;') { throw 'Native runtime evidence is missing.' }
+          Write-Output $result
+
       - name: Build Windows installer (Inno Setup)
         if: runner.os == 'Windows'
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
@@ -148,6 +165,10 @@ jobs:
           }
           "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           "tag_name=$tagName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: 校验五平台安装包与 SHA-256
+        shell: pwsh
+        run: ./scripts/verify_release_installers.ps1 -Version '${{ steps.version.outputs.version }}'
 
       - name: Prepare release notes
         shell: pwsh
