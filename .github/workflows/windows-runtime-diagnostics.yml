@@ -1,0 +1,69 @@
+name: Windows runtime diagnostics
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  telemetry:
+    name: Managed telemetry (${{ matrix.mode }})
+    runs-on: windows-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [exact, instrumented]
+    env:
+      NUGET_PACKAGES: ${{ runner.temp }}/nexus-diagnostic-nuget
+    steps:
+      - name: Checkout diagnostics
+        uses: actions/checkout@v4
+        with:
+          path: diagnostics
+          sparse-checkout: scripts/ci-diagnostics
+
+      - name: Checkout immutable product source
+        uses: actions/checkout@v4
+        with:
+          ref: v0.1.13
+          path: source
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Bind probe to published source without changing product files
+        shell: pwsh
+        run: |
+          $expected = '766988fef73b3ca608261eadeb571a7bbf807554'
+          if ((git -C source rev-parse HEAD).Trim() -ne $expected) { throw 'Published source mismatch.' }
+          Copy-Item -LiteralPath diagnostics/scripts/ci-diagnostics -Destination source/scripts/ci-diagnostics -Recurse
+          $changed = git -C source diff --name-only $expected -- src Directory.Build.props Directory.Packages.props global.json
+          if ($changed) { throw 'Product sources must remain unchanged.' }
+          Write-Output "Product source: $expected"
+
+      - name: Build managed console probe
+        working-directory: source
+        shell: pwsh
+        run: |
+          dotnet build scripts/ci-diagnostics/windows-telemetry/WindowsTelemetryDiagnostics.csproj -c Release -o '${{ runner.temp }}/nexus-managed-probe'
+          if ($LASTEXITCODE -ne 0) { throw 'Diagnostic build failed.' }
+
+      - name: Diagnose unchanged telemetry assertions
+        working-directory: source
+        shell: pwsh
+        run: |
+          $directory = Join-Path $env:RUNNER_TEMP 'nexus-redacted-evidence'
+          dotnet '${{ runner.temp }}/nexus-managed-probe/WindowsTelemetryDiagnostics.dll' '${{ matrix.mode }}' $directory
+          if ($LASTEXITCODE -ne 0) { throw 'Telemetry diagnostic reproduced a failure; inspect redacted evidence.' }
+
+      - name: Upload redacted phase evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-v0.1.13-managed-${{ matrix.mode }}
+          path: ${{ runner.temp }}/nexus-redacted-evidence/*.jsonl
+          if-no-files-found: warn
+          retention-days: 7
