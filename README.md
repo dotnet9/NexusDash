@@ -1,4 +1,4 @@
-# NexusDash
+﻿# NexusDash
 
 NexusDash 是一个 Avalonia 桌面仪表盘，用于本机系统监控。项目使用 `NexusDash.slnx`，并通过 `Directory.Packages.props` 启用 NuGet 中央包管理。
 
@@ -66,3 +66,9 @@ XML 文件统一使用两个空格缩进。`Directory.Packages.props` 统一承�
 ## 发布
 
 标准发布流程与发布说明规范见 [docs/RELEASE.md](docs/RELEASE.md)。
+
+## 原生界面复核
+
+![原生主窗口](docs/media/nexusdash-native-dark.png)
+
+0.1.10 提供独立三态与八色、四语言动态设置和真实版本更新流程。详见 [验收记录](docs/UI-VERIFICATION.md) 与 [产品原型](design/studio.html)。
