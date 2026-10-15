@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <Version>0.1.12</Version>
+    <Version>0.1.13</Version>
     <UseArtifactsOutput>true</UseArtifactsOutput>
     <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts\</ArtifactsPath>
     <PackageOutputPath>$(ArtifactsPath)packages\</PackageOutputPath>
