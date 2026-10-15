@@ -1,4 +1,4 @@
-using CodeWF.Avalonia.DataGrid;
+﻿using CodeWF.Avalonia.DataGrid;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -300,9 +300,9 @@ namespace NexusDash.Views
                 return;
             }
 
-            SetColumnHeader(processGrid.Columns[0], MainWindowViewModel.ProcessColumnPid, _viewModel.PidText);
-            SetColumnHeader(processGrid.Columns[1], MainWindowViewModel.ProcessColumnParentPid, _viewModel.ParentPidText);
-            SetColumnHeader(processGrid.Columns[2], MainWindowViewModel.ProcessColumnName, _viewModel.ProcessNameText);
+            SetColumnHeader(processGrid.Columns[1], MainWindowViewModel.ProcessColumnPid, _viewModel.PidText);
+            SetColumnHeader(processGrid.Columns[2], MainWindowViewModel.ProcessColumnParentPid, _viewModel.ParentPidText);
+            SetColumnHeader(processGrid.Columns[0], MainWindowViewModel.ProcessColumnName, _viewModel.ProcessNameText);
             SetColumnHeader(processGrid.Columns[3], MainWindowViewModel.ProcessColumnPublisher, _viewModel.PublisherText);
             SetColumnHeader(processGrid.Columns[4], MainWindowViewModel.ProcessColumnCpu, _viewModel.CpuText);
             SetColumnHeader(processGrid.Columns[5], MainWindowViewModel.ProcessColumnMemory, _viewModel.MemoryText);

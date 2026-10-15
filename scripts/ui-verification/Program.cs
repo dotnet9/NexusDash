@@ -32,6 +32,14 @@ var window = app.Container.Resolve<MainWindow>();
 var model = (MainWindowViewModel)window.DataContext!;
 model.PauseRefresh();
 window.Show(); Pump();
+if (args.Contains("--minimum-only"))
+{
+    VerifyMinimumLayout();
+    window.Close();
+    Console.WriteLine("NexusDash minimum layout verification passed: " + output);
+    return;
+}
+VerifyThirdPartyLocales();
 Check(window.Bounds.Width == 1440 && window.Bounds.Height == 760, "Actual main window applies product dimensions");
 Check(window.FontFamily.Equals((FontFamily)app.FindResource("DefaultFontFamily")!), "Actual main window applies font fallback");
 Check(window.TitleBarHeight == 40 && window.CaptionButtonWidth == 34, "Compact title bar metrics");
@@ -116,10 +124,127 @@ foreach (var culture in new[] { "en-US", "zh-CN", "zh-Hant", "ja-JP" })
     Check(!about.Header.StartsWith("NexusDash."), "About dynamically localized: " + culture);
     Capture(settingsWindow, $"about-{culture}.png");
 }
+VerifyMinimumLayout();
 VerifyUpdates();
 settingsWindow.Close(); window.Close();
 Console.WriteLine("NexusDash UI verification passed: " + output);
 
+void VerifyMinimumLayout()
+{
+    var minimumSettings = app.Container.Resolve<SettingsViewModel>();
+    window.Width = 1180;
+    window.Height = 620;
+    foreach (var culture in new[] { "zh-CN", "zh-Hant", "en-US", "ja-JP" })
+    {
+        EventBus.Default.Publish(new LanguageChangeRequestedCommand(culture));
+        foreach (var node in model.ToolTree.ToolMenuItems.ToArray())
+        {
+            model.ToolTree.SelectedToolNode = node;
+            Pump();
+            if (node.ToolKey == MainWindowViewModel.ProcessManagerToolKey)
+            {
+                var tabs = window.GetVisualDescendants().OfType<ProcessManagerView>().Single()
+                    .GetVisualDescendants().OfType<TabControl>().Single();
+                for (var index = 0; index < tabs.ItemCount; index++)
+                {
+                    tabs.SelectedIndex = index;
+                    Capture(window, $"minimum-{culture}-{node.ToolKey}-{index}.png");
+                    if (index == 0)
+                    {
+                        foreach (var plot in window.GetVisualDescendants().OfType<MetricPlotView>())
+                        {
+                            var grid = (Grid)plot.Parent!;
+                            var following = grid.Children.Where(child => Grid.GetRow(child) > Grid.GetRow(plot)).ToArray();
+                            var plotBottom = plot.TranslatePoint(new Point(0, plot.Bounds.Height), window)!.Value.Y;
+                            var nextTop = following.Min(child => child.TranslatePoint(default, window)!.Value.Y);
+                            Check(plotBottom <= nextTop + 1,
+                                $"Minimum performance chart avoids summary overlap: {culture}; plot bottom={plotBottom}; summary top={nextTop}");
+                        }
+                    }
+                    if (index == 1)
+                    {
+                        var list = window.GetVisualDescendants().OfType<ProcessListView>().Single();
+                        var grid = list.FindControl<DataGrid>("ProcessGrid")!;
+                        if (!grid.ItemsSource.Cast<object>().Any())
+                        {
+                            ((ProcessListViewModel)list.DataContext!).VisibleProcesses.Add(new ProcessRowViewModel(
+                                new ProcessMetrics { Pid = 6408, Name = "Layout fixture", RawName = "Layout fixture" },
+                                "—", (_, _) => { }));
+                            Pump();
+                        }
+                        foreach (var filter in list.GetVisualDescendants().OfType<CheckBox>())
+                        {
+                            var start = filter.TranslatePoint(default, list)!.Value;
+                            Check(start.X >= 0 && start.X + filter.Bounds.Width <= list.Bounds.Width + 1,
+                                "Minimum process filters remain fully reachable: " + culture);
+                        }
+                        Check(Equals(grid.Columns[0].Tag, "name") && grid.Columns.All(column => !column.IsVisible || column.ActualWidth >= 64),
+                            "Minimum process table preserves readable columns: " + culture);
+                        grid.ScrollIntoView(grid.ItemsSource.Cast<object>().First(), grid.Columns[^1]);
+                        Pump();
+                        var lastHeader = grid.GetVisualDescendants().OfType<DataGridColumnHeader>()
+                            .Single(header => Equals(header.Content, grid.Columns[^1].Header));
+                        var lastStart = lastHeader.TranslatePoint(default, grid)!.Value;
+                        Check(lastStart.X >= grid.Columns[0].ActualWidth - 1 && lastStart.X + lastHeader.Bounds.Width <= grid.Bounds.Width + 1,
+                            $"Horizontal scrolling exposes the final process column: {culture}; start={lastStart.X}; width={lastHeader.Bounds.Width}; grid={grid.Bounds.Width}; frozen={grid.Columns[0].ActualWidth}");
+                        Capture(window, $"minimum-{culture}-{node.ToolKey}-scrolled.png");
+                    }
+                }
+            }
+            else if (node.ToolKey == MainWindowViewModel.SettingsToolKey)
+            {
+                foreach (var page in minimumSettings.Pages)
+                {
+                    minimumSettings.SelectedPage = page;
+                    Capture(window, $"minimum-{culture}-settings-{page.GetType().Name}.png");
+                }
+            }
+            else Capture(window, $"minimum-{culture}-{node.ToolKey}.png");
+        }
+    }
+}
+
+void VerifyThirdPartyLocales()
+{
+    var editor = new TextBox { Text = "Locale verification" };
+    var shell = new Window { Width = 360, Height = 120, Content = editor };
+    try
+    {
+        shell.Show(); Pump();
+        var menu = (MenuFlyout)editor.ContextFlyout!;
+        foreach (var culture in new[] { "en-US", "zh-CN", "ja-JP", "zh-Hant", "en-US" })
+        {
+            I18nManager.Instance.Culture = CultureInfo.GetCultureInfo(culture); Pump();
+            ResourceDictionary semi = culture switch
+            {
+                "en-US" => new Semi.Avalonia.Locale.en_us(),
+                "ja-JP" => new Semi.Avalonia.Locale.ja_jp(),
+                "zh-Hant" => new Semi.Avalonia.Locale.zh_tw(),
+                _ => new Semi.Avalonia.Locale.zh_cn(),
+            };
+            ResourceDictionary ursa = culture is "en-US" or "ja-JP"
+                ? new Ursa.Themes.Semi.Locale.en_us() : new Ursa.Themes.Semi.Locale.zh_cn();
+            menu.ShowAt(editor); Pump();
+            Check(Equals(((MenuItem)menu.Items[1]!).Header, semi["STRING_MENU_COPY"])
+                && Equals(((MenuItem)menu.Items[2]!).Header, semi["STRING_MENU_PASTE"]),
+                "Existing Semi editor menu follows global culture: " + culture);
+            Check(Equals(app.Styles.OfType<Ursa.Themes.Semi.UrsaSemiTheme>().Single().Resources["STRING_MENU_DIALOG_CANCEL"],
+                ursa["STRING_MENU_DIALOG_CANCEL"]), "Existing Ursa dialog follows global culture: " + culture);
+            menu.Hide();
+        }
+        app.Resources["STRING_MENU_COPY"] = "Host copy";
+        EventBus.Default.Publish(new LanguageChangeRequestedCommand("zh-CN")); Pump();
+        menu.ShowAt(editor); Pump();
+        Check(Equals(((MenuItem)menu.Items[1]!).Header, "Host copy"), "Language changes preserve host overrides.");
+        menu.Hide();
+    }
+    finally
+    {
+        app.Resources.Remove("STRING_MENU_COPY");
+        I18nManager.Instance.Culture = CultureInfo.GetCultureInfo("zh-CN");
+        shell.Close();
+    }
+}
 void Check(bool success, string scenario)
 {
     if (!success) throw new InvalidOperationException(scenario);

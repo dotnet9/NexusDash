@@ -2714,7 +2714,6 @@ namespace NexusDash.ViewModels
                 _userPreferencesService.Update(preferences => preferences.CultureName = culture.Name);
             }
 
-            App.ApplyThirdPartyCulture(culture.Name);
 
             RefreshLanguageOptions();
             RefreshLocalizedProperties();

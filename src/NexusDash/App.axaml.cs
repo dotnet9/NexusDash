@@ -3,6 +3,7 @@ using CodeWF.Avalonia.Controls.Themes;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using CodeWF.Toolkit.EventBus;
 using CodeWF.Toolkit.Logging;
 using DryIoc;
@@ -18,9 +19,9 @@ using Prism.Ioc;
 using Prism.Modularity;
 using Prism.Mvvm;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 
 namespace NexusDash
 {
@@ -50,7 +51,8 @@ namespace NexusDash
                 ResourceFolder = resourceFolder
             };
             I18nManager.Instance.Register(langPlugin, startupCulture, out _);
-            ApplyThirdPartyCulture(startupCulture.Name);
+            I18nManager.Instance.CultureChanged += OnCultureChanged;
+            ApplyControlCulture();
             ThemeController = new StudioThemeController(this)
             {
                 Palette = ThemeResourceService.ResolvePalette(ThemeResourceService.ResolvePreferencePaletteKey(preferences.PaletteKey, preferences.ThemeKey)),
@@ -140,54 +142,22 @@ namespace NexusDash
             return "en-US";
         }
 
-        internal static void ApplyThirdPartyCulture(string cultureName)
+        private static void OnCultureChanged(object? sender, EventArgs args)
         {
-            if (Current is not { } app)
-            {
-                return;
-            }
-
-            var normalizedCultureName = NormalizeCulture(cultureName);
-            if (SemiCultures.TryGetValue(normalizedCultureName, out var semiCulture))
-            {
-                MergeCultureResources(app.Resources, semiCulture);
-            }
-
-            if (UrsaCultures.TryGetValue(normalizedCultureName, out var ursaCulture))
-            {
-                MergeCultureResources(app.Resources, ursaCulture);
-            }
+            if (Dispatcher.UIThread.CheckAccess()) ApplyControlCulture();
+            else Dispatcher.UIThread.Post(ApplyControlCulture);
         }
 
-        private static readonly IReadOnlyDictionary<string, ResourceDictionary> SemiCultures =
-            new Dictionary<string, ResourceDictionary>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["en-US"] = new Semi.Avalonia.Locale.en_us(),
-                ["ja-JP"] = new Semi.Avalonia.Locale.ja_jp(),
-                ["zh-CN"] = new Semi.Avalonia.Locale.zh_cn(),
-                ["zh-Hant"] = new Semi.Avalonia.Locale.zh_cn()
-            };
-
-        private static readonly IReadOnlyDictionary<string, ResourceDictionary> UrsaCultures =
-            new Dictionary<string, ResourceDictionary>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["en-US"] = new Ursa.Themes.Semi.Locale.en_us(),
-                ["ja-JP"] = new Ursa.Themes.Semi.Locale.en_us(),
-                ["zh-CN"] = new Ursa.Themes.Semi.Locale.zh_cn(),
-                ["zh-Hant"] = new Ursa.Themes.Semi.Locale.zh_cn()
-            };
-
-        private static void MergeCultureResources(IResourceDictionary appResources, ResourceDictionary cultureResources)
+        /// <summary>同步已加载主题的内建语言，保留应用和局部资源的同键覆盖。</summary>
+        private static void ApplyControlCulture()
         {
-            foreach (var item in cultureResources)
-            {
-                if (appResources.ContainsKey(item.Key))
-                {
-                    appResources.Remove(item.Key);
-                }
-
-                appResources.Add(item);
-            }
+            if (Current is not { } app || I18nManager.Instance.Culture is not { } culture) return;
+            var name = NormalizeCulture(culture.Name);
+            var semiCulture = CultureInfo.GetCultureInfo(name == "zh-Hant" ? "zh-TW" : name);
+            // 当前 Ursa 包缺少日语和繁体资源，分别回退英文和简体中文。
+            var ursaCulture = CultureInfo.GetCultureInfo(name switch { "ja-JP" => "en-US", "zh-Hant" => "zh-CN", _ => name });
+            foreach (var theme in app.Styles.OfType<Semi.Avalonia.SemiTheme>()) theme.Locale = semiCulture;
+            foreach (var theme in app.Styles.OfType<Ursa.Themes.Semi.UrsaSemiTheme>()) theme.Locale = ursaCulture;
         }
     }
 }
