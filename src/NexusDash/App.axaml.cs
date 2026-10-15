@@ -6,8 +6,8 @@ using Avalonia.Styling;
 using CodeWF.Toolkit.EventBus;
 using CodeWF.Toolkit.Logging;
 using DryIoc;
-using CodeWF.Avalonia.Lang;
-using CodeWF.Avalonia.Lang.Json;
+using CodeWF.Toolkit.Lang;
+using CodeWF.Toolkit.Lang.Json;
 using NexusDash.Services;
 using NexusDash.ViewModels;
 using NexusDash.ViewModels.Settings;
@@ -41,9 +41,13 @@ namespace NexusDash
             CultureInfo.DefaultThreadCurrentCulture = startupCulture;
             CultureInfo.DefaultThreadCurrentUICulture = startupCulture;
 
+            var resourceFolder = Path.Combine(AppContext.BaseDirectory, "I18n");
+            var bundleResources = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "Resources", "I18n"));
+            if (!Directory.Exists(resourceFolder) && OperatingSystem.IsMacOS() && Directory.Exists(bundleResources))
+                resourceFolder = bundleResources;
             var langPlugin = new JsonLangPlugin
             {
-                ResourceFolder = Path.Combine(AppContext.BaseDirectory, "I18n")
+                ResourceFolder = resourceFolder
             };
             I18nManager.Instance.Register(langPlugin, startupCulture, out _);
             ApplyThirdPartyCulture(startupCulture.Name);

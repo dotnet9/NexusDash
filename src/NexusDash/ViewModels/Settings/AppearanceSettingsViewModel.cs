@@ -87,6 +87,7 @@ namespace NexusDash.ViewModels.Settings
                 }
 
                 this.RaiseAndSetIfChanged(ref _selectedTheme, value, nameof(SelectedTheme));
+                this.RaisePropertyChanged(nameof(ThemeMode));
                 if (value is null || _isApplyingSettingsState)
                 {
                     return;
@@ -94,6 +95,18 @@ namespace NexusDash.ViewModels.Settings
 
                 EventBus.Publish(new ThemeChangeRequestedCommand(value.Key));
             }
+        }
+
+        /// <summary>标题栏三态按钮复用设置页的主题状态与保存流程。</summary>
+        public CodeWF.Avalonia.Controls.Themes.StudioThemeMode ThemeMode
+        {
+            get => ThemeResourceService.ResolveMode(SelectedTheme?.Key);
+            set => SelectedTheme = ThemeOptions.Single(option => option.Key == (value switch
+            {
+                CodeWF.Avalonia.Controls.Themes.StudioThemeMode.Light => ThemeResourceService.LightThemeKey,
+                CodeWF.Avalonia.Controls.Themes.StudioThemeMode.Dark => ThemeResourceService.DarkThemeKey,
+                _ => ThemeResourceService.SystemThemeKey,
+            }));
         }
 
         public void SetDarkTheme()

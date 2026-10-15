@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
@@ -7,7 +7,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using CodeWF.Avalonia.Controls.Themes;
-using CodeWF.Avalonia.Lang;
+using CodeWF.Toolkit.Lang;
 using CodeWF.Toolkit.Core.Extensions;
 using CodeWF.Toolkit.Core.UpdateChecking;
 using CodeWF.Toolkit.EventBus;
@@ -38,6 +38,42 @@ Check(window.TitleBarHeight == 40 && window.CaptionButtonWidth == 34, "Compact t
 var appearance = app.Container.Resolve<SettingsViewModel>().Pages.OfType<AppearanceSettingsViewModel>().Single();
 var about = app.Container.Resolve<SettingsViewModel>().Pages.OfType<AboutSettingsViewModel>().Single();
 Check(appearance.ThemeOptions.Count == 3 && appearance.PaletteOptions.Count == 8, "Independent three modes and eight palettes");
+var titleSettings = window.GetVisualDescendants().OfType<TitleBarSearchAddOn>().Single();
+var titleToggle = titleSettings.FindControl<Ursa.Controls.ThemeToggleButton>("TitleBarThemeToggle")!;
+var titleSwatches = titleSettings.FindControl<ListBox>("TitleBarPalettes")!;
+var titleLanguages = titleSettings.FindControl<ComboBox>("TitleBarLanguageSelector")!;
+var titleButton = titleToggle.GetVisualDescendants().OfType<Button>().Single(item => item.Name == "PART_ThemeButton");
+foreach (var palette in appearance.PaletteOptions)
+{
+    titleSwatches.SelectedItem = palette; appearance.ThemeMode = StudioThemeMode.System; Pump();
+    foreach (var expected in new[] { StudioThemeMode.Light, StudioThemeMode.Dark, StudioThemeMode.System })
+    {
+        titleButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent)); Pump();
+        Check(appearance.ThemeMode == expected && App.ThemeController!.Mode == expected, "Actual Ursa title-bar button selects: " + expected);
+        Check(VerificationApp.Preferences.Value.PaletteKey == palette.Key && App.ThemeController!.Palette == ThemeResourceService.ResolvePalette(palette.Key), "Title bar retains the selected palette: " + palette.Key);
+    }
+}
+foreach(var width in new[] { 1180, 1440 })
+foreach(var culture in new[] { "zh-CN", "zh-Hant", "en-US", "ja-JP" })
+{
+    window.Width = width; titleLanguages.IsDropDownOpen = true; Pump();
+    Check(titleLanguages.IsDropDownOpen && titleLanguages.Items.Count == model.Languages.Count, "Language icon opens every supported culture");
+    titleLanguages.SelectedItem = model.Languages.Single(option => option.CultureName == culture);
+    titleLanguages.IsDropDownOpen = false; Pump();
+    Check(I18nManager.Instance.Culture.Name == culture, "Title bar switches the global language: " + culture);
+    foreach (var mode in new[] { StudioThemeMode.System, StudioThemeMode.Light, StudioThemeMode.Dark })
+    {
+        appearance.ThemeMode = mode; Pump();
+        var key = mode switch { StudioThemeMode.Light => NexusDashL.LightTheme, StudioThemeMode.Dark => NexusDashL.DarkTheme, _ => NexusDashL.ThemeSystem };
+        Check(ToolTip.GetTip(titleButton) is TextBlock tip && tip.Text == I18nManager.Instance.GetResource(key),
+            "Existing Ursa tooltip follows the current culture and mode: " + culture + "/" + mode);
+    }
+    var left = (Control)window.LeftContent!;
+    Check(left.TranslatePoint(new Point(left.Bounds.Width, 0), window)!.Value.X <= titleSettings.TranslatePoint(default, window)!.Value.X,
+        "Title bar content does not overlap: " + width + "/" + culture);
+}
+window.Width = 1440; titleLanguages.SelectedItem = model.Languages.Single(option => option.CultureName == "zh-CN"); Pump();
+
 Check(ThemeResourceService.ResolvePreferenceThemeKey("aquatic", true) == "light" && ThemeResourceService.ResolvePreferencePaletteKey(null, "aquatic") == "aquatic", "Legacy palette migration preserves mode");
 Check(ThemeResourceService.ResolvePreferenceThemeKey("night-sky", false) == "dark", "Legacy night sky preserves dark mode");
 foreach (var palette in appearance.PaletteOptions)
@@ -68,7 +104,7 @@ foreach (var culture in new[] { "en-US", "zh-CN", "zh-Hant", "ja-JP" })
     about.PropertyChanged += changed;
     EventBus.Default.Publish(new LanguageChangeRequestedCommand(culture));
     about.PropertyChanged -= changed;
-    Check(notifications > 0, "Existing settings pages notify language changes: " + culture);
+    Check(I18nManager.Instance.Culture.Name == culture && notifications > 0, "Requested language stays active and updates existing settings pages: " + culture);
     settings.SelectedPage = appearance; Pump();
     Check(appearance.SelectedTheme?.Key == "system", "Language change preserves selected system mode");
     Check(appearance.SelectedTheme.DisplayName == I18nManager.Instance.GetResource(NexusDashL.ThemeSystem), "Selected mode refreshes its displayed translation");

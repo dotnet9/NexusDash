@@ -72,6 +72,7 @@ namespace NexusDash.ViewModels.Settings
             var candidates = new[]
             {
                 Path.Combine(AppContext.BaseDirectory, fileName),
+                Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "Resources", fileName)),
                 Path.Combine(Directory.GetCurrentDirectory(), fileName),
                 Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", fileName)),
                 Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", fileName))

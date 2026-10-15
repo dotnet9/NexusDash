@@ -1,4 +1,4 @@
-﻿using CodeWF.Avalonia.Lang;
+﻿using CodeWF.Toolkit.Lang;
 using Avalonia.Threading;
 using CodeWF.Toolkit.Logging;
 using NexusDash.Models;

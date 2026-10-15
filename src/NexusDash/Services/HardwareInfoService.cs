@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-#if WINDOWS
-using System.Management;
-#endif
 
 namespace NexusDash.Services
 {
@@ -67,23 +66,56 @@ namespace NexusDash.Services
         }
 
 #if WINDOWS
-        private static void AddWindowsHardwareSections(
+        private void AddWindowsHardwareSections(
             ICollection<HardwareInfoSectionSnapshot> sections,
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            AddProcessorSection(sections);
-            AddMemorySection(sections);
-            AddGraphicsSection(sections);
-            AddStorageSection(sections);
-            AddNetworkSection(sections);
-            AddFirmwareSection(sections);
-            AddBatterySection(sections);
+            // 单次限时 CIM 查询避开 System.Management 在 NativeAOT 中失效的 COM 路径。
+            const string script = """
+                $ErrorActionPreference='SilentlyContinue'; $ProgressPreference='SilentlyContinue'
+                [Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)
+                [ordered]@{
+                    Win32_Processor=@(Get-CimInstance Win32_Processor -OperationTimeoutSec 5 | Select-Object Name,NumberOfCores,NumberOfLogicalProcessors,ProcessorId)
+                    Win32_OperatingSystem=@(Get-CimInstance Win32_OperatingSystem -OperationTimeoutSec 5 | Select-Object TotalVisibleMemorySize,FreePhysicalMemory)
+                    Win32_PhysicalMemory=@(Get-CimInstance Win32_PhysicalMemory -OperationTimeoutSec 2 | Select-Object Capacity,Speed,Manufacturer,PartNumber)
+                    Win32_VideoController=@(Get-CimInstance Win32_VideoController -OperationTimeoutSec 2 | Select-Object Name,DriverVersion,AdapterRAM)
+                    Win32_DiskDrive=@(Get-CimInstance Win32_DiskDrive -OperationTimeoutSec 2 | Select-Object Model,Size,InterfaceType,MediaType,SerialNumber)
+                    'Win32_NetworkAdapterConfiguration WHERE IPEnabled = True'=@(Get-CimInstance Win32_NetworkAdapterConfiguration -Filter 'IPEnabled=True' -OperationTimeoutSec 2 | Select-Object Description,MACAddress,IPAddress,DefaultIPGateway,DHCPEnabled)
+                    Win32_ComputerSystem=@(Get-CimInstance Win32_ComputerSystem -OperationTimeoutSec 2 | Select-Object Manufacturer,Model)
+                    Win32_BIOS=@(Get-CimInstance Win32_BIOS -OperationTimeoutSec 2 | Select-Object Manufacturer,SMBIOSBIOSVersion,@{Name='ReleaseDate';Expression={if($_.ReleaseDate){$_.ReleaseDate.ToString('yyyyMMddHHmmss',[Globalization.CultureInfo]::InvariantCulture)}}},SerialNumber)
+                    Win32_BaseBoard=@(Get-CimInstance Win32_BaseBoard -OperationTimeoutSec 2 | Select-Object Manufacturer,Product,SerialNumber)
+                    Win32_Battery=@(Get-CimInstance Win32_Battery -OperationTimeoutSec 2 | Select-Object Name,BatteryStatus,EstimatedChargeRemaining)
+                } | ConvertTo-Json -Depth 5 -Compress
+                """;
+            try
+            {
+                var encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));
+                var output = processCommandRunner.ReadOutput("powershell.exe",
+                    "-NoLogo -NoProfile -NonInteractive -EncodedCommand " + encoded,
+                    timeoutMilliseconds: 15000, cancellationToken: cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                if (string.IsNullOrWhiteSpace(output)) return;
+                using var document = JsonDocument.Parse(output);
+                var hardware = document.RootElement;
+                AddProcessorSection(sections, hardware);
+                AddMemorySection(sections, hardware);
+                AddGraphicsSection(sections, hardware);
+                AddStorageSection(sections, hardware);
+                AddNetworkSection(sections, hardware);
+                AddFirmwareSection(sections, hardware);
+                AddBatterySection(sections, hardware);
+            }
+            catch (OperationCanceledException) { throw; }
+            catch
+            {
+                // CIM 不可用或受限时保留运行时概览。
+            }
         }
 
-        private static void AddProcessorSection(ICollection<HardwareInfoSectionSnapshot> sections)
+        private static void AddProcessorSection(ICollection<HardwareInfoSectionSnapshot> sections, JsonElement hardware)
         {
-            var processor = QueryWmi("Win32_Processor", "Name", "NumberOfCores", "NumberOfLogicalProcessors", "ProcessorId").FirstOrDefault();
+            var processor = QueryWmi(hardware, "Win32_Processor", "Name", "NumberOfCores", "NumberOfLogicalProcessors", "ProcessorId").FirstOrDefault();
             if (processor is null)
             {
                 return;
@@ -98,10 +130,10 @@ namespace NexusDash.Services
             }));
         }
 
-        private static void AddMemorySection(ICollection<HardwareInfoSectionSnapshot> sections)
+        private static void AddMemorySection(ICollection<HardwareInfoSectionSnapshot> sections, JsonElement hardware)
         {
-            var operatingSystem = QueryWmi("Win32_OperatingSystem", "TotalVisibleMemorySize", "FreePhysicalMemory").FirstOrDefault();
-            var modules = QueryWmi("Win32_PhysicalMemory", "Capacity", "Speed", "Manufacturer", "PartNumber");
+            var operatingSystem = QueryWmi(hardware, "Win32_OperatingSystem", "TotalVisibleMemorySize", "FreePhysicalMemory").FirstOrDefault();
+            var modules = QueryWmi(hardware, "Win32_PhysicalMemory", "Capacity", "Speed", "Manufacturer", "PartNumber");
             var items = new List<HardwareInfoItemSnapshot>();
 
             if (operatingSystem is not null)
@@ -139,9 +171,9 @@ namespace NexusDash.Services
             sections.Add(Section(NexusDashL.HardwareMemory, items));
         }
 
-        private static void AddGraphicsSection(ICollection<HardwareInfoSectionSnapshot> sections)
+        private static void AddGraphicsSection(ICollection<HardwareInfoSectionSnapshot> sections, JsonElement hardware)
         {
-            var adapters = QueryWmi("Win32_VideoController", "Name", "DriverVersion", "AdapterRAM");
+            var adapters = QueryWmi(hardware, "Win32_VideoController", "Name", "DriverVersion", "AdapterRAM");
             if (adapters.Count == 0)
             {
                 return;
@@ -165,9 +197,9 @@ namespace NexusDash.Services
             sections.Add(Section(NexusDashL.HardwareGraphics, items));
         }
 
-        private static void AddStorageSection(ICollection<HardwareInfoSectionSnapshot> sections)
+        private static void AddStorageSection(ICollection<HardwareInfoSectionSnapshot> sections, JsonElement hardware)
         {
-            var disks = QueryWmi("Win32_DiskDrive", "Model", "Size", "InterfaceType", "MediaType", "SerialNumber");
+            var disks = QueryWmi(hardware, "Win32_DiskDrive", "Model", "Size", "InterfaceType", "MediaType", "SerialNumber");
             if (disks.Count == 0)
             {
                 return;
@@ -194,10 +226,10 @@ namespace NexusDash.Services
             sections.Add(Section(NexusDashL.HardwareStorage, items));
         }
 
-        private static void AddNetworkSection(ICollection<HardwareInfoSectionSnapshot> sections)
+        private static void AddNetworkSection(ICollection<HardwareInfoSectionSnapshot> sections, JsonElement hardware)
         {
             var adapters = QueryWmi(
-                "Win32_NetworkAdapterConfiguration WHERE IPEnabled = True",
+                hardware, "Win32_NetworkAdapterConfiguration WHERE IPEnabled = True",
                 "Description",
                 "MACAddress",
                 "IPAddress",
@@ -225,11 +257,11 @@ namespace NexusDash.Services
             sections.Add(Section(NexusDashL.HardwareNetwork, items));
         }
 
-        private static void AddFirmwareSection(ICollection<HardwareInfoSectionSnapshot> sections)
+        private static void AddFirmwareSection(ICollection<HardwareInfoSectionSnapshot> sections, JsonElement hardware)
         {
-            var computerSystem = QueryWmi("Win32_ComputerSystem", "Manufacturer", "Model").FirstOrDefault();
-            var bios = QueryWmi("Win32_BIOS", "Manufacturer", "SMBIOSBIOSVersion", "ReleaseDate", "SerialNumber").FirstOrDefault();
-            var baseBoard = QueryWmi("Win32_BaseBoard", "Manufacturer", "Product", "SerialNumber").FirstOrDefault();
+            var computerSystem = QueryWmi(hardware, "Win32_ComputerSystem", "Manufacturer", "Model").FirstOrDefault();
+            var bios = QueryWmi(hardware, "Win32_BIOS", "Manufacturer", "SMBIOSBIOSVersion", "ReleaseDate", "SerialNumber").FirstOrDefault();
+            var baseBoard = QueryWmi(hardware, "Win32_BaseBoard", "Manufacturer", "Product", "SerialNumber").FirstOrDefault();
             var items = new List<HardwareInfoItemSnapshot>();
 
             if (computerSystem is not null)
@@ -263,9 +295,9 @@ namespace NexusDash.Services
             }
         }
 
-        private static void AddBatterySection(ICollection<HardwareInfoSectionSnapshot> sections)
+        private static void AddBatterySection(ICollection<HardwareInfoSectionSnapshot> sections, JsonElement hardware)
         {
-            var batteries = QueryWmi("Win32_Battery", "Name", "BatteryStatus", "EstimatedChargeRemaining");
+            var batteries = QueryWmi(hardware, "Win32_Battery", "Name", "BatteryStatus", "EstimatedChargeRemaining");
             if (batteries.Count == 0)
             {
                 return;
@@ -287,52 +319,38 @@ namespace NexusDash.Services
             sections.Add(Section(NexusDashL.HardwareBattery, items));
         }
 
-        private static IReadOnlyList<IReadOnlyDictionary<string, string>> QueryWmi(string wmiClassOrQuery, params string[] properties)
+        private static IReadOnlyList<IReadOnlyDictionary<string, string>> QueryWmi(
+            JsonElement hardware, string wmiClassOrQuery, params string[] properties)
         {
-            try
-            {
-                var query = $"SELECT {string.Join(", ", properties)} FROM {wmiClassOrQuery}";
-                var options = new EnumerationOptions
-                {
-                    ReturnImmediately = true,
-                    Timeout = TimeSpan.FromMilliseconds(900)
-                };
-                using var searcher = new ManagementObjectSearcher(query)
-                {
-                    Options = options
-                };
-                var rows = new List<IReadOnlyDictionary<string, string>>();
-                foreach (ManagementObject item in searcher.Get())
-                {
-                    var row = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                    foreach (var property in properties)
-                    {
-                        row[property] = FormatWmiValue(item[property]);
-                    }
-
-                    rows.Add(row);
-                }
-
-                return rows;
-            }
-            catch
+            if (hardware.ValueKind != JsonValueKind.Object ||
+                !hardware.TryGetProperty(wmiClassOrQuery, out var items) || items.ValueKind != JsonValueKind.Array)
             {
                 return [];
             }
+            var rows = new List<IReadOnlyDictionary<string, string>>();
+            foreach (var item in items.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object) continue;
+                var row = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var property in properties)
+                {
+                    row[property] = item.TryGetProperty(property, out var value) ? FormatWmiValue(value) : "";
+                }
+                rows.Add(row);
+            }
+            return rows;
         }
 
-        private static string FormatWmiValue(object? value)
+        private static string FormatWmiValue(JsonElement value)
         {
-            return value switch
+            return value.ValueKind switch
             {
-                null => "",
-                string[] values => JoinParts(values),
-                ushort[] values => JoinParts(values.Select(static value => value.ToString(CultureInfo.InvariantCulture))),
-                uint[] values => JoinParts(values.Select(static value => value.ToString(CultureInfo.InvariantCulture))),
-                ulong[] values => JoinParts(values.Select(static value => value.ToString(CultureInfo.InvariantCulture))),
-                DateTime dateTime => dateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.CurrentCulture),
-                IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
-                _ => value.ToString() ?? ""
+                JsonValueKind.Null or JsonValueKind.Undefined => "",
+                JsonValueKind.Array => JoinParts(value.EnumerateArray().Select(FormatWmiValue)),
+                JsonValueKind.True => bool.TrueString,
+                JsonValueKind.False => bool.FalseString,
+                JsonValueKind.String => value.GetString() ?? "",
+                _ => value.GetRawText()
             };
         }
 #endif

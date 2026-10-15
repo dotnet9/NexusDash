@@ -1,4 +1,4 @@
-﻿using CodeWF.Avalonia.Lang;
+﻿using CodeWF.Toolkit.Lang;
 using CodeWF.Toolkit.EventBus;
 using NexusDash.Services;
 using ReactiveUI;

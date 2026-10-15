@@ -2,7 +2,7 @@
 using Avalonia.Threading;
 using CodeWF.Toolkit.EventBus;
 using CodeWF.Toolkit.Logging;
-using CodeWF.Avalonia.Lang;
+using CodeWF.Toolkit.Lang;
 using NexusDash.Controls.Models;
 using NexusDash.Models;
 using NexusDash.Services;
@@ -156,6 +156,7 @@ namespace NexusDash.ViewModels
             IProcessSnapshotExportService processSnapshotExportService,
             SettingsViewModel settings)
         {
+            Appearance = settings.Pages.OfType<AppearanceSettingsViewModel>().Single();
             _eventBus = eventBus;
             _systemMonitorService = systemMonitorService;
             _processTelemetryService = processTelemetryService;
@@ -223,6 +224,8 @@ namespace NexusDash.ViewModels
         public EndProcessConfirmationViewModel EndProcessConfirmation { get; }
         public ObservableCollection<ProcessRowViewModel> VisibleProcesses { get; } = new();
         public ObservableCollection<ProcessColumnOptionViewModel> ProcessColumns { get; } = new();
+        public AppearanceSettingsViewModel Appearance { get; }
+
         public ObservableCollection<LanguageOption> Languages { get; } = new();
         public ObservableCollection<ToolMenuNode> ToolMenuItems { get; } = new();
         public DelegateCommand SelectProcessTool { get; }

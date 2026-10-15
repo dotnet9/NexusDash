@@ -6,12 +6,14 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 #if WINDOWS
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Management;
 #endif
 
 namespace NexusDash.Services
@@ -26,18 +28,20 @@ namespace NexusDash.Services
         private readonly Dictionary<string, byte[]?> _iconCache = new(StringComparer.OrdinalIgnoreCase);
         private readonly PlatformProcessMetadataReader _metadataReader;
         private DateTime _lastStaticMetadataRefreshUtc = DateTime.MinValue;
+        internal int WindowsServiceMetadataCount => _metadataCache.Values.Count(
+            static metadata => !string.IsNullOrWhiteSpace(metadata.ServiceDisplayName));
 
         public ProcessTelemetryService(IProcessCommandRunner processCommandRunner)
         {
             _metadataReader = new PlatformProcessMetadataReader(processCommandRunner);
         }
 
-        public Task<IReadOnlyList<ProcessMetrics>> GetProcessesAsync()
+        public Task<IReadOnlyList<ProcessMetrics>> GetProcessesAsync(CancellationToken cancellationToken = default)
         {
-            return Task.Run<IReadOnlyList<ProcessMetrics>>(GetProcesses);
+            return Task.Run<IReadOnlyList<ProcessMetrics>>(() => GetProcesses(cancellationToken), cancellationToken);
         }
 
-        private IReadOnlyList<ProcessMetrics> GetProcesses()
+        private IReadOnlyList<ProcessMetrics> GetProcesses(CancellationToken cancellationToken)
         {
             var now = DateTime.UtcNow;
             var processes = Process.GetProcesses();
@@ -54,7 +58,7 @@ namespace NexusDash.Services
                 }
             }
 
-            var metadata = RefreshPlatformMetadata(currentPids, now);
+            var metadata = RefreshPlatformMetadata(currentPids, now, cancellationToken);
             var result = new List<ProcessMetrics>(processes.Length);
 
             foreach (var process in processes)
@@ -148,10 +152,10 @@ namespace NexusDash.Services
 
         private IReadOnlyDictionary<int, PlatformProcessMetadata> RefreshPlatformMetadata(
             IReadOnlyCollection<int> currentPids,
-            DateTime now)
+            DateTime now, CancellationToken cancellationToken)
         {
             var refreshStaticMetadata = ShouldRefreshStaticMetadata(now);
-            var latestMetadata = _metadataReader.ReadAll(refreshStaticMetadata);
+            var latestMetadata = _metadataReader.ReadAll(refreshStaticMetadata, cancellationToken);
 
             if (refreshStaticMetadata)
             {
@@ -608,11 +612,11 @@ namespace NexusDash.Services
                 _processCommandRunner = processCommandRunner;
             }
 
-            public IReadOnlyDictionary<int, PlatformProcessMetadata> ReadAll(bool includeStaticMetadata)
+            public IReadOnlyDictionary<int, PlatformProcessMetadata> ReadAll(bool includeStaticMetadata, CancellationToken cancellationToken)
             {
                 if (OperatingSystem.IsWindows())
                 {
-                    return ReadWindows(includeStaticMetadata);
+                    return ReadWindows(includeStaticMetadata, cancellationToken);
                 }
 
                 if (OperatingSystem.IsLinux())
@@ -628,7 +632,7 @@ namespace NexusDash.Services
                 return new Dictionary<int, PlatformProcessMetadata>();
             }
 
-            private static IReadOnlyDictionary<int, PlatformProcessMetadata> ReadWindows(bool includeStaticMetadata)
+            private IReadOnlyDictionary<int, PlatformProcessMetadata> ReadWindows(bool includeStaticMetadata, CancellationToken cancellationToken)
             {
 #if WINDOWS
                 var result = ReadWindowsProcessSnapshot();
@@ -638,9 +642,7 @@ namespace NexusDash.Services
                     return result;
                 }
 
-                ApplyWindowsStaticMetadata(result);
-
-                foreach (var serviceGroup in ReadWindowsServiceDisplayNames())
+                foreach (var serviceGroup in ApplyWindowsStaticMetadata(result, cancellationToken))
                 {
                     if (!result.TryGetValue(serviceGroup.Key, out var processMetadata))
                     {
@@ -871,77 +873,79 @@ namespace NexusDash.Services
                 return result;
             }
 
-            private static void ApplyWindowsStaticMetadata(IDictionary<int, PlatformProcessMetadata> result)
+            private IReadOnlyDictionary<int, IReadOnlyList<string>> ApplyWindowsStaticMetadata(
+                IDictionary<int, PlatformProcessMetadata> result, CancellationToken cancellationToken)
             {
                 try
                 {
-                    using var searcher = new ManagementObjectSearcher(
-                        "SELECT ProcessId, CommandLine, ExecutablePath FROM Win32_Process");
-
-                    foreach (ManagementObject item in searcher.Get())
+                    // 沿用两分钟静态元数据缓存，避免每次 CPU 采样都启动命令。
+                    const string script = """
+                        $ErrorActionPreference='SilentlyContinue'; $ProgressPreference='SilentlyContinue'
+                        [Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)
+                        [ordered]@{
+                            Processes=@(Get-CimInstance Win32_Process -OperationTimeoutSec 3 | Select-Object ProcessId,CommandLine,ExecutablePath)
+                            Services=@(Get-CimInstance Win32_Service -Filter 'ProcessId <> 0' -OperationTimeoutSec 3 | Select-Object ProcessId,Name,DisplayName)
+                        } | ConvertTo-Json -Depth 4 -Compress
+                        """;
+                    var encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));
+                    var output = _processCommandRunner.ReadOutput("powershell.exe",
+                        "-NoLogo -NoProfile -NonInteractive -EncodedCommand " + encoded,
+                        timeoutMilliseconds: 10000, cancellationToken: cancellationToken);
+                    if (string.IsNullOrWhiteSpace(output)) return new Dictionary<int, IReadOnlyList<string>>();
+                    using var document = JsonDocument.Parse(output);
+                    if (document.RootElement.TryGetProperty("Processes", out var processes) && processes.ValueKind == JsonValueKind.Array)
                     {
-                        using (item)
+                        foreach (var item in processes.EnumerateArray())
                         {
-                            var pid = Convert.ToInt32(item["ProcessId"], CultureInfo.InvariantCulture);
-                            var commandLine = item["CommandLine"] as string;
-                            result.TryGetValue(pid, out var processMetadata);
-                            result[pid] = new PlatformProcessMetadata
+                            var pid = item.TryGetProperty("ProcessId", out var value) ? TryConvertInt32(value) : null;
+                            if (pid is null) continue;
+                            var commandLine = item.TryGetProperty("CommandLine", out value) && value.ValueKind == JsonValueKind.String
+                                ? value.GetString() : null;
+                            result.TryGetValue(pid.Value, out var processMetadata);
+                            result[pid.Value] = new PlatformProcessMetadata
                             {
                                 ParentPid = processMetadata?.ParentPid,
                                 Name = processMetadata?.Name,
                                 ServiceGroupName = ExtractWindowsServiceGroupName(commandLine),
                                 CommandLine = commandLine,
-                                ExecutablePath = item["ExecutablePath"] as string,
+                                ExecutablePath = item.TryGetProperty("ExecutablePath", out value) && value.ValueKind == JsonValueKind.String
+                                    ? value.GetString() : null,
                                 ReadTransferBytes = processMetadata?.ReadTransferBytes,
                                 WriteTransferBytes = processMetadata?.WriteTransferBytes
                             };
                         }
                     }
+                    if (document.RootElement.TryGetProperty("Services", out var services))
+                        return ReadWindowsServiceDisplayNames(services);
                 }
+                catch (OperationCanceledException) { throw; }
                 catch
                 {
-                    // WMI can be disabled or unavailable.
+                    // CIM 可能被禁用、不可用或受到权限限制。
                 }
+                return new Dictionary<int, IReadOnlyList<string>>();
             }
 
-            private static IReadOnlyDictionary<int, IReadOnlyList<string>> ReadWindowsServiceDisplayNames()
+            private static IReadOnlyDictionary<int, IReadOnlyList<string>> ReadWindowsServiceDisplayNames(JsonElement items)
             {
                 var result = new Dictionary<int, List<string>>();
-
-                try
+                if (items.ValueKind == JsonValueKind.Array)
                 {
-                    using var searcher = new ManagementObjectSearcher(
-                        "SELECT ProcessId, Name, DisplayName FROM Win32_Service WHERE ProcessId <> 0");
-
-                    foreach (ManagementObject item in searcher.Get())
+                    foreach (var item in items.EnumerateArray())
                     {
-                        using (item)
+                        var pid = item.TryGetProperty("ProcessId", out var value) ? TryConvertInt32(value) : null;
+                        if (pid is null) continue;
+                        var displayName = FirstNonEmpty(
+                            item.TryGetProperty("DisplayName", out value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null,
+                            item.TryGetProperty("Name", out value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null);
+                        if (string.IsNullOrWhiteSpace(displayName)) continue;
+                        if (!result.TryGetValue(pid.Value, out var services))
                         {
-                            var pid = TryConvertInt32(item["ProcessId"]);
-                            if (pid is null)
-                            {
-                                continue;
-                            }
-
-                            var displayName = FirstNonEmpty(item["DisplayName"] as string, item["Name"] as string);
-                            if (string.IsNullOrWhiteSpace(displayName))
-                            {
-                                continue;
-                            }
-
-                            if (!result.TryGetValue(pid.Value, out var services))
-                            {
-                                services = new List<string>();
-                                result[pid.Value] = services;
-                            }
-
-                            services.Add(displayName);
+                            services = new List<string>();
+                            result[pid.Value] = services;
                         }
+                        services.Add(displayName);
                     }
-                }
-                catch
-                {
-                    // Service Control Manager / WMI access can be restricted.
                 }
 
                 return result.ToDictionary(
@@ -993,16 +997,12 @@ namespace NexusDash.Services
                 return null;
             }
 
-            private static int? TryConvertInt32(object? value)
+            private static int? TryConvertInt32(JsonElement value)
             {
-                try
-                {
-                    return value is null ? null : Convert.ToInt32(value, CultureInfo.InvariantCulture);
-                }
-                catch
-                {
-                    return null;
-                }
+                if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var number)) return number;
+                return value.ValueKind == JsonValueKind.String &&
+                    int.TryParse(value.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out number)
+                    ? number : null;
             }
 
             private const uint SnapshotProcess = 0x00000002;
