@@ -15,8 +15,6 @@ jobs:
       fail-fast: false
       matrix:
         mode: [exact, instrumented]
-    env:
-      NUGET_PACKAGES: ${{ runner.temp }}/nexus-diagnostic-nuget
     steps:
       - name: Checkout diagnostics
         uses: actions/checkout@v4
@@ -47,6 +45,8 @@ jobs:
       - name: Build managed console probe
         working-directory: source
         shell: pwsh
+        env:
+          NUGET_PACKAGES: ${{ runner.temp }}/nexus-diagnostic-nuget
         run: |
           dotnet build scripts/ci-diagnostics/windows-telemetry/WindowsTelemetryDiagnostics.csproj -c Release -o '${{ runner.temp }}/nexus-managed-probe'
           if ($LASTEXITCODE -ne 0) { throw 'Diagnostic build failed.' }

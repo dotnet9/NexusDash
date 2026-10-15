@@ -9,7 +9,7 @@ using NexusDash;
 using NexusDash.Models;
 using NexusDash.Services;
 
-// CI-only: never serialize hardware values, process objects, command arguments or raw errors.
+// 仅用于云端诊断；禁止序列化硬件值、进程对象、命令参数或原始错误。
 if (args is not [var mode, var output] || mode is not ("exact" or "instrumented"))
     return 2;
 Directory.CreateDirectory(output);
@@ -17,7 +17,7 @@ var evidence = new Evidence(Path.Combine(output, "telemetry.jsonl"));
 try
 {
     evidence.Write("start", new { mode, framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription });
-    // Match the culture in RuntimeVerification.Run immediately before its telemetry call.
+    // 与正式自检进入遥测阶段前的语言初始化顺序一致。
     var manager = I18nManager.Instance;
     manager.Register(new JsonLangPlugin { ResourceFolder = Path.Combine(AppContext.BaseDirectory, "I18n") }, CultureInfo.GetCultureInfo("en-US"));
     foreach (var culture in new[] { "en-US", "zh-CN", "zh-Hant", "ja-JP" })
@@ -45,7 +45,7 @@ try
 catch (Exception exception)
 {
     if (exception is TargetInvocationException { InnerException: { } inner }) exception = inner;
-    // Unknown exception messages can contain private values. Type/HResult and fixed codes suffice.
+    // 未知异常消息可能包含隐私值，仅记录类型、HResult 和固定错误代码。
     evidence.Write("failed", new
     {
         passed = false,
@@ -66,7 +66,7 @@ catch (Exception exception)
 static void VerifyInstrumented(Evidence evidence)
 {
     var runner = new DiagnosticCommandRunner(evidence);
-    // Preserve the product's shared budget and every assertion, including CIM-only requirements.
+    // 保留产品的共享时间预算和全部断言，包括必须由 CIM 提供的数据。
     using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(25));
     evidence.Stage = "hardware";
     evidence.Write("phase-start", new { budgetMilliseconds = 25000 });
