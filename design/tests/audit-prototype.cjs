@@ -102,6 +102,31 @@ const {verifyAbout} = require('./compare-layout.cjs');
     fs.writeFileSync(path.join(output,'about-fonts.geometry.json'),JSON.stringify(fontResults,null,2));
     console.log('PASS 12 language/font combinations: natural description wrapping, content spacing and complete text.');
     console.log('PASS desktop window chrome, four routes/languages, 96 appearance combinations, persisted preferences, process tree/details/treemap, file search, hardware, update/cancel and same-size settings captures.');
+    await page.setViewportSize({width:1180,height:620});
+    await page.goto(standalone.url+'?capture=window');
+    for(const culture of ['en-US','zh-CN','zh-Hant','ja-JP']){
+      await page.evaluate(culture=>NexusPrototype.set({culture,route:'process',mode:'dark',palette:'DotNet'}),culture);
+      await page.click('[data-process-tab="overview"]');
+      check(await page.locator('.card').evaluateAll(cards=>cards.every(card=>{
+        const chart=card.querySelector('.chart').getBoundingClientRect();
+        const following=[...card.children].filter(child=>child.matches('span,progress'));
+        return following.every(child=>chart.bottom<=child.getBoundingClientRect().top+1);
+      })),'Minimum performance charts avoid summary overlap: '+culture);
+      await page.click('[data-process-tab="tree"]');
+      check(await page.locator('.filter-row label').evaluateAll(labels=>labels.every(label=>{
+        const rect=label.getBoundingClientRect(),parent=label.closest('.process-table').getBoundingClientRect();
+        return rect.left>=parent.left-1&&rect.right<=parent.right+1;
+      })),'Minimum process filters remain reachable: '+culture);
+      check(await page.locator('.process-table th').count()===9,'All nine product columns are represented');
+      check(await page.locator('.process-table th').evaluateAll(headers=>headers.every(header=>header.getBoundingClientRect().width>=64)),
+        'Minimum process table preserves readable columns: '+culture);
+      check(await page.locator('.process-table').evaluate(panel=>{
+        panel.scrollLeft=panel.scrollWidth-panel.clientWidth;
+        const first=panel.querySelector('th:first-child').getBoundingClientRect(),last=panel.querySelector('th:last-child').getBoundingClientRect(),bounds=panel.getBoundingClientRect();
+        return Math.abs(first.left-bounds.left)<=1&&last.right<=bounds.right+1&&last.left>=first.right-1;
+      }),'Horizontal scrolling exposes the final column and keeps the name frozen: '+culture);
+    }
+    console.log('PASS four cultures at 1180x620: chart summaries, wrapping filters and nine readable horizontally scrollable columns.');
   await standalone.verify(page);
   } finally { await browser.close(); standalone.dispose(); }
 })().catch(error=>{ console.error(error); process.exitCode=1; });
