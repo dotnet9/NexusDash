@@ -7,6 +7,8 @@ $design = Join-Path $fixtureRoot 'design'
 try {
     New-Item -ItemType Directory -Path $source, $design -Force | Out-Null
     Copy-Item -LiteralPath $builder -Destination (Join-Path $fixtureRoot 'scripts/build_standalone_prototype.ps1')
+    # 构建器从根属性读取版本；换行夹具提供独立固定版本，不依赖仓库外文件。
+    [IO.File]::WriteAllText((Join-Path $fixtureRoot 'Directory.Build.props'), '<Project><PropertyGroup><Version>0.0.1</Version></PropertyGroup></Project>')
     $template = '<!doctype html><html><head><link rel="stylesheet" href="sample.css"></head><body><img src="./logo.svg"><script src="sample.js"></script></body></html>'
     foreach ($name in 'index.template.html', 'property-panel.template.html') { [IO.File]::WriteAllText((Join-Path $source $name), $template) }
     [IO.File]::WriteAllText((Join-Path $source 'sample.css'), 'body { background-image: url("./logo.svg"); }' + [char]10)
