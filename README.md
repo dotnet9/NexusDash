@@ -4,7 +4,7 @@ NexusDash 是一个 Avalonia 桌面仪表盘，用于本机系统监控。项目
 
 ## 仓库规范
 
-- 当前版本：`0.1.12`，版本号统一维护在根目录 `Directory.Build.props` 的 `<Version>` 节点。
+- 当前版本：`0.1.13`，版本号统一维护在根目录 `Directory.Build.props` 的 `<Version>` 节点。
 - NuGet 包项目统一支持 `net8.0;net10.0`；Demo、App、测试与内部应用项目统一使用 `net10.0` / `net10.0-windows`。
 - 根目录 `logo.svg`、`logo.png`、`logo.ico` 是唯一图标源，子工程只通过 MSBuild `Link` 引用，不维护图标副本。
 - 运行时帮助、Markdown 示例、内置备忘录、设计说明等业务文档按功能保留；仓库级入口文档使用根目录 `README.md` 和 `UpdateLog.md`。
@@ -81,4 +81,4 @@ XML 文件统一使用两个空格缩进。`Directory.Packages.props` 统一承�
 
 ![原生主窗口](docs/media/nexusdash-native-dark.png)
 
-0.1.12 使用官方 NuGet 独立缓存完成 Windows NativeAOT 发布、正式 EXE 自检、245 项原生界面检查、60 张截图及 Windows 安装器生成；最小窗口覆盖四语与全部入口。五平台只发布 EXE、DEB、DMG 安装器和 SHA256。详见 [验收记录](docs/UI-VERIFICATION.md) 与 [产品原型](design/index.html)。
+0.1.13 使用官方 NuGet 独立缓存完成 Windows NativeAOT 发布、正式 EXE 自检、253 项原生界面检查、60 张截图及 Windows 安装器生成；最小窗口覆盖四语与全部入口。五平台只发布 EXE、DEB、DMG 安装器和 SHA256。详见 [验收记录](docs/UI-VERIFICATION.md) 与 [产品原型](design/index.html)。
