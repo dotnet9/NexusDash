@@ -56,6 +56,10 @@ const fs = require('node:fs');
     }
     await page.click('[data-route="process"]');await page.click('[data-process-tab="tree"]');
     check(await page.locator('tr[data-pid]').count()===3,'Process tree rows');
+    await page.check('[data-filter="FilterHighCpu"]');check(await page.locator('tr[data-pid]').count()===1&&await page.locator('tr[data-pid]').getAttribute('data-pid')==='5120','High CPU filter');await page.uncheck('[data-filter="FilterHighCpu"]');
+    await page.check('[data-filter="FilterHasNetworkConnections"]');check(await page.locator('tr[data-pid]').count()===2,'Network process filter');await page.uncheck('[data-filter="FilterHasNetworkConnections"]');
+    for(const key of ['FilterUserProcesses','FilterHideSystemProcesses']){await page.check('[data-filter="'+key+'"]');check(await page.locator('tr[data-pid]').count()===2,'User/system process filter');await page.uncheck('[data-filter="'+key+'"]');}
+    await page.fill('#search','dotnet');check(await page.locator('tr[data-pid]').count()===1,'Title query filters tree');await page.fill('#search','');
     await page.click('[data-pid="5120"]');await page.click('[data-detail="Details"]');check((await page.locator('#detail-content').innerText()).includes('dotnet'),'Process details');
     await page.click('#end-process');check(await page.locator('#confirm-dialog').evaluate(el=>el.open),'Termination confirmation');await page.click('#confirm-cancel');check(await page.locator('tr[data-pid]').count()===3,'Canceled termination preserves rows');
     await page.click('[data-process-tab="treemap"]');check(await page.locator('.treemap button').count()===3,'Treemap');
