@@ -65,6 +65,9 @@ $html = [regex]::Replace($html, '(?<prefix><(?:img|link)\b[^>]*?\b(?:src|href)\s
     param($match)
     return $match.Groups['prefix'].Value + $match.Groups['quote'].Value + (Convert-PrototypeImage $match.Groups['path'].Value $sourceRoot) + $match.Groups['quote'].Value
 })
+$version = [regex]::Match([IO.File]::ReadAllText((Join-Path $repositoryRoot 'Directory.Build.props')), '<Version>([^<]+)</Version>')
+if (!$version.Success) { throw '无法读取原型产品版本号。' }
+$html = $html.Replace('__NEXUSDASH_VERSION__', $version.Groups[1].Value)
 $html = $html.ReplaceLineEndings("`n")
 if ($Check) {
     if (-not (Test-Path -LiteralPath $output) -or [IO.File]::ReadAllText($output).ReplaceLineEndings("`n") -cne $html) {

@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const {verifyAbout} = require('./compare-layout.cjs');
 (async () => {
   const standalone = standaloneFixture(path.resolve(__dirname, '../index.html'));
+  const version = fs.readFileSync(path.resolve(__dirname, '../../Directory.Build.props'), 'utf8').match(/<Version>([^<]+)<\/Version>/)[1];
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1440, height: 760 }, reducedMotion:'reduce' });
     await standalone.attach(page);
@@ -50,6 +51,7 @@ const {verifyAbout} = require('./compare-layout.cjs');
       check(await page.locator('html').getAttribute('data-theme') === 'light','System light');
       await page.click('[data-tab="about"]');
       check((await page.locator('.about dl').innerText()).includes('2026-10-15 00:00:00'),'Sample build time');
+      check((await page.locator('.about dl dd').first().innerText()) === version, 'About metadata follows the current product version');
       for (const scenario of ['current','available','failed']) {
         await page.evaluate(value=>{window.updateScenario=value;state='idle';update()},scenario);
         await page.click('#action');
