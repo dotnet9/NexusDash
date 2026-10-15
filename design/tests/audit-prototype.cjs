@@ -3,6 +3,7 @@ const { chromium } = require('playwright');
 const { pathToFileURL } = require('node:url');
 const path = require('node:path');
 const fs = require('node:fs');
+const {verifyAbout} = require('./compare-layout.cjs');
 (async () => {
   const standalone = standaloneFixture(path.resolve(__dirname, '../index.html'));
   const browser = await chromium.launch({ headless: true });
@@ -74,7 +75,10 @@ const fs = require('node:fs');
     await page.click('[data-route="hardware"]');await page.click('#refresh-hardware');check(await page.locator('.hardware-sections section').count()===3,'Hardware sections');
     await page.reload();check(await page.locator('html').getAttribute('lang')==='ja-JP','Language persistence');check(await page.locator('html').getAttribute('data-palette')==='NightSky','Palette persistence');
     const output=path.resolve(process.env.NEXUS_AUDIT_OUTPUT||path.join(__dirname,'../../artifacts/prototype-audit'));fs.mkdirSync(output,{recursive:true});
-    async function capture(name,selector){await page.screenshot({path:path.join(output,name+'.png')});const geometry=await page.evaluate(selectors=>Object.fromEntries(Object.entries(selectors).map(([key,selector])=>{const rect=document.querySelector(selector).getBoundingClientRect();return[key,{x:rect.x,y:rect.y,width:rect.width,height:rect.height}];})),selector);fs.writeFileSync(path.join(output,name+'.geometry.json'),JSON.stringify(geometry,null,2));}
+    async function geometry(selectors){return page.evaluate(selectors=>Object.fromEntries(Object.entries(selectors).map(([key,selector])=>{const rect=document.querySelector(selector).getBoundingClientRect();return[key,{x:rect.x,y:rect.y,width:rect.width,height:rect.height}];})),selectors);}
+    async function capture(name,selector){await page.screenshot({path:path.join(output,name+'.png')});fs.writeFileSync(path.join(output,name+'.geometry.json'),JSON.stringify(await geometry(selector),null,2));}
+    const aboutRegions={surface:'.settings',navigation:'.settings-nav',head:'.about-head',metadata:'.about dl',update:'.update'};
+    const fontResults=[];
     await page.setViewportSize({width:1440,height:760});
     await page.evaluate(()=>NexusPrototype.set({culture:'zh-CN',mode:'light',palette:'DotNet',route:'process'}));
     await capture('workspace', {titlebar:'.titlebar',navigation:'#nav',workspace:'.content',cards:'.cards',card:'.card',log:'.log',status:'footer'});
@@ -82,10 +86,21 @@ const fs = require('node:fs');
     for(const culture of ['en-US','zh-CN','zh-Hant','ja-JP']){
       await page.evaluate(value=>NexusPrototype.set({culture:value,mode:'dark',palette:'DotNet',route:'settings',tab:'appearance'}),culture);
       await capture('appearance-'+culture,{surface:'.settings',navigation:'.settings-nav',form:'.form',mode:'#mode',palette:'#palette'});
-      await page.click('[data-tab="about"]');await page.evaluate(()=>{state='idle';update();});await capture('about-'+culture,{surface:'.settings',navigation:'.settings-nav',head:'.about-head',metadata:'.about dl',update:'.update'});
+      await page.click('[data-tab="about"]');await page.evaluate(()=>{state='idle';update();});await capture('about-'+culture,aboutRegions);
+      // 在真实浏览器中切换字体，验证换行后的布局和完整文字。
+      for(const font of ['Arial,sans-serif','"Times New Roman",serif','monospace']){
+        await page.evaluate(font=>{document.body.style.fontFamily=font;},font);
+        const rectangles=await geometry(aboutRegions);fontResults.push({culture,font,rectangles});
+        verifyAbout('about-'+culture+'/'+font,rectangles);
+        check(await page.locator('.about-head h2,.about-head p,.about dt,.about dd,.update>b,.update>p').evaluateAll(items=>items.every(el=>el.scrollWidth<=el.clientWidth+1&&el.scrollHeight<=el.clientHeight+1)),'About text clipping: '+culture+'/'+font);
+        if(font==='Arial,sans-serif')await page.screenshot({path:path.join(output,'about-arial-'+culture+'.png')});
+      }
+      await page.evaluate(()=>{document.body.style.fontFamily='';});
     }
     check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Horizontal overflow');
     check(errors.length===0,errors.join('\n'));
+    fs.writeFileSync(path.join(output,'about-fonts.geometry.json'),JSON.stringify(fontResults,null,2));
+    console.log('PASS 12 language/font combinations: natural description wrapping, content spacing and complete text.');
     console.log('PASS desktop window chrome, four routes/languages, 96 appearance combinations, persisted preferences, process tree/details/treemap, file search, hardware, update/cancel and same-size settings captures.');
   await standalone.verify(page);
   } finally { await browser.close(); standalone.dispose(); }
