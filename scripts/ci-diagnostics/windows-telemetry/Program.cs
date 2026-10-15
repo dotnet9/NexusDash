@@ -60,8 +60,71 @@ catch (Exception exception)
         },
         stackMethods = new StackTrace(exception, false).GetFrames().Select(frame => frame.GetMethod()?.DeclaringType?.FullName + "." + frame.GetMethod()?.Name).ToArray()
     });
+    if (mode == "instrumented" && evidence.Stage == "processes")
+    {
+        // 原始失败已落盘且原共享令牌已释放，后置查询不得改变原校验结果。
+        try { RunServiceFollowup(evidence); }
+        catch (Exception followupException)
+        {
+            evidence.Write("service-followup-failed", new { exceptionType = followupException.GetType().FullName, followupException.HResult });
+        }
+    }
     return 1;
 }
+
+static void RunServiceFollowup(Evidence evidence)
+{
+    const string template = """
+        $ErrorActionPreference='Stop'; $ProgressPreference='SilentlyContinue'
+        [Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)
+        $watch=[Diagnostics.Stopwatch]::StartNew()
+        try {
+            $items=@(Get-CimInstance Win32_Service __FILTER__ -OperationTimeoutSec __TIMEOUT__ -ErrorAction Stop)
+            [ordered]@{ok=$true;rows=$items.Count;positivePidRows=@($items|Where-Object {$_.ProcessId -gt 0}).Count;queryMilliseconds=$watch.ElapsedMilliseconds}|ConvertTo-Json -Compress
+        } catch {
+            $nativeCode=$null
+            if ($_.Exception.PSObject.Properties['NativeErrorCode']) {$nativeCode=[long]$_.Exception.NativeErrorCode}
+            [ordered]@{ok=$false;rows=0;positivePidRows=0;queryMilliseconds=$watch.ElapsedMilliseconds;exceptionType=$_.Exception.GetType().FullName;category=[int]$_.CategoryInfo.Category;hresult=$_.Exception.HResult;nativeErrorCode=$nativeCode}|ConvertTo-Json -Compress
+        }
+        """;
+    var runner = new DiagnosticCommandRunner(evidence);
+    foreach (var query in new[] { (Filtered: true, Seconds: 3), (Filtered: true, Seconds: 10), (Filtered: false, Seconds: 10) })
+    {
+        evidence.Stage = "service-only-followup";
+        evidence.Write("service-only-start", new { filtered = query.Filtered, operationTimeoutSeconds = query.Seconds });
+        var script = template.Replace("__FILTER__", query.Filtered ? "-Filter 'ProcessId <> 0'" : "")
+            .Replace("__TIMEOUT__", query.Seconds.ToString(CultureInfo.InvariantCulture));
+        var encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));
+        // 每条后置命令使用新的预算，不占用原遥测断言的 25 秒共享预算。
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(25));
+        var output = runner.ReadOutput("powershell.exe", "-NoLogo -NoProfile -NonInteractive -EncodedCommand " + encoded,
+            timeoutMilliseconds: 20000, cancellationToken: cancellation.Token);
+        if (string.IsNullOrWhiteSpace(output))
+        {
+            evidence.Write("service-only-no-result", new { filtered = query.Filtered, operationTimeoutSeconds = query.Seconds });
+            continue;
+        }
+        using var document = JsonDocument.Parse(output);
+        var root = document.RootElement;
+        // 仅复制明确允许的布尔值、数值与异常类型，不透传原始输出或错误消息。
+        evidence.Write("service-only-result", new
+        {
+            filtered = query.Filtered,
+            operationTimeoutSeconds = query.Seconds,
+            ok = root.GetProperty("ok").GetBoolean(),
+            rows = root.GetProperty("rows").GetInt32(),
+            positivePidRows = root.GetProperty("positivePidRows").GetInt32(),
+            queryMilliseconds = root.GetProperty("queryMilliseconds").GetInt64(),
+            exceptionType = root.TryGetProperty("exceptionType", out var exceptionType) ? exceptionType.GetString() : null,
+            category = ReadNumber(root, "category"),
+            hresult = ReadNumber(root, "hresult"),
+            nativeErrorCode = ReadNumber(root, "nativeErrorCode")
+        });
+    }
+}
+
+static long? ReadNumber(JsonElement root, string property)
+    => root.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var number) ? number : null;
 
 static void VerifyInstrumented(Evidence evidence)
 {
@@ -181,7 +244,8 @@ sealed class DiagnosticCommandRunner(Evidence evidence) : IProcessCommandRunner
             {
                 using var document = JsonDocument.Parse(result);
                 var root = document.RootElement;
-                var rows = root.TryGetProperty("Services", out var services) && services.ValueKind == JsonValueKind.Array
+                var hasServices = root.TryGetProperty("Services", out var services);
+                var rows = hasServices && services.ValueKind == JsonValueKind.Array
                     ? services.EnumerateArray().ToArray() : [];
                 var processes = root.TryGetProperty("Processes", out var processRows) && processRows.ValueKind == JsonValueKind.Array
                     ? processRows.EnumerateArray().ToArray() : [];
@@ -189,6 +253,8 @@ sealed class DiagnosticCommandRunner(Evidence evidence) : IProcessCommandRunner
                 evidence.Write("metadata-json-counts", new
                 {
                     processRows = processes.Length,
+                    servicesPropertyPresent = hasServices,
+                    servicesValueKind = hasServices ? services.ValueKind.ToString() : "missing",
                     serviceRows = rows.Length,
                     servicesWithPositivePid = rows.Count(row => ReadPid(row) > 0),
                     servicesMatchingProcessPid = rows.Count(row => processPids.Contains(ReadPid(row))),
