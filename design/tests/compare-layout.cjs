@@ -25,7 +25,7 @@ function verify(read){
   for(const[key,y,height]of [['head',41,42],['metadata',101,195],['update',321,132]]){
    const region=actual[key];
    if(!region||![region.x,region.y,region.width,region.height].every(Number.isFinite)||Math.abs(region.x-198)>1||Math.abs(region.y-y)>1||Math.abs(region.height-height)>1||Math.abs(region.width-width)>1||region.x+region.width>right+1)
-    throw Error(`${name}/${key} violates content alignment, height or bounds`);
+    throw Error(`${name}/${key} violates content alignment, height or bounds; actual=${JSON.stringify(actual)}`);
    contentCount++;
   }
  }
