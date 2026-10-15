@@ -15,7 +15,13 @@ const fs = require('node:fs');
     await page.goto(standalone.url);
     check(await page.locator('.window').evaluate(el=>el.getBoundingClientRect().x===18&&parseFloat(getComputedStyle(el).borderTopWidth)>0),'Desktop window frame');
     check(await page.locator('.captions button').count()===3,'Caption controls');
+    check(JSON.stringify(await page.locator('.captions > button').evaluateAll(items=>items.map(item=>item.dataset.window)))===JSON.stringify(['minimize','maximize','close']),'Caption actions belong to the three desktop buttons');
+    await page.locator('.captions [data-window="maximize"]').click();check(await page.locator('.window').evaluate(el=>el.classList.contains('maximized')&&el.getBoundingClientRect().x===0),'Maximize changes the frame');
+    await page.locator('.captions [data-window="maximize"]').click();check(await page.locator('.window').evaluate(el=>!el.classList.contains('maximized')&&el.getBoundingClientRect().x===18),'Restore resets the frame');
+    for(const action of ['minimize','close']){await page.locator('.captions [data-window="'+action+'"]').click();check(!await page.locator('.window').isVisible()&&await page.locator('#restore-window').isVisible(),'Caption hides the window: '+action);await page.locator('#restore-window').click();check(await page.locator('.window').isVisible(),'Restore reopens the window');}
     check(await page.locator('#title-swatches button').count()===8,'Eight title swatches');check(await page.locator('.titlebar select').count()===0,'No duplicate title selectors');
+    check(JSON.stringify(await page.locator('#title-swatches button').evaluateAll(items=>items.map(item=>item.dataset.palette)))===JSON.stringify(['DotNet','Aurora','Ember','Default','Aquatic','Desert','Dusk','NightSky']),'Title palette order follows the native enum');
+    const nativeSwatches=await page.locator('#title-swatches button').evaluateAll(items=>items.map(item=>getComputedStyle(item,':before').background));check(/linear-gradient.*137, 104, 255.*38, 212, 204/.test(nativeSwatches[1]),'Aurora matches the fixed native gradient swatch');
     await page.locator('#language-button').click();check(await page.locator('#title-language-menu').isVisible(),'Real language menu');await page.locator('#title-language-menu [data-culture="en-US"]').click();check(await page.locator('html').getAttribute('lang')==='en-US','Title language selection');
     for(let index=0;index<3;index++)await page.locator('#theme-cycle').click();check(await page.locator('html').getAttribute('data-mode')==='system','Three-state title cycle');
     await page.goto(standalone.url+'?capture=window');
@@ -31,6 +37,7 @@ const fs = require('node:fs');
         for (const palette of ['DotNet','Aurora','Ember','Default','Aquatic','Desert','Dusk','NightSky']) {
           await page.selectOption('#palette',palette);
           check(await page.locator('html').getAttribute('data-palette') === palette,'Palette mismatch');
+          check(JSON.stringify(await page.locator('#title-swatches button').evaluateAll(items=>items.map(item=>getComputedStyle(item,':before').background)))===JSON.stringify(nativeSwatches),'Title swatches stay fixed across palette and mode changes');
           check(await page.locator('#palette').evaluate(el=>getComputedStyle(el).textAlign) === 'left','Select alignment');
         }
       }
