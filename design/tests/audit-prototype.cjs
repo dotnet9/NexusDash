@@ -1,14 +1,17 @@
+const standaloneFixture = require('./standalone-fixture.cjs');
 const { chromium } = require('playwright');
 const { pathToFileURL } = require('node:url');
 const path = require('node:path');
 (async () => {
+  const standalone = standaloneFixture(path.resolve(__dirname, '../index.html'));
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1440, height: 760 } });
+    await standalone.attach(page);
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   const check = (value, message) => { if (!value) throw new Error(message); };
   try {
-    await page.goto(pathToFileURL(path.resolve(__dirname, '../studio.html')).href);
+    await page.goto(standalone.url);
     for (const route of ['process','files','hardware','settings']) {
       await page.click(`[data-route="${route}"]`);
       check((await page.locator('#page').innerText()).length > 15, 'Empty route: '+route);
@@ -46,5 +49,6 @@ const path = require('node:path');
     check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Horizontal overflow');
     check(errors.length===0,errors.join('\n'));
     console.log('PASS Four routes, four languages, 96 appearance combinations, system changes, update and cancel flows.');
-  } finally { await browser.close(); }
+  await standalone.verify(page);
+  } finally { await browser.close(); standalone.dispose(); }
 })().catch(error=>{ console.error(error); process.exitCode=1; });
