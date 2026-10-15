@@ -1,6 +1,6 @@
 {
   "name": "nexusdash-prototype-tests",
   "private": true,
-  "scripts": { "test": "node audit-prototype.cjs && node compare-layout.cjs" },
+  "scripts": { "test": "node compare-layout.test.cjs && node audit-prototype.cjs && node compare-layout.cjs" },
   "devDependencies": { "playwright": "1.62.1" }
 }
