@@ -210,6 +210,7 @@ namespace NexusDash.ViewModels
             PublishShellState();
             PublishSettingsState();
             _refreshLoopTask = RefreshLoopAsync(_refreshCancellation.Token);
+            I18nManager.Instance.CultureChanged += HandleGlobalCultureChanged;
             if (Application.Current is { } app) app.ActualThemeVariantChanged += HandleHostThemeChanged;
         }
 
@@ -2685,6 +2686,22 @@ namespace NexusDash.ViewModels
             }
         }
 
+        private void HandleGlobalCultureChanged(object? sender, EventArgs args)
+        {
+            if (Dispatcher.UIThread.CheckAccess()) SynchronizeGlobalCulture();
+            else Dispatcher.UIThread.Post(SynchronizeGlobalCulture);
+        }
+
+        private void SynchronizeGlobalCulture()
+        {
+            if (_isDisposed) return;
+            var cultureName = I18nManager.Instance.Culture?.Name;
+            if (string.IsNullOrWhiteSpace(cultureName)
+                || string.Equals(_selectedCultureName, NormalizeCulture(cultureName), StringComparison.OrdinalIgnoreCase)) return;
+            // 复用既有刷新与持久化流程；共享实例已是目标语言，不会再次发出切语事件。
+            SetLanguage(cultureName, showStatus: false);
+        }
+
         private void InitializeLanguageOptions()
         {
             Languages.Clear();
@@ -2946,6 +2963,7 @@ namespace NexusDash.ViewModels
             }
 
             _isDisposed = true;
+            I18nManager.Instance.CultureChanged -= HandleGlobalCultureChanged;
             _refreshCancellation.Cancel();
             _eventBus.Unsubscribe(this);
             if (Application.Current is { } app) app.ActualThemeVariantChanged -= HandleHostThemeChanged;

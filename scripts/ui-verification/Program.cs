@@ -51,6 +51,26 @@ var titleToggle = titleSettings.FindControl<Ursa.Controls.ThemeToggleButton>("Ti
 var titleSwatches = titleSettings.FindControl<ListBox>("TitleBarPalettes")!;
 var titleLanguages = titleSettings.FindControl<ComboBox>("TitleBarLanguageSelector")!;
 var titleButton = titleToggle.GetVisualDescendants().OfType<Button>().Single(item => item.Name == "PART_ThemeButton");
+{
+    foreach (var culture in new[] { "en-US", "zh-Hant", "ja-JP", "zh-CN" })
+    {
+        Task.Run(() => I18nManager.Instance.Culture = CultureInfo.GetCultureInfo(culture)).GetAwaiter().GetResult();
+        Pump();
+        Check(model.SelectedLanguage?.CultureName == culture
+            && ReferenceEquals(titleLanguages.SelectedItem, model.SelectedLanguage)
+            && VerificationApp.Preferences.Value.CultureName == culture,
+            "Background global language synchronizes the existing selector and preferences: " + culture);
+        titleLanguages.SelectedItem = model.Languages.Single(option => option.CultureName == "zh-CN");
+        Pump();
+        Check(I18nManager.Instance.Culture.Name == "zh-CN", "The same title-bar control can choose the previous language.");
+    }
+}
+if (args.Contains("--culture-only"))
+{
+    window.Close();
+    Console.WriteLine("NexusDash global language verification passed: " + output);
+    return;
+}
 foreach (var palette in appearance.PaletteOptions)
 {
     titleSwatches.SelectedItem = palette; appearance.ThemeMode = StudioThemeMode.System; Pump();

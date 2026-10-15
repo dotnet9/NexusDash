@@ -131,7 +131,11 @@ public sealed class UpdateViewModel : ReactiveObject, IDisposable
         CancelCommand.RaiseCanExecuteChanged();
         Refresh();
     }
-    private void OnCultureChanged(object? sender, EventArgs args) => Refresh();
+    private void OnCultureChanged(object? sender, EventArgs args)
+    {
+        if (global::Avalonia.Threading.Dispatcher.UIThread.CheckAccess()) Refresh();
+        else global::Avalonia.Threading.Dispatcher.UIThread.Post(Refresh);
+    }
     private void Refresh()
     {
         if (_disposed) return;
