@@ -183,17 +183,17 @@ jobs:
             Copy-Item -LiteralPath $curated -Destination $bodyPath -Force
             Write-Host "Using curated release notes: $curated"
           }
-                    # 附注 tag 的说明就是发布说明（Release 页直接可读，不点开 tag 也能看到）
-                    git fetch --quiet --tags origin 2>$null
-                    $tagMessage = git tag -l "$env:TAG_NAME" --format='%(contents)'
-                    if (-not [string]::IsNullOrWhiteSpace($tagMessage)) {
-                      $tagMessage | Set-Content -LiteralPath $bodyPath -Encoding utf8
-                      Write-Host "使用附注 tag 说明作为发布说明。"
-                    }
-                    else {
-        
-            "NexusDash v$env:VERSION" | Set-Content -LiteralPath $bodyPath -Encoding utf8
-            Write-Host "No curated notes found; generated notes only."
+          else {
+            git fetch --quiet --tags origin 2>$null
+            $tagMessage = git tag -l "$env:TAG_NAME" --format='%(contents)'
+            if (-not [string]::IsNullOrWhiteSpace($tagMessage)) {
+              $tagMessage | Set-Content -LiteralPath $bodyPath -Encoding utf8
+              Write-Host "使用附注 tag 说明作为发布说明。"
+            }
+            else {
+              "NexusDash v$env:VERSION" | Set-Content -LiteralPath $bodyPath -Encoding utf8
+              Write-Host "未找到 $curated，将只使用自动生成的变更说明。"
+            }
           }
 
       - name: Create GitHub Release
