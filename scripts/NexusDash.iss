@@ -14,6 +14,7 @@
 #endif
 
 [Setup]
+LicenseFile=..\LICENSE
 AppId={{C9D8E7F6-A5B4-4C3D-8E2F-1A0B9C8D7E6F}}
 AppName=NexusDash
 AppVersion={#AppVersion}
@@ -32,6 +33,10 @@ ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog commandline
 
+[Languages]
+Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "chinesesimplified"; MessagesFile: "Languages\ChineseSimplified.isl"
+
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Excludes: "*.pdb,*.dbg,*.dSYM\*"; Flags: ignoreversion recursesubdirs createallsubdirs
 
@@ -45,5 +50,4 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Run]
 Filename: "{app}\NexusDash.exe"; Description: "{cm:LaunchProgram,NexusDash}"; Flags: nowait postinstall skipifsilent
 
-[UninstallDelete]
-Type: filesandordirs; Name: "{app}"
+#include "installer\CodeWF.Setup.iss"
