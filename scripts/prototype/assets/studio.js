@@ -1,4 +1,4 @@
-// 使用宿主四语资源模拟产品界面；系统采样、文件和更新全部使用受控样例。
+﻿// 使用宿主四语资源模拟产品界面；系统采样、文件和更新全部使用受控样例。
 const $=id=>document.getElementById(id),media=matchMedia('(prefers-color-scheme:dark)');
 const names=['DotNet','Aurora','Ember','Default','Aquatic','Desert','Dusk','NightSky'];
 // 标题色点对齐共享 StudioSwatch 资源；界面明暗变化不改变色点本身。
