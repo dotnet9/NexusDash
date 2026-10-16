@@ -38,15 +38,27 @@ case "$1" in
     done
     printf 'writable image' >"${!#}"
     ;;
-  attach|detach) : ;;
+  attach) printf 'fixture attach plist' ;;
+    detach) [[ $# == 2 && "$2" == /dev/disk41 ]] ;;
   convert) while [[ $# -gt 0 ]]; do if [[ "$1" == -o ]]; then printf 'compressed image' >"$2"; fi; shift; done ;;
   verify) [[ -s "$2" ]] ;;
   *) exit 2 ;;
 esac
 STUB
+# 挂载解析由受控替身提供；状态异常由品牌层专项回归覆盖。
+cat >"$fixture/bin/plutil" <<'STUB'
+#!/usr/bin/env bash
+[[ "$1" == -extract && "$2" == system-entities && "$3" == json && "$4" == -o && "$5" == - && -s "$6" ]] || exit 31
+printf '[{"dev-entry":"/dev/disk41s1"},{"dev-entry":"/dev/disk41"}]'
+STUB
 cat >"$fixture/bin/osascript" <<'STUB'
 #!/usr/bin/env bash
-printf 'Finder metadata' >"$2/.DS_Store"
+if [[ "$1" == -l ]]; then
+  [[ "$2" == JavaScript && "$3" == -e && $# == 5 ]] || exit 32
+  printf '/dev/disk41'
+else
+  printf 'Finder metadata' >"$2/.DS_Store"
+fi
 STUB
 cat >"$fixture/bin/sync" <<'STUB'
 #!/usr/bin/env bash
