@@ -29,13 +29,28 @@ printf '/Applications' >"${!#}"
 STUB
 cat >"$fixture/bin/hdiutil" <<'STUB'
 #!/usr/bin/env bash
+set -euo pipefail
 [[ "${SIMULATE_DMG_FAILURE:-0}" == '0' ]] || exit 28
-while [[ $# -gt 0 ]]; do
-  if [[ "$1" == '-srcfolder' ]]; then cp -R "$2" "$TEST_CAPTURE"; fi
-  output="$1"
-  shift
-done
-printf 'disk image' >"$output"
+case "$1" in
+  create)
+    for ((index=1;index<$#;index++)); do
+      if [[ "${!index}" == -srcfolder ]]; then next=$((index+1)); cp -R "${!next}" "$TEST_CAPTURE"; fi
+    done
+    printf 'writable image' >"${!#}"
+    ;;
+  attach|detach) : ;;
+  convert) while [[ $# -gt 0 ]]; do if [[ "$1" == -o ]]; then printf 'compressed image' >"$2"; fi; shift; done ;;
+  verify) [[ -s "$2" ]] ;;
+  *) exit 2 ;;
+esac
+STUB
+cat >"$fixture/bin/osascript" <<'STUB'
+#!/usr/bin/env bash
+printf 'Finder metadata' >"$2/.DS_Store"
+STUB
+cat >"$fixture/bin/sync" <<'STUB'
+#!/usr/bin/env bash
+exit 0
 STUB
 cat >"$fixture/bin/shasum" <<'STUB'
 #!/usr/bin/env bash
