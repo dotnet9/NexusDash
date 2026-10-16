@@ -36,13 +36,9 @@ if ((Test-Path -LiteralPath $outputPath) -and -not $Force) {
     throw "Output already exists (use -Force to overwrite): $outputPath"
 }
 
-$staging = Join-Path $repositoryRoot "artifacts/deb/$RuntimeIdentifier/nexusdash"
-if (-not ([IO.Path]::GetFullPath($staging)).StartsWith(([IO.Path]::GetFullPath($repositoryRoot) + [IO.Path]::DirectorySeparatorChar), [StringComparison]::OrdinalIgnoreCase)) {
-    throw "拒绝使用仓库外的打包暂存目录。"
-}
-if (Test-Path -LiteralPath $staging) {
-    Remove-Item -LiteralPath $staging -Recurse -Force
-}
+# 每次打包使用唯一临时目录，只清理当前任务创建的暂存文件。
+$staging = Join-Path ([IO.Path]::GetTempPath()) ('NexusDash-deb-' + [Guid]::NewGuid().ToString('N'))
+try {
 New-Item -ItemType Directory -Path (Join-Path $staging "DEBIAN") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $staging "usr/local/share/NexusDash") -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $staging 'usr/local/bin'), (Join-Path $staging 'usr/share/applications'), (Join-Path $staging 'usr/share/pixmaps') -Force | Out-Null
@@ -88,6 +84,10 @@ if ($IsLinux) {
     if ($LASTEXITCODE -ne 0) { throw '无法设置 DEB 元数据权限。' }
 }
 
+# 补齐独立安装包的图标、品牌和软件管理器元数据。
+
+& (Join-Path $scriptRoot 'installer/linux/Write-LinuxPackageMetadata.ps1') -StagingDirectory $staging -RepositoryRoot $repositoryRoot -Version $Version
+
 dpkg-deb --build --root-owner-group $staging $outputPath
 if ($LASTEXITCODE -ne 0) {
     throw "dpkg-deb failed for $RuntimeIdentifier"
@@ -99,5 +99,12 @@ if (-not (Test-Path -LiteralPath $outputPath -PathType Leaf)) {
 $sha = (Get-FileHash -LiteralPath $outputPath -Algorithm SHA256).Hash.ToLowerInvariant()
 "$sha  $packageName" | Set-Content -LiteralPath "$outputPath.sha256" -Encoding ASCII
 
-Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue
+
 Write-Host "Deb 打包完成：$outputPath"
+
+} finally {
+    $resolved = [IO.Path]::GetFullPath($staging)
+    $temporary = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+    if (-not $resolved.StartsWith($temporary, [StringComparison]::OrdinalIgnoreCase)) { throw '拒绝清理临时目录之外的路径。' }
+    if (Test-Path -LiteralPath $resolved) { Remove-Item -LiteralPath $resolved -Recurse -Force }
+}

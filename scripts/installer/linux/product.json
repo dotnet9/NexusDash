@@ -1,0 +1,16 @@
+{
+  "id": "com.codewf.nexusdash",
+  "package": "nexusdash",
+  "command": "nexusdash",
+  "name": "NexusDash",
+  "chineseName": "系统监控仪表盘",
+  "summary": "Monitor system activity in a desktop dashboard",
+  "chineseSummary": "通过桌面仪表盘监控系统状态",
+  "description": "A desktop dashboard for reviewing available system metrics and monitoring panels.",
+  "chineseDescription": "用于查看当前平台可用系统指标与监控面板的桌面仪表盘。",
+  "categories": [
+    "System",
+    "Monitor"
+  ],
+  "homepage": "https://github.com/dotnet9/NexusDash"
+}
